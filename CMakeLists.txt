@@ -19,7 +19,7 @@
 # - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,                                       *
 # - xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                       *
 # -----------------------------------------------------------------------------
-# Frontend2 Author: Jon Gough Testplugin(TP) v1.0.352.0 09/12/2025 DD/MM/YYYY
+# Frontend2 Author: Jon Gough Signalk_notes_opencpn(TP) v1.0.352.0 09/12/2025 DD/MM/YYYY
 # format buildCI:yes useODAPI:yes validateJSON:yes
 # ---------------------------------------------------------------------------
 # -- When changing this file do NOT change the order of the sections.    -- ##
@@ -61,16 +61,16 @@ endif (COMMAND cmake_policy)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # define plugin name, owner and versions
-set(VERBOSE_NAME "Testplugin")
-set(COMMON_NAME "Testplugin")
-set(TITLE_NAME "testplugin")
+set(VERBOSE_NAME "Signalk_notes_opencpn")
+set(COMMON_NAME "Signalk_notes_opencpn")
+set(TITLE_NAME "signalk_notes_opencpn")
 set(PACKAGE_CONTACT "Jon Gough")
-set(PACKAGE "testplugin")
+set(PACKAGE "signalk_notes_opencpn")
 set(SHORT_DESCRIPTION
     "Plugin to test examples of the ODAPI and JSON interface for ODRAW"
 )
 set(LONG_DESCRIPTION
-    "testplugin Plugin is used to test out the ODraw API and demonstrate how to use it successfully from another plugin"
+    "signalk_notes_opencpn Plugin is used to test out the ODraw API and demonstrate how to use it successfully from another plugin"
 )
 
 set(VERSION_MAJOR "1")
@@ -102,7 +102,7 @@ set(ALPHA "alpha") # Standard Repos
 # Set if  Cloudsmith Base Repository name does not match your Git Repository
 # name. set(CLOUDSMITH_BASE_REPOSITORY "${GIT_REPOSITORY_NAME}")
 # set(CLOUDSMITH_BASE_REPOSITORY "opencpn-plugins")  #Ricks's customization
-set(CLOUDSMITH_BASE_REPOSITORY "testplugin") # without the pi
+set(CLOUDSMITH_BASE_REPOSITORY "signalk_notes_opencpn") # without the pi
 
 # Set the following to use OpenCPN cloudsmith repositories instead of own
 # repositories
@@ -181,11 +181,11 @@ add_definitions(-DUSE_S57)
 # ---- Section Below - Add your project SET(SRCS and SET(HDRS  etc..
 
 set(SRCS src/tpControlDialogDef.cpp src/tpControlDialogImpl.cpp src/tpicons.cpp
-         src/tpJSON.cpp src/testplugin_pi.cpp src/tpUtils.cpp
+         src/tpJSON.cpp src/signalk_notes_opencpn_pi.cpp src/tpUtils.cpp
 )
 
 set(HDRS
-    include/testplugin_pi.h
+    include/signalk_notes_opencpn_pi.h
     include/tpicons.h
     include/tpControlDialogDef.h
     include/tpControlDialogImpl.h

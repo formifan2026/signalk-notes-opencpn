@@ -7,22 +7,22 @@ newname="$1"
 Newname="$(echo "${newname^}")"
 NEWNAME="$(echo "${newname^^}")"
 
-grep -rl testplugin . | grep -v .git | while read name; do
-  sed -e "s+testplugin+$newname+g" -i "$name";
+grep -rl signalk_notes_opencpn . | grep -v .git | while read name; do
+  sed -e "s+signalk_notes_opencpn+$newname+g" -i "$name";
 done
 
-grep -rl Testplugin . | grep -v .git | while read name; do  
-  sed -e "s+Testplugin+$Newname+g" -i "$name";
+grep -rl Signalk_notes_opencpn . | grep -v .git | while read name; do  
+  sed -e "s+Signalk_notes_opencpn+$Newname+g" -i "$name";
 done 
 
-grep -rl TESTPLUGIN . | grep -v .git | while read name; do  
-  sed -e "s+TESTPLUGIN+$NEWNAME+g" -i "$name";
+grep -rl SIGNALK_NOTES_OPENCPN . | grep -v .git | while read name; do  
+  sed -e "s+SIGNALK_NOTES_OPENCPN+$NEWNAME+g" -i "$name";
 done 
 
-find . -name "*testplugin*" | grep -v .git | while read name; do
-  mv "$name" "$(echo "$name" | sed -e "s+testplugin+$newname+g")"
+find . -name "*signalk_notes_opencpn*" | grep -v .git | while read name; do
+  mv "$name" "$(echo "$name" | sed -e "s+signalk_notes_opencpn+$newname+g")"
 done
 
-find . -name "*Testplugin*" | grep -v .git | while read name; do
-  mv "$name" "$(echo "$name" | sed -e "s+Testplugin+$Newname+g")"
+find . -name "*Signalk_notes_opencpn*" | grep -v .git | while read name; do
+  mv "$name" "$(echo "$name" | sed -e "s+Signalk_notes_opencpn+$Newname+g")"
 done

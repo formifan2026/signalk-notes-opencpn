@@ -1,4 +1,4 @@
-REM FE2  Testplugin
+REM FE2  Signalk_notes_opencpn
 
 
 REM  Requires wxWidgets setup

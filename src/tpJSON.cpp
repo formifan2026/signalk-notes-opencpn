@@ -36,7 +36,7 @@
 #include "wx/jsonwriter.h"
 #include <wx/ffile.h>
 
-#include "testplugin_pi.h"
+#include "signalk_notes_opencpn_pi.h"
 #include "tpJSON.h"
 #include "ODAPI.h"
 #include "version.h"
@@ -57,7 +57,7 @@ using nlohmann::json_schema::json_validator;
 #include <json.hpp>
 #endif
 
-extern testplugin_pi        *g_testplugin_pi;
+extern signalk_notes_opencpn_pi        *g_signalk_notes_opencpn_pi;
 extern ODAPI                *g_pODAPI;
 extern double               g_dVar;
 extern wxString             g_ReceivedODAPIMessage;
@@ -135,22 +135,22 @@ void tpJSON::ProcessMessage(wxString &message_id, wxString &message_body)
     int         l_BoundaryState;
     bool        bFail = false;
 
-    if(g_testplugin_pi->m_bSaveIncommingJSONMessages) {
+    if(g_signalk_notes_opencpn_pi->m_bSaveIncommingJSONMessages) {
         if(!m_ffOutputFile) {
             wxString l_mode;
-            if(g_testplugin_pi->m_bAppendToSaveFile) l_mode = "a";
+            if(g_signalk_notes_opencpn_pi->m_bAppendToSaveFile) l_mode = "a";
             else l_mode = "w";
-            m_ffOutputFile  = new wxFFile(g_testplugin_pi->m_fnOutputJSON.GetFullPath(), l_mode);
+            m_ffOutputFile  = new wxFFile(g_signalk_notes_opencpn_pi->m_fnOutputJSON.GetFullPath(), l_mode);
             if(!m_ffOutputFile->IsOpened()) {
-                g_testplugin_pi->m_bSaveIncommingJSONMessages = false;
-                OCPNMessageBox_PlugIn(NULL, g_testplugin_pi->m_fnOutputJSON.GetPath(), _("File not found"), wxICON_EXCLAMATION | wxCANCEL);
+                g_signalk_notes_opencpn_pi->m_bSaveIncommingJSONMessages = false;
+                OCPNMessageBox_PlugIn(NULL, g_signalk_notes_opencpn_pi->m_fnOutputJSON.GetPath(), _("File not found"), wxICON_EXCLAMATION | wxCANCEL);
             }
         }
         m_ffOutputFile->SeekEnd();
         wxString l_str;
         l_str.Printf("%s:\n%s\n", message_id, message_body);
         m_ffOutputFile->Write(l_str);
-        if(g_testplugin_pi->m_bCloseSaveFileAfterEachWrite) {
+        if(g_signalk_notes_opencpn_pi->m_bCloseSaveFileAfterEachWrite) {
             m_ffOutputFile->Flush();
             m_ffOutputFile->Close();
             delete m_ffOutputFile;
@@ -158,14 +158,14 @@ void tpJSON::ProcessMessage(wxString &message_id, wxString &message_body)
         }
 
     }
-    if(message_id != _T("TESTPLUGIN_PI")) {
+    if(message_id != _T("SIGNALK_NOTES_OPENCPN_PI")) {
         if(message_id == _T("OCPN_DRAW_PI_READY_FOR_REQUESTS")) {
             if(message_body == _T("TRUE")) {
-                if(g_testplugin_pi->m_bReadyForRequests)
-                    g_testplugin_pi->GetODAPI();
+                if(g_signalk_notes_opencpn_pi->m_bReadyForRequests)
+                    g_signalk_notes_opencpn_pi->GetODAPI();
             }
         }
-    } else if(message_id == wxS("TESTPLUGIN_PI")) {
+    } else if(message_id == wxS("SIGNALK_NOTES_OPENCPN_PI")) {
 
         // now read the JSON text and store it in the 'root' structure
         // check for errors before retreiving values...
@@ -208,7 +208,7 @@ void tpJSON::ProcessMessage(wxString &message_id, wxString &message_body)
             {
                 if(i == 0) {
                     sLogMessage.clear();
-                    sLogMessage.Append(wxT("testplugin_pi: Error parsing JSON message - "));
+                    sLogMessage.Append(wxT("signalk_notes_opencpn_pi: Error parsing JSON message - "));
                     sLogMessage.Append( message_id );
                 }
                 else sLogMessage.Append(wxT(" "));
@@ -244,7 +244,7 @@ void tpJSON::ProcessMessage(wxString &message_id, wxString &message_body)
         }
 #endif
         if(!bFail && root[wxS("Msg")].AsString() == wxS("Version") && root[wxS("Type")].AsString() == wxS("Request")) {
-            jMsg[wxT("Source")] = wxT("TESTPLUGIN_PI");
+            jMsg[wxT("Source")] = wxT("SIGNALK_NOTES_OPENCPN_PI");
             jMsg[wxT("Msg")] = root[wxT("Msg")];
             jMsg[wxT("Type")] = wxT("Response");
             jMsg[wxT("MsgId")] = root[wxT("MsgId")].AsString();

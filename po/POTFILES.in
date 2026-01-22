@@ -2,9 +2,9 @@ src/tpControlDialogDef.cpp
 src/tpControlDialogImpl.cpp
 src/tpicons.cpp
 src/tpJSON.cpp
-src/testplugin_pi.cpp
+src/signalk_notes_opencpn_pi.cpp
 src/tpUtils.cpp
-include/testplugin_pi.h
+include/signalk_notes_opencpn_pi.h
 include/tpicons.h
 include/tpControlDialogDef.h
 include/tpControlDialogImpl.h

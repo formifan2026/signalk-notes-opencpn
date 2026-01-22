@@ -1,8 +1,8 @@
-# testplugin_pi
+# signalk_notes_opencpn_pi
 Plugin to test JSON and ODAPI and develop a templated build system
 
 The idea is really to debug the process to see what happens.
-The testplugin should 'do' what a plugin would do to create stuff,
+The signalk_notes_opencpn should 'do' what a plugin would do to create stuff,
 
 Only ODAPI is working at the moment. JSON is being developed now.
 1. With the ODAPI select the type of object you want to create,
@@ -41,7 +41,7 @@ the next step, `./cloudsmith-upload.sh` (this is the case even if no account inf
 ## IDE setup & debugging
 
 This is totally dependant on the IDE that is being used. Basically the IDE needs to have both OpenCPN and the Plugin open in the IDE so that the IDE can do debugging.
-OpenCPN will/should be built with DEBUG as should the Plugin. The simplest way to continue is to use Plugin Manger once to setup your plugin correctly, i.e. all the directories and files. This can be done once you have a working plugin, testplugin_pi does work so if you base your plugin on this code, to start with, you should have an installable plugin if it compiles successfully. Then you can use the 'Local build' process to create the installable package.
+OpenCPN will/should be built with DEBUG as should the Plugin. The simplest way to continue is to use Plugin Manger once to setup your plugin correctly, i.e. all the directories and files. This can be done once you have a working plugin, signalk_notes_opencpn_pi does work so if you base your plugin on this code, to start with, you should have an installable plugin if it compiles successfully. Then you can use the 'Local build' process to create the installable package.
 
 The IDE needs to be setup to run OpenCPN with the "-p" option so that all data and programs exist in the location the opencpn executable is or sub-directories of this location. Now you can use Plugin Manager to install your plugin. You will need to have set 'CatalogExpert=1' in the [Plugins] section of the opencpn.conf/ini file so that you get full access to the facilities in Plugin Manager.
 

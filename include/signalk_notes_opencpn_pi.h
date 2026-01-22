@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: testplugin_pi.h,v 1.0 2015/01/28 01:54:37 jongough Exp $
+ * $Id: signalk_notes_opencpn_pi.h,v 1.0 2015/01/28 01:54:37 jongough Exp $
  *
  * Project:  OpenCPN
  * Purpose:  OpenCPN General Drawing Plugin
@@ -25,8 +25,8 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.             *
  ***************************************************************************
  */
-#ifndef _TESTPLUGINPI_H_
-#define _TESTPLUGINPI_H_
+#ifndef _SIGNALK_NOTES_OPENCPNPI_H_
+#define _SIGNALK_NOTES_OPENCPNPI_H_
 
 #ifdef __WXMSW__
 #ifdef _DEBUG
@@ -150,12 +150,12 @@ std::cout << x  << std::endl ; } while (0)
 
 //#define PI 3.14159265
 
-class testplugin_pi : public opencpn_plugin_118
+class signalk_notes_opencpn_pi : public opencpn_plugin_118
 {
 public:
 
-    testplugin_pi(void *ppimgr);
-    ~testplugin_pi();
+    signalk_notes_opencpn_pi(void *ppimgr);
+    ~signalk_notes_opencpn_pi();
 
     wxWindow            *m_parent_window;
     wxFileConfig        *m_pTPConfig;
@@ -240,7 +240,7 @@ public:
     bool    m_bDoneODAPIVersionCall;
     int     m_iCallerId;
     bool    m_btpDialog;
-    int     m_testplugin_button_id;
+    int     m_signalk_notes_opencpn_button_id;
     int     m_iODVersionMajor;
     int     m_iODVersionMinor;
     int     m_iODVersionPatch;

@@ -29,7 +29,7 @@
 #include "wx/wx.h"
 #endif //precompiled headers
 
-#include "testplugin_pi.h"
+#include "signalk_notes_opencpn_pi.h"
 #include "tpUtils.h"
 #include "ocpn_plugin.h"
 

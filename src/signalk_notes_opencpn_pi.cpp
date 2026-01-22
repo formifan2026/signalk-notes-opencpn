@@ -46,7 +46,7 @@
 
 #include <wx/aui/aui.h>
 
-#include "testplugin_pi.h"
+#include "signalk_notes_opencpn_pi.h"
 #include "version.h"
 #include "wxWTranslateCatalog.h"
 
@@ -71,7 +71,7 @@ static const long long lNaN = 0xfff8000000000000;
 #define NAN (*(double*)&lNaN)
 #endif
 
-testplugin_pi           *g_testplugin_pi;
+signalk_notes_opencpn_pi           *g_signalk_notes_opencpn_pi;
 wxString                *g_PrivateDataDir;
 
 wxString                *g_pHome_Locn;
@@ -109,7 +109,7 @@ float g_GLMinSymbolLineWidth;
 
 extern "C" DECL_EXP opencpn_plugin* create_pi(void *ppimgr)
 {
-    return new testplugin_pi(ppimgr);
+    return new signalk_notes_opencpn_pi(ppimgr);
 }
 
 extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
@@ -120,7 +120,7 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 
 //---------------------------------------------------------------------------------------------------------
 //
-//    testplugin PlugIn Implementation
+//    signalk_notes_opencpn PlugIn Implementation
 //
 //---------------------------------------------------------------------------------------------------------
 
@@ -132,13 +132,13 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 //
 //---------------------------------------------------------------------------------------------------------
 
-testplugin_pi::testplugin_pi(void *ppimgr)
+signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void *ppimgr)
 :opencpn_plugin_118(ppimgr)
 {
     // Create the PlugIn icons
     g_ppimgr = ppimgr;
 //    g_tp_pi_manager = (PlugInManager *) ppimgr;
-    g_testplugin_pi = this;
+    g_signalk_notes_opencpn_pi = this;
 
     wxString *l_pDir = new wxString(*GetpPrivateApplicationDataLocation());
     appendOSDirSlash( l_pDir );
@@ -146,7 +146,7 @@ testplugin_pi::testplugin_pi(void *ppimgr)
     appendOSDirSlash( l_pDir );
     if ( !wxDir::Exists(*l_pDir))
         wxMkdir( *l_pDir );
-    l_pDir->Append(_T("testplugin_pi"));
+    l_pDir->Append(_T("signalk_notes_opencpn_pi"));
     appendOSDirSlash( l_pDir );
     if ( !wxDir::Exists(*l_pDir))
         wxMkdir( *l_pDir );
@@ -167,7 +167,7 @@ testplugin_pi::testplugin_pi(void *ppimgr)
     delete l_pDir;
 }
 
-testplugin_pi::~testplugin_pi()
+signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi()
 {
     delete g_SData_Locn;
     g_SData_Locn = NULL;
@@ -183,7 +183,7 @@ testplugin_pi::~testplugin_pi()
 
 }
 
-int testplugin_pi::Init(void)
+int signalk_notes_opencpn_pi::Init(void)
 {
     g_tplocale = NULL;
     m_bReadyForRequests = false;
@@ -247,11 +247,11 @@ int testplugin_pi::Init(void)
 
 
 #ifdef PLUGIN_USE_SVG
-    m_testplugin_button_id  = InsertPlugInToolSVG(_("Test Plugin"), m_ptpicons->m_s_testplugin_grey_pi, m_ptpicons->m_s_testplugin_pi, m_ptpicons->m_s_testplugin_toggled_pi, wxITEM_CHECK,
-                                                  _("Test Plugin"), wxS(""), NULL, testplugin_POSITION, 0, this);
+    m_signalk_notes_opencpn_button_id  = InsertPlugInToolSVG(_("Test Plugin"), m_ptpicons->m_s_signalk_notes_opencpn_grey_pi, m_ptpicons->m_s_signalk_notes_opencpn_pi, m_ptpicons->m_s_signalk_notes_opencpn_toggled_pi, wxITEM_CHECK,
+                                                  _("Test Plugin"), wxS(""), NULL, signalk_notes_opencpn_POSITION, 0, this);
 #else
-    m_testplugin_button_id  = InsertPlugInTool(_("Test Plugin"), &m_ptpicons->m_bm_testplugin_grey_pi, &m_ptpicons->m_bm_testplugin_pi, wxITEM_CHECK,
-                                             _("Test Plugin"), wxS(""), NULL, testplugin_POSITION, 0, this);
+    m_signalk_notes_opencpn_button_id  = InsertPlugInTool(_("Test Plugin"), &m_ptpicons->m_bm_signalk_notes_opencpn_grey_pi, &m_ptpicons->m_bm_signalk_notes_opencpn_pi, wxITEM_CHECK,
+                                             _("Test Plugin"), wxS(""), NULL, signalk_notes_opencpn_POSITION, 0, this);
 #endif
 
     //    In order to avoid an ASSERT on msw debug builds,
@@ -260,7 +260,7 @@ int testplugin_pi::Init(void)
     wxMenu dummy_menu;
 
     // Create an OCPN Draw event handler
-    //g_WVEventHandler = new WVEventHandler( g_testplugin_pi );
+    //g_WVEventHandler = new WVEventHandler( g_signalk_notes_opencpn_pi );
 
     // Get item into font list in options/user interface
     AddPersistentFontKey( wxT("tp_Label") );
@@ -294,14 +294,14 @@ int testplugin_pi::Init(void)
     );
 }
 
-void testplugin_pi::LateInit(void)
+void signalk_notes_opencpn_pi::LateInit(void)
 {
-    SendPluginMessage(wxS("TESTPLUGIN_PI_READY_FOR_REQUESTS"), wxS("TRUE"));
+    SendPluginMessage(wxS("SIGNALK_NOTES_OPENCPN_PI_READY_FOR_REQUESTS"), wxS("TRUE"));
     m_bReadyForRequests = true;
     return;
 }
 
-bool testplugin_pi::DeInit(void)
+bool signalk_notes_opencpn_pi::DeInit(void)
 {
     if(m_tpControlDialogImpl)
     {
@@ -314,86 +314,86 @@ bool testplugin_pi::DeInit(void)
     return true;
 }
 
-int testplugin_pi::GetAPIVersionMajor()
+int signalk_notes_opencpn_pi::GetAPIVersionMajor()
 {
       return OCPN_API_VERSION_MAJOR;
 }
 
-int testplugin_pi::GetAPIVersionMinor()
+int signalk_notes_opencpn_pi::GetAPIVersionMinor()
 {
       return OCPN_API_VERSION_MINOR;
 }
 
-int testplugin_pi::GetPlugInVersionMajor()
+int signalk_notes_opencpn_pi::GetPlugInVersionMajor()
 {
       return PLUGIN_VERSION_MAJOR;
 }
 
-int testplugin_pi::GetPlugInVersionMinor()
+int signalk_notes_opencpn_pi::GetPlugInVersionMinor()
 {
       return PLUGIN_VERSION_MINOR;
 }
 
-int testplugin_pi::GetPlugInVersionPatch()
+int signalk_notes_opencpn_pi::GetPlugInVersionPatch()
 {
     return PLUGIN_VERSION_PATCH;
 }
 
-int testplugin_pi::GetPlugInVersionPost()
+int signalk_notes_opencpn_pi::GetPlugInVersionPost()
 {
     return PLUGIN_VERSION_TWEAK;
 }
 
-wxString testplugin_pi::GetCommonName()
+wxString signalk_notes_opencpn_pi::GetCommonName()
 {
     return _T(PLUGIN_COMMON_NAME);
 }
 
-wxString testplugin_pi::GetShortDescription()
+wxString signalk_notes_opencpn_pi::GetShortDescription()
 {
     return _(PLUGIN_SHORT_DESCRIPTION);
 }
 
-wxString testplugin_pi::GetLongDescription()
+wxString signalk_notes_opencpn_pi::GetLongDescription()
 {
     return _(PLUGIN_LONG_DESCRIPTION);
 
 }
 
-int testplugin_pi::GetToolbarToolCount(void)
+int signalk_notes_opencpn_pi::GetToolbarToolCount(void)
 {
       return 1;
 }
 
-void testplugin_pi::OnToolbarToolCallback(int id)
+void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id)
 {
     m_iCallerId = id;
     ToggleToolbarIcon();
 }
 
-void testplugin_pi::OnToolbarToolDownCallback(int id)
+void signalk_notes_opencpn_pi::OnToolbarToolDownCallback(int id)
 {
     return;
 }
 
-void testplugin_pi::OnToolbarToolUpCallback(int id)
+void signalk_notes_opencpn_pi::OnToolbarToolUpCallback(int id)
 {
     m_ptpicons->SetScaleFactor();
     return;
 }
 
-void testplugin_pi::ShowPreferencesDialog( wxWindow* parent )
+void signalk_notes_opencpn_pi::ShowPreferencesDialog( wxWindow* parent )
 {
 
 }
 
-void testplugin_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
+void signalk_notes_opencpn_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 {
     g_ptpJSON->ProcessMessage(message_id, message_body);
     return;
 }
 
-bool testplugin_pi::KeyboardEventHook( wxKeyEvent &event )
+bool signalk_notes_opencpn_pi::KeyboardEventHook( wxKeyEvent &event )
 {
     bool bret = FALSE;
 
@@ -408,7 +408,7 @@ bool testplugin_pi::KeyboardEventHook( wxKeyEvent &event )
             case WXK_CONTROL_W:                      // Ctrl W
                 if ( event.ShiftDown() ) { // Shift-Ctrl-W
                     if(event.GetEventType() == wxEVT_KEY_DOWN) {
-                        OnToolbarToolDownCallback( m_testplugin_button_id);
+                        OnToolbarToolDownCallback( m_signalk_notes_opencpn_button_id);
                     }
                     bret = TRUE;
                 } else bret = FALSE;
@@ -419,7 +419,7 @@ bool testplugin_pi::KeyboardEventHook( wxKeyEvent &event )
     return bret;
 }
 
-bool testplugin_pi::MouseEventHook( wxMouseEvent &event )
+bool signalk_notes_opencpn_pi::MouseEventHook( wxMouseEvent &event )
 {
     bool bret = FALSE;
 
@@ -439,7 +439,7 @@ bool testplugin_pi::MouseEventHook( wxMouseEvent &event )
     return bret;
 }
 
-void testplugin_pi::SetCursorLatLon(double lat, double lon)
+void signalk_notes_opencpn_pi::SetCursorLatLon(double lat, double lon)
 {
     if(m_tpControlDialogImpl->IsShown()) {
         m_cursor_lat = lat;
@@ -447,12 +447,12 @@ void testplugin_pi::SetCursorLatLon(double lat, double lon)
     }
 }
 
-wxBitmap *testplugin_pi::GetPlugInBitmap()
+wxBitmap *signalk_notes_opencpn_pi::GetPlugInBitmap()
 {
-    return &m_ptpicons->m_bm_testplugin_pi;
+    return &m_ptpicons->m_bm_signalk_notes_opencpn_pi;
 }
 
-void testplugin_pi::appendOSDirSlash(wxString* pString)
+void signalk_notes_opencpn_pi::appendOSDirSlash(wxString* pString)
 {
     wxChar sep = wxFileName::GetPathSeparator();
 
@@ -460,22 +460,22 @@ void testplugin_pi::appendOSDirSlash(wxString* pString)
         pString->Append(sep);
 }
 
-void testplugin_pi::ToggleToolbarIcon( void )
+void signalk_notes_opencpn_pi::ToggleToolbarIcon( void )
 {
     if(m_btpDialog) {
         m_btpDialog = false;
-        SetToolbarItemState( m_testplugin_button_id, false );
+        SetToolbarItemState( m_signalk_notes_opencpn_button_id, false );
         m_tpControlDialogImpl->Hide();
     } else {
         m_btpDialog = true;
-        SetToolbarItemState( m_testplugin_button_id, true  );
+        SetToolbarItemState( m_signalk_notes_opencpn_button_id, true  );
         if(!m_bDoneODAPIVersionCall) GetODAPI();
         m_tpControlDialogImpl->SetPanels();
         m_tpControlDialogImpl->Show();
     }
 }
 
-void testplugin_pi::SaveConfig()
+void signalk_notes_opencpn_pi::SaveConfig()
 {
     #ifndef __WXMSW__
     wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
@@ -490,9 +490,9 @@ void testplugin_pi::SaveConfig()
     wxFileConfig *pConf = m_pTPConfig;
 
     if(pConf) {
-        pConf->SetPath( wxS( "/Settings/testplugin_pi" ) );
+        pConf->SetPath( wxS( "/Settings/signalk_notes_opencpn_pi" ) );
         if(m_bRecreateConfig) {
-            pConf->DeleteGroup( "/Settings/testplugin_pi" );
+            pConf->DeleteGroup( "/Settings/signalk_notes_opencpn_pi" );
         } else {
             pConf->Write( wxS( "SaveJSONOnStartup" ), g_bSaveJSONOnStartup );
             pConf->Write( wxS( "JSONSaveFile" ), m_fnOutputJSON.GetFullPath());
@@ -504,7 +504,7 @@ void testplugin_pi::SaveConfig()
     }
 }
 
-void testplugin_pi::LoadConfig()
+void signalk_notes_opencpn_pi::LoadConfig()
 {
     #ifndef __WXMSW__
     wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
@@ -520,7 +520,7 @@ void testplugin_pi::LoadConfig()
     if(pConf)
     {
         wxString val;
-        pConf->SetPath( wxS( "/Settings/testplugin_pi" ) );
+        pConf->SetPath( wxS( "/Settings/signalk_notes_opencpn_pi" ) );
         wxString  l_wxsColour;
         pConf->Read( wxS( "SaveJSONOnStartup"), &g_bSaveJSONOnStartup, false );
         if(g_bSaveJSONOnStartup) m_tpControlDialogImpl->SetSaveJSONOnStartup(g_bSaveJSONOnStartup);
@@ -539,13 +539,13 @@ void testplugin_pi::LoadConfig()
         m_tpControlDialogImpl->SetIncommingJSONMessages(m_bSaveIncommingJSONMessages);
     }
 }
-void testplugin_pi::GetODAPI()
+void signalk_notes_opencpn_pi::GetODAPI()
 {
     wxJSONValue jMsg;
     wxJSONWriter writer;
     wxString    MsgString;
 
-    jMsg[wxT("Source")] = "TESTPLUGIN_PI";
+    jMsg[wxT("Source")] = "SIGNALK_NOTES_OPENCPN_PI";
     jMsg[wxT("Type")] = wxT("Request");
     jMsg[wxT("Msg")] = wxT("Version");
     jMsg[wxT("MsgId")] = wxT("Version");
@@ -559,7 +559,7 @@ void testplugin_pi::GetODAPI()
     m_bDoneODAPIVersionCall = true;
 
     wxJSONValue jMsg1;
-    jMsg1[wxT("Source")] = wxT("TESTPLUGIN_PI");
+    jMsg1[wxT("Source")] = wxT("SIGNALK_NOTES_OPENCPN_PI");
     jMsg1[wxT("Type")] = wxT("Request");
     jMsg1[wxT("Msg")] = wxS("GetAPIAddresses");
     jMsg1[wxT("MsgId")] = wxS("GetAPIAddresses");
@@ -671,11 +671,11 @@ void testplugin_pi::GetODAPI()
         l_msg.Append(l_notavail);
     }
 
-    OCPNMessageBox_PlugIn( m_parent_window, l_msg, _("TESTPLUGIN"), (long) wxYES );
+    OCPNMessageBox_PlugIn( m_parent_window, l_msg, _("SIGNALK_NOTES_OPENCPN"), (long) wxYES );
 
 }
 
-void testplugin_pi::FindClosestBoundaryLineCrossing(FindClosestBoundaryLineCrossing_t *pFCPBLC)
+void signalk_notes_opencpn_pi::FindClosestBoundaryLineCrossing(FindClosestBoundaryLineCrossing_t *pFCPBLC)
 {
     if((*m_pODFindClosestBoundaryLineCrossing)(pFCPBLC)) {
         delete pFCPBLC;
@@ -683,7 +683,7 @@ void testplugin_pi::FindClosestBoundaryLineCrossing(FindClosestBoundaryLineCross
     delete pFCPBLC;
 }
 
-void testplugin_pi::GetGUIDList(GUIDList_t *pGL)
+void signalk_notes_opencpn_pi::GetGUIDList(GUIDList_t *pGL)
 {
   if(pGL->GUIDType == "" || pGL->GUIDType == "Boundary" || pGL->GUIDType == "EBL") {
     pGL->GUIDList = (*m_pODFindAllPathsGUIDS)(pGL);
@@ -695,7 +695,7 @@ void testplugin_pi::GetGUIDList(GUIDList_t *pGL)
 
 }
 
-bool testplugin_pi::CreateBoundaryPoint(CreateBoundaryPoint_t* pCBP)
+bool signalk_notes_opencpn_pi::CreateBoundaryPoint(CreateBoundaryPoint_t* pCBP)
 {
     bool l_bRet = (*m_pODCreateBoundaryPoint)(pCBP);
     DEBUGST("Boundary Point created: ");
@@ -703,7 +703,7 @@ bool testplugin_pi::CreateBoundaryPoint(CreateBoundaryPoint_t* pCBP)
     return true;
 }
 
-bool testplugin_pi::CreateBoundary(CreateBoundary_t* pCB)
+bool signalk_notes_opencpn_pi::CreateBoundary(CreateBoundary_t* pCB)
 {
     wxString l_GUID;
     bool l_bRet = (*m_pODCreateBoundary)(pCB);
@@ -712,7 +712,7 @@ bool testplugin_pi::CreateBoundary(CreateBoundary_t* pCB)
     return l_bRet;;
 }
 
-bool testplugin_pi::CreateTextPoint(CreateTextPoint_t* pCTP)
+bool signalk_notes_opencpn_pi::CreateTextPoint(CreateTextPoint_t* pCTP)
 {
     wxString l_GUID;
     bool l_bRet = (*m_pODCreateTextPoint)(pCTP);
@@ -721,7 +721,7 @@ bool testplugin_pi::CreateTextPoint(CreateTextPoint_t* pCTP)
     return true;
 }
 
-bool testplugin_pi::DeleteBoundaryPoint(DeleteBoundaryPoint_t* pDBP)
+bool signalk_notes_opencpn_pi::DeleteBoundaryPoint(DeleteBoundaryPoint_t* pDBP)
 {
     bool l_bRet = (*m_pODDeleteBoundaryPoint)(pDBP);
     DEBUGST("Boundary Point Deleted: ");
@@ -729,7 +729,7 @@ bool testplugin_pi::DeleteBoundaryPoint(DeleteBoundaryPoint_t* pDBP)
     return true;
 }
 
-bool testplugin_pi::DeleteBoundary(DeleteBoundary_t* pDB)
+bool signalk_notes_opencpn_pi::DeleteBoundary(DeleteBoundary_t* pDB)
 {
     bool l_bRet = (*m_pODDeleteBoundary)(pDB);
     DEBUGST("Boundary deleted: ");
@@ -737,7 +737,7 @@ bool testplugin_pi::DeleteBoundary(DeleteBoundary_t* pDB)
     return true;
 }
 
-bool testplugin_pi::DeleteTextPoint(DeleteTextPoint_t* pDTP)
+bool signalk_notes_opencpn_pi::DeleteTextPoint(DeleteTextPoint_t* pDTP)
 {
     bool l_bRet = (*m_pODDeleteTextPoint)(pDTP);
     DEBUGST("Text Point created: ");
@@ -745,19 +745,19 @@ bool testplugin_pi::DeleteTextPoint(DeleteTextPoint_t* pDTP)
     return true;
 }
 
-void testplugin_pi::AddPointIcon(AddPointIcon_t* pAPI)
+void signalk_notes_opencpn_pi::AddPointIcon(AddPointIcon_t* pAPI)
 {
     (*m_pODAddPointIcon)(pAPI);
     return;
 }
 
-void testplugin_pi::DeletePointIcon(DeletePointIcon_t* pDPI)
+void signalk_notes_opencpn_pi::DeletePointIcon(DeletePointIcon_t* pDPI)
 {
     (*m_pODDeletePointIcon)(pDPI);
     return;
 }
 
-bool testplugin_pi::ImportJSONFile()
+bool signalk_notes_opencpn_pi::ImportJSONFile()
 {
     wxFFile l_ffile;
     l_ffile.Open(m_fnInputJSON.GetFullPath(), "r");
@@ -783,7 +783,7 @@ bool testplugin_pi::ImportJSONFile()
     return true;
 }
 
-void testplugin_pi::UpdateCloseAfterSave(bool bCloseAfterSave)
+void signalk_notes_opencpn_pi::UpdateCloseAfterSave(bool bCloseAfterSave)
 {
     if(m_bCloseSaveFileAfterEachWrite != bCloseAfterSave) {
         m_bCloseSaveFileAfterEachWrite = bCloseAfterSave;
@@ -793,6 +793,6 @@ void testplugin_pi::UpdateCloseAfterSave(bool bCloseAfterSave)
     }
 }
 
-void testplugin_pi::UpdateAppendToFile(bool bAppendToFile)
+void signalk_notes_opencpn_pi::UpdateAppendToFile(bool bAppendToFile)
 {
 }
