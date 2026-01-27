@@ -1,798 +1,1022 @@
 /******************************************************************************
- * updated: 4-5-2012
  * Project:  OpenCPN
- * Purpose:  test Plugin
- * Author:   Jon Gough
+ * Purpose:  SignalK Notes Plugin
+ * Author:   Dirk (bereinigt)
  *
  ***************************************************************************
- *   Copyright (C) 2010 by David S. Register   *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- *   This program is distributed in the hope that it will be useful,       *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
- *   GNU General Public License for more details.                          *
- *                                                                         *
- *   You should have received a copy of the GNU General Public License     *
- *   along with this program; if not, write to the                         *
- *   Free Software Foundation, Inc.,                                       *
- *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,  USA.         *
+ *   GPL License
  ***************************************************************************
  */
+#if defined(__WXGTK__)
+#include <GL/gl.h>
+#include <GL/glu.h>
+#elif defined(__WXMSW__)
+#include <GL/gl.h>
+#include <GL/glu.h>
+#elif defined(__WXOSX__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#endif
+#if defined(__OCPN__ANDROID__)
+#include <GLES2/gl2.h>
+#else
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 
+#include "version.h"
+#include "tpSignalKNotes.h"
 
+#include "ocpn_plugin.h"
+#include <cmath>
 #include "wx/wxprec.h"
 
-#ifndef  WX_PRECOMP
-  #include "wx/wx.h"
-#endif //precompiled headers
+#ifndef WX_PRECOMP
+#include "wx/wx.h"
+#endif
+
 #include <wx/stdpaths.h>
 #include <wx/timer.h>
 #include <wx/event.h>
 #include <wx/sysopt.h>
 #include <wx/dir.h>
-#include <wx/stdpaths.h>
 #include <wx/filefn.h>
 #include <wx/msgdlg.h>
-#include <wx/listbook.h>
-#include <wx/panel.h>
-#include <wx/ffile.h>
 #include <wx/wfstream.h>
 #include <wx/txtstrm.h>
-
 #include <wx/aui/aui.h>
+#include <wx/fileconf.h>
+#include <wx/filename.h>
+#include <wx/graphics.h>
+
+#include <uuid/uuid.h>
 
 #include "signalk_notes_opencpn_pi.h"
-#include "version.h"
 #include "wxWTranslateCatalog.h"
 
-#include "ODAPI.h"
-#include "tpJSON.h"
 #include "tpicons.h"
-#include "tpControlDialogImpl.h"
+#include "tpConfigDialog.h"
 
 #include "wx/jsonwriter.h"
 
-
 #ifndef DECL_EXP
 #ifdef __WXMSW__
-#define DECL_EXP     __declspec(dllexport)
+#define DECL_EXP __declspec(dllexport)
 #else
 #define DECL_EXP
 #endif
 #endif
 
-#if !defined(NAN)
-static const long long lNaN = 0xfff8000000000000;
-#define NAN (*(double*)&lNaN)
-#endif
+signalk_notes_opencpn_pi* g_signalk_notes_opencpn_pi = nullptr;
+wxString* g_PrivateDataDir = nullptr;
 
-signalk_notes_opencpn_pi           *g_signalk_notes_opencpn_pi;
-wxString                *g_PrivateDataDir;
+wxString* g_pLayerDir = nullptr;
 
-wxString                *g_pHome_Locn;
-wxString                *g_pData;
-wxString                *g_SData_Locn;
-wxString                *g_pLayerDir;
+PlugIn_ViewPort* g_pVP = nullptr;
+PlugIn_ViewPort g_VP;
 
-PlugIn_ViewPort         *g_pVP;
-PlugIn_ViewPort         g_VP;
-wxString                *g_tplocale;
-void                    *g_ppimgr;
+wxFont* g_pFontTitle = nullptr;
+wxFont* g_pFontData = nullptr;
+wxFont* g_pFontLabel = nullptr;
+wxFont* g_pFontSmall = nullptr;
 
-tpJSON                  *g_ptpJSON;
-ODAPI                   *g_ptpAPI;
-double                  g_dVar;
-int                     g_iLocaleDepth;
-wxString                *g_tpLocale;
-bool                    g_bSaveJSONOnStartup;
-
-wxFont                  *g_pFontTitle;
-wxFont                  *g_pFontData;
-wxFont                  *g_pFontLabel;
-wxFont                  *g_pFontSmall;
-
-wxString                g_ReceivedODAPIMessage;
-wxJSONValue             g_ReceivedODAPIJSONMsg;
-wxString                g_ReceivedJSONMessage;
-wxJSONValue             g_ReceivedJSONJSONMsg;
-
-// Needed for ocpndc.cpp to compile. Normally would be in glChartCanvas.cpp
-float g_GLMinSymbolLineWidth;
-
-
-// the class factories, used to create and destroy instances of the PlugIn
-
-extern "C" DECL_EXP opencpn_plugin* create_pi(void *ppimgr)
-{
-    return new signalk_notes_opencpn_pi(ppimgr);
+// Factory
+extern "C" DECL_EXP opencpn_plugin* create_pi(void* ppimgr) {
+  return new signalk_notes_opencpn_pi(ppimgr);
 }
 
-extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
-{
-    delete p;
+extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p) { delete p; }
+
+// ---------------------------------------------------------------------------------------
+// Constructor / Destructor
+// ---------------------------------------------------------------------------------------
+
+signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void* ppimgr)
+    : opencpn_plugin_118(ppimgr) {
+  g_signalk_notes_opencpn_pi = this;
+
+  // Plugin-Datenverzeichnis von OpenCPN ermitteln
+  wxString pluginDir = GetPluginDataDir("signalk_notes_opencpn_pi");
+
+  // Sicherstellen, dass der Pfad mit Slash endet
+  if (!pluginDir.EndsWith("/")) pluginDir += "/";
+
+  // Globale Verzeichnisse setzen
+  g_PrivateDataDir = new wxString(pluginDir);
+
+  // data/ Verzeichnis
+  wxString dataDir = pluginDir + "data/";
+  if (!wxDir::Exists(dataDir)) wxMkdir(dataDir);
+
+  // icons/ Verzeichnis
+  wxString iconDir = dataDir + "icons/";
+  if (!wxDir::Exists(iconDir)) wxMkdir(iconDir);
+
+  // Layers/ Verzeichnis
+  wxString layerDir = pluginDir + "Layers/";
+  if (!wxDir::Exists(layerDir)) wxMkdir(layerDir);
+
+  // Globale Pointer setzen (falls noch benötigt)
+  g_pLayerDir = new wxString(layerDir);
+
+  // Plugin-Komponenten initialisieren
+  m_ptpicons = new tpicons();
+  m_pSignalKNotesManager = new tpSignalKNotesManager(this);
+  m_lastViewPortValid = false;
 }
 
+signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi() {
+  delete g_PrivateDataDir;
+  delete g_pLayerDir;
 
-//---------------------------------------------------------------------------------------------------------
-//
-//    signalk_notes_opencpn PlugIn Implementation
-//
-//---------------------------------------------------------------------------------------------------------
-
-
-
-//---------------------------------------------------------------------------------------------------------
-//
-//          PlugIn initialization and de-init
-//
-//---------------------------------------------------------------------------------------------------------
-
-signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void *ppimgr)
-:opencpn_plugin_118(ppimgr)
-{
-    // Create the PlugIn icons
-    g_ppimgr = ppimgr;
-//    g_tp_pi_manager = (PlugInManager *) ppimgr;
-    g_signalk_notes_opencpn_pi = this;
-
-    wxString *l_pDir = new wxString(*GetpPrivateApplicationDataLocation());
-    appendOSDirSlash( l_pDir );
-    l_pDir->Append(_T("plugins"));
-    appendOSDirSlash( l_pDir );
-    if ( !wxDir::Exists(*l_pDir))
-        wxMkdir( *l_pDir );
-    l_pDir->Append(_T("signalk_notes_opencpn_pi"));
-    appendOSDirSlash( l_pDir );
-    if ( !wxDir::Exists(*l_pDir))
-        wxMkdir( *l_pDir );
-    g_PrivateDataDir = new wxString;
-    g_PrivateDataDir->Append(*l_pDir);
-    g_pData = new wxString(*l_pDir);
-    g_pData->append( wxS("data") );
-    appendOSDirSlash( g_pData );
-    if ( !wxDir::Exists(*g_pData))
-        wxMkdir( *g_pData );
-    g_pLayerDir = new wxString;
-    g_pLayerDir->Append(*l_pDir);
-    g_pLayerDir->Append( wxT("Layers") );
-    appendOSDirSlash( g_pLayerDir );
-
-    m_ptpicons = new tpicons();
-
-    delete l_pDir;
+  if (m_pSignalKNotesManager) delete m_pSignalKNotesManager;
 }
 
-signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi()
-{
-    delete g_SData_Locn;
-    g_SData_Locn = NULL;
+// ---------------------------------------------------------------------------
+// Version / Metadata (aus version.h)
+// ---------------------------------------------------------------------------
 
-    delete g_PrivateDataDir;
-    g_PrivateDataDir = NULL;
-
-    delete g_pData;
-    g_pData = NULL;
-
-    delete g_pLayerDir;
-    g_pLayerDir = NULL;
-
+int signalk_notes_opencpn_pi::GetAPIVersionMajor() {
+  return OCPN_API_VERSION_MAJOR;
+}
+int signalk_notes_opencpn_pi::GetAPIVersionMinor() {
+  return OCPN_API_VERSION_MINOR;
 }
 
-int signalk_notes_opencpn_pi::Init(void)
-{
-    g_tplocale = NULL;
-    m_bReadyForRequests = false;
-    m_bDoneODAPIVersionCall = false;
-    m_btpDialog = false;
-    m_tpControlDialogImpl = NULL;
-    m_cursor_lat = 0.0;
-    m_cursor_lon = 0.0;
-    m_click_lat = 0.0;
-    m_click_lon = 0.0;
-    m_bOD_FindPointInAnyBoundary = false;
-    m_bODFindClosestBoundaryLineCrossing = false;
-    m_bODFindFirstBoundaryLineCrossing = false;
-    m_bODCreateBoundary = false;
-    m_bODCreateBoundaryPoint = false;
-    m_bODCreateTextPoint = false;
-    m_bODAddPointIcon = false;
-    m_bODDeletePointIcon = false;
-    m_bODFindAllPathsGUIDS = false;
-    m_pOD_FindPointInAnyBoundary = NULL;
-    m_pODFindClosestBoundaryLineCrossing = NULL;
-    m_pODFindFirstBoundaryLineCrossing = NULL;
-    m_pODFindFirstBoundaryLineCrossing = NULL;
-    m_pODCreateBoundary = NULL;
-    m_pODCreateBoundaryPoint = NULL;
-    m_pODCreateTextPoint = NULL;
-    m_pODDeleteBoundary = NULL;
-    m_pODDeleteBoundaryPoint = NULL;
-    m_pODDeleteTextPoint = NULL;
-    m_pODAddPointIcon = NULL;
-    m_pODDeletePointIcon = NULL;
-    m_pODFindAllPathsGUIDS = NULL;
-    m_iODVersionMajor = 0;
-    m_iODVersionMinor = 0;
-    m_iODVersionPatch = 0;
-    m_iODAPIVersionMajor = 0;
-    m_iODAPIVersionMinor = 0;
-    m_bSaveIncommingJSONMessages = false;
-    m_fnOutputJSON = wxEmptyString;
-    m_fnInputJSON = wxEmptyString;
-    m_bCloseSaveFileAfterEachWrite = true;
-    m_bAppendToSaveFile = true;
-    m_bRecreateConfig = false;
+int signalk_notes_opencpn_pi::GetPlugInVersionMajor() {
+  return PLUGIN_VERSION_MAJOR;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionMinor() {
+  return PLUGIN_VERSION_MINOR;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionPatch() {
+  return PLUGIN_VERSION_PATCH;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionPost() {
+  return PLUGIN_VERSION_TWEAK;
+}
 
-    // Adds local language support for the plugin to OCPN
-    AddLocaleCatalog( PLUGIN_CATALOG_NAME );
+wxString signalk_notes_opencpn_pi::GetCommonName() {
+  return _T(PLUGIN_COMMON_NAME);
+}
+wxString signalk_notes_opencpn_pi::GetShortDescription() {
+  return _(PLUGIN_SHORT_DESCRIPTION);
+}
+wxString signalk_notes_opencpn_pi::GetLongDescription() {
+  return _(PLUGIN_LONG_DESCRIPTION);
+}
 
-    eventsEnabled = true;
+// ---------------------------------------------------------------------------------------
+// Init / DeInit
+// ---------------------------------------------------------------------------------------
 
-    // Get a pointer to the opencpn display canvas, to use as a parent for windows created
-    m_parent_window = GetOCPNCanvasWindow();
-    m_pTPConfig = GetOCPNConfigObject();
+int signalk_notes_opencpn_pi::Init(void) {
+  AddLocaleCatalog(PLUGIN_CATALOG_NAME);
 
-    m_tpControlDialogImpl = new tpControlDialogImpl(m_parent_window);
-    m_tpControlDialogImpl->Fit();
-    m_tpControlDialogImpl->Layout();
-    m_tpControlDialogImpl->Hide();
-    LoadConfig();
+  m_parent_window = GetOCPNCanvasWindow();
+  m_pTPConfig = GetOCPNConfigObject();
 
-    g_ptpJSON = new tpJSON;
+  LoadConfig();
 
+  // ← KEINE Änderung nötig, kein Initial-Fetch!
 
 #ifdef PLUGIN_USE_SVG
-    m_signalk_notes_opencpn_button_id  = InsertPlugInToolSVG(_("Test Plugin"), m_ptpicons->m_s_signalk_notes_opencpn_grey_pi, m_ptpicons->m_s_signalk_notes_opencpn_pi, m_ptpicons->m_s_signalk_notes_opencpn_toggled_pi, wxITEM_CHECK,
-                                                  _("Test Plugin"), wxS(""), NULL, signalk_notes_opencpn_POSITION, 0, this);
+  m_signalk_notes_opencpn_button_id = InsertPlugInToolSVG(
+      _("SignalK Notes"), m_ptpicons->m_s_signalk_notes_opencpn_grey_pi,
+      m_ptpicons->m_s_signalk_notes_opencpn_pi,
+      m_ptpicons->m_s_signalk_notes_opencpn_toggled_pi, wxITEM_CHECK,
+      _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
 #else
-    m_signalk_notes_opencpn_button_id  = InsertPlugInTool(_("Test Plugin"), &m_ptpicons->m_bm_signalk_notes_opencpn_grey_pi, &m_ptpicons->m_bm_signalk_notes_opencpn_pi, wxITEM_CHECK,
-                                             _("Test Plugin"), wxS(""), NULL, signalk_notes_opencpn_POSITION, 0, this);
+  m_signalk_notes_opencpn_button_id = InsertPlugInTool(
+      _("SignalK Notes"), &m_ptpicons->m_bm_signalk_notes_opencpn_grey_pi,
+      &m_ptpicons->m_bm_signalk_notes_opencpn_pi, wxITEM_CHECK,
+      _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
 #endif
 
-    //    In order to avoid an ASSERT on msw debug builds,
-    //    we need to create a dummy menu to act as a surrogate parent of the created MenuItems
-    //    The Items will be re-parented when added to the real context meenu
-    wxMenu dummy_menu;
+  g_pFontTitle = GetOCPNScaledFont_PlugIn("tp_Title");
+  g_pFontLabel = GetOCPNScaledFont_PlugIn("tp_Label");
+  g_pFontData = GetOCPNScaledFont_PlugIn("tp_Data");
+  g_pFontSmall = GetOCPNScaledFont_PlugIn("tp_Small");
 
-    // Create an OCPN Draw event handler
-    //g_WVEventHandler = new WVEventHandler( g_signalk_notes_opencpn_pi );
-
-    // Get item into font list in options/user interface
-    AddPersistentFontKey( wxT("tp_Label") );
-    AddPersistentFontKey( wxT("tp_Data") );
-    g_pFontTitle = GetOCPNScaledFont_PlugIn( wxS("tp_Title") );
-    g_pFontLabel = GetOCPNScaledFont_PlugIn( wxS("tp_Label") );
-    g_pFontData = GetOCPNScaledFont_PlugIn( wxS("tp_Data") );
-    g_pFontSmall = GetOCPNScaledFont_PlugIn( wxS("tp_Small") );
-    wxColour l_fontcolour = GetFontColour_PlugIn( wxS("tp_Label") );
-    l_fontcolour = GetFontColour_PlugIn( wxS("tp_Data") );
-
-    m_pOD_FindPointInAnyBoundary = NULL;
-    m_pODFindClosestBoundaryLineCrossing = NULL;
-
-    return (
-        WANTS_CURSOR_LATLON       |
-        WANTS_TOOLBAR_CALLBACK    |
-        INSTALLS_TOOLBAR_TOOL     |
-//        WANTS_CONFIG              |
-        INSTALLS_TOOLBOX_PAGE     |
-        INSTALLS_CONTEXTMENU_ITEMS  |
-//        WANTS_NMEA_EVENTS         |
-//        WANTS_NMEA_SENTENCES        |
-        //    USES_AUI_MANAGER            |
-//        WANTS_PREFERENCES         |
-        //    WANTS_ONPAINT_VIEWPORT      |
-        WANTS_PLUGIN_MESSAGING    |
-        WANTS_LATE_INIT           |
-        WANTS_MOUSE_EVENTS        |
-        WANTS_KEYBOARD_EVENTS
-    );
+  return (WANTS_CURSOR_LATLON | WANTS_TOOLBAR_CALLBACK | INSTALLS_TOOLBAR_TOOL |
+          INSTALLS_TOOLBOX_PAGE | INSTALLS_CONTEXTMENU_ITEMS |
+          WANTS_OVERLAY_CALLBACK | WANTS_OPENGL_OVERLAY_CALLBACK |
+          WANTS_PLUGIN_MESSAGING | WANTS_LATE_INIT | WANTS_MOUSE_EVENTS |
+          WANTS_KEYBOARD_EVENTS | WANTS_ONPAINT_VIEWPORT);
 }
 
-void signalk_notes_opencpn_pi::LateInit(void)
-{
-    SendPluginMessage(wxS("SIGNALK_NOTES_OPENCPN_PI_READY_FOR_REQUESTS"), wxS("TRUE"));
-    m_bReadyForRequests = true;
-    return;
+void signalk_notes_opencpn_pi::LateInit(void) {
+  SendPluginMessage("SIGNALK_NOTES_OPENCPN_PI_READY_FOR_REQUESTS", "TRUE");
 }
 
-bool signalk_notes_opencpn_pi::DeInit(void)
-{
-    if(m_tpControlDialogImpl)
-    {
-        m_tpControlDialogImpl->Close();
-        delete m_tpControlDialogImpl;
-        m_tpControlDialogImpl = NULL;
+bool signalk_notes_opencpn_pi::DeInit(void) {
+  if (m_pOverviewDialog) {
+    m_pOverviewDialog->Destroy();
+    m_pOverviewDialog = nullptr;
+  }
+
+  if (m_pTPConfig) SaveConfig();
+
+  return true;
+}
+
+// ---------------------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------------------
+
+void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
+  // Token validieren BEVOR Dialog geöffnet wird
+  if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
+    if (!m_pSignalKNotesManager->ValidateToken()) {
+      wxLogMessage("SignalK Notes: Token invalid - clearing");
+      m_pSignalKNotesManager->SetAuthToken("");
+      m_pSignalKNotesManager->ClearAuthRequest();
+      SaveConfig();
     }
-    if(m_pTPConfig) SaveConfig();
+  }
 
-    return true;
-}
+  // Provider-Cleanup
+  if (m_pSignalKNotesManager) {
+    m_pSignalKNotesManager->CleanupDisabledProviders();
+  }
 
-int signalk_notes_opencpn_pi::GetAPIVersionMajor()
-{
-      return OCPN_API_VERSION_MAJOR;
-}
+  if (m_pConfigDialog) {
+    m_pConfigDialog->Destroy();
+    m_pConfigDialog = nullptr;
+  }
 
-int signalk_notes_opencpn_pi::GetAPIVersionMinor()
-{
-      return OCPN_API_VERSION_MINOR;
-}
+  m_pConfigDialog = new tpConfigDialog(this, GetOCPNCanvasWindow());
 
-int signalk_notes_opencpn_pi::GetPlugInVersionMajor()
-{
-      return PLUGIN_VERSION_MAJOR;
-}
+  m_pConfigDialog->UpdateProviders(
+      m_pSignalKNotesManager->GetDiscoveredProviders());
+  m_pConfigDialog->UpdateIconMappings(
+      m_pSignalKNotesManager->GetDiscoveredIcons());
+  m_pConfigDialog->LoadSettings(m_pSignalKNotesManager->GetProviderSettings(),
+                                m_pSignalKNotesManager->GetIconMappings());
 
-int signalk_notes_opencpn_pi::GetPlugInVersionMinor()
-{
-      return PLUGIN_VERSION_MINOR;
-}
+  if (m_pConfigDialog->ShowModal() == wxID_OK) {
+    m_pSignalKNotesManager->SetProviderSettings(
+        m_pConfigDialog->GetProviderSettings());
+    m_pSignalKNotesManager->SetIconMappings(m_pConfigDialog->GetIconMappings());
 
-int signalk_notes_opencpn_pi::GetPlugInVersionPatch()
-{
-    return PLUGIN_VERSION_PATCH;
-}
+    SaveConfig();
 
-int signalk_notes_opencpn_pi::GetPlugInVersionPost()
-{
-    return PLUGIN_VERSION_TWEAK;
-}
-
-wxString signalk_notes_opencpn_pi::GetCommonName()
-{
-    return _T(PLUGIN_COMMON_NAME);
-}
-
-wxString signalk_notes_opencpn_pi::GetShortDescription()
-{
-    return _(PLUGIN_SHORT_DESCRIPTION);
-}
-
-wxString signalk_notes_opencpn_pi::GetLongDescription()
-{
-    return _(PLUGIN_LONG_DESCRIPTION);
-
-}
-
-int signalk_notes_opencpn_pi::GetToolbarToolCount(void)
-{
-      return 1;
-}
-
-void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id)
-{
-    m_iCallerId = id;
-    ToggleToolbarIcon();
-}
-
-void signalk_notes_opencpn_pi::OnToolbarToolDownCallback(int id)
-{
-    return;
-}
-
-void signalk_notes_opencpn_pi::OnToolbarToolUpCallback(int id)
-{
-    m_ptpicons->SetScaleFactor();
-    return;
-}
-
-void signalk_notes_opencpn_pi::ShowPreferencesDialog( wxWindow* parent )
-{
-
-}
-
-void signalk_notes_opencpn_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
-{
-    g_ptpJSON->ProcessMessage(message_id, message_body);
-    return;
-}
-
-bool signalk_notes_opencpn_pi::KeyboardEventHook( wxKeyEvent &event )
-{
-    bool bret = FALSE;
-
-    if( event.GetKeyCode() < 128 )            //ascii
-    {
-        int key_char = event.GetKeyCode();
-
-        if ( event.ControlDown() )
-            key_char -= 64;
-
-        switch( key_char ) {
-            case WXK_CONTROL_W:                      // Ctrl W
-                if ( event.ShiftDown() ) { // Shift-Ctrl-W
-                    if(event.GetEventType() == wxEVT_KEY_DOWN) {
-                        OnToolbarToolDownCallback( m_signalk_notes_opencpn_button_id);
-                    }
-                    bret = TRUE;
-                } else bret = FALSE;
-                break;
-        }
-    }
-    if(bret) RequestRefresh(m_parent_window);
-    return bret;
-}
-
-bool signalk_notes_opencpn_pi::MouseEventHook( wxMouseEvent &event )
-{
-    bool bret = FALSE;
-
-    if(m_tpControlDialogImpl->IsVisible()) {
-        if(event.LeftDown()) {
-            m_click_lat = m_cursor_lat;
-            m_click_lon = m_cursor_lon;
-            m_tpControlDialogImpl->SetLatLon( m_cursor_lat, m_cursor_lon );
-            bret = TRUE;
-        }
-
-        if(event.LeftUp()) {
-            bret = TRUE;
-        }
+    if (m_lastViewPortValid) {
+      m_pSignalKNotesManager->UpdateDisplayedIcons(
+          m_lastViewPort.clat, m_lastViewPort.clon,
+          CalculateMaxDistance(m_lastViewPort));
     }
 
-    return bret;
+    RequestRefresh(m_parent_window);
+  }
+
+  m_pConfigDialog->Destroy();
+  m_pConfigDialog = nullptr;
+
+  UpdateOverviewDialog();
 }
 
-void signalk_notes_opencpn_pi::SetCursorLatLon(double lat, double lon)
-{
-    if(m_tpControlDialogImpl->IsShown()) {
-        m_cursor_lat = lat;
-        m_cursor_lon = lon;
+void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
+  if (m_pConfigDialog) {
+    m_pConfigDialog->Destroy();
+    m_pConfigDialog = nullptr;
+  }
+
+  m_pConfigDialog = new tpConfigDialog(this, parent);
+
+  m_pConfigDialog->UpdateProviders(
+      m_pSignalKNotesManager->GetDiscoveredProviders());
+  m_pConfigDialog->UpdateIconMappings(
+      m_pSignalKNotesManager->GetDiscoveredIcons());
+  m_pConfigDialog->LoadSettings(m_pSignalKNotesManager->GetProviderSettings(),
+                                m_pSignalKNotesManager->GetIconMappings());
+
+  // WICHTIG: NICHT modal öffnen!
+  m_pConfigDialog->Show();
+}
+
+void signalk_notes_opencpn_pi::OnToolbarToolDownCallback(int id) {}
+
+void signalk_notes_opencpn_pi::OnToolbarToolUpCallback(int id) {
+  m_ptpicons->SetScaleFactor();
+}
+
+void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
+  if (!m_lastViewPortValid) return;
+
+  // 1. Notes aktualisieren
+  m_pSignalKNotesManager->UpdateDisplayedIcons(
+      m_lastViewPort.clat, m_lastViewPort.clon,
+      m_lastViewPort.view_scale_ppm * 1000  // oder dein Radius
+  );
+
+  // 2. aktuellen Wert holen
+  int count = m_pSignalKNotesManager->GetVisibleIconCount(m_lastViewPort);
+
+  // 3. Dialog aktualisieren
+  if (m_pOverviewDialog) m_pOverviewDialog->UpdateCount(count);
+}
+
+// ---------------------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------------------
+
+bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
+  if (!vp || !m_pSignalKNotesManager) return false;
+
+  m_lastViewPort = *vp;
+  m_lastViewPortValid = true;
+
+  double centerLat = vp->clat;
+  double centerLon = vp->clon;
+  double maxDistance = CalculateMaxDistance(*vp);
+
+  wxLongLong now = wxGetLocalTimeMillis();
+
+  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
+      fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
+      fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
+      fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
+    m_lastFetchCenterLat = centerLat;
+    m_lastFetchCenterLon = centerLon;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
+  }
+
+  std::vector<const SignalKNote*> visibleNotes;
+  m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
+
+  if (visibleNotes.empty()) return false;
+
+  // Clustering
+  m_currentClusters = BuildClusters(visibleNotes, *vp);
+
+  bool drewSomething = false;
+
+  for (const auto& cluster : m_currentClusters) {
+    // ---------------------------------------------------------
+    // EINZEL-ICON
+    // ---------------------------------------------------------
+    if (cluster.notes.size() == 1) {
+      const SignalKNote* note = cluster.notes[0];
+
+      wxBitmap bmp;
+      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
+
+      // ICON SCHÄRFEN + ANTI-ALIASING + Y-FLIP
+      wxBitmap glBmp = PrepareIconBitmapForGL(bmp, bmp.GetWidth());
+
+      dc.DrawBitmap(glBmp, cluster.screenPos.x - glBmp.GetWidth() / 2,
+                    cluster.screenPos.y - glBmp.GetHeight() / 2, true);
+
+      drewSomething = true;
     }
+
+    // ---------------------------------------------------------
+    // CLUSTER-ICON
+    // ---------------------------------------------------------
+    else {
+      wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
+
+      dc.DrawBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
+                    cluster.screenPos.y - clusterBmp.GetHeight() / 2, true);
+
+      drewSomething = true;
+    }
+  }
+
+  return drewSomething;
 }
 
-wxBitmap *signalk_notes_opencpn_pi::GetPlugInBitmap()
-{
-    return &m_ptpicons->m_bm_signalk_notes_opencpn_pi;
-}
+bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
+                                               PlugIn_ViewPort* vp) {
+  if (!vp || !m_pSignalKNotesManager) return false;
 
-void signalk_notes_opencpn_pi::appendOSDirSlash(wxString* pString)
-{
-    wxChar sep = wxFileName::GetPathSeparator();
+  m_lastViewPort = *vp;
+  m_lastViewPortValid = true;
 
-    if (pString->Last() != sep)
-        pString->Append(sep);
-}
+  double centerLat = vp->clat;
+  double centerLon = vp->clon;
+  double maxDistance = CalculateMaxDistance(*vp);
 
-void signalk_notes_opencpn_pi::ToggleToolbarIcon( void )
-{
-    if(m_btpDialog) {
-        m_btpDialog = false;
-        SetToolbarItemState( m_signalk_notes_opencpn_button_id, false );
-        m_tpControlDialogImpl->Hide();
+  wxLongLong now = wxGetLocalTimeMillis();
+
+  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
+      fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
+      fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
+      fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
+    m_lastFetchCenterLat = centerLat;
+    m_lastFetchCenterLon = centerLon;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
+  }
+
+  std::vector<const SignalKNote*> visibleNotes;
+  m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
+
+  if (visibleNotes.empty()) return false;
+
+  // CLUSTERING AUCH FÜR OPENGL
+  m_currentClusters = BuildClusters(visibleNotes, *vp);
+
+  bool drewSomething = false;
+
+  for (const auto& cluster : m_currentClusters) {
+    if (cluster.notes.size() == 1) {
+      // Einzelnes Icon
+      const SignalKNote* note = cluster.notes[0];
+      wxBitmap bmp;
+      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
+
+      DrawGLBitmap(bmp, cluster.screenPos.x - bmp.GetWidth() / 2,
+                   cluster.screenPos.y - bmp.GetHeight() / 2);
+      drewSomething = true;
     } else {
-        m_btpDialog = true;
-        SetToolbarItemState( m_signalk_notes_opencpn_button_id, true  );
-        if(!m_bDoneODAPIVersionCall) GetODAPI();
-        m_tpControlDialogImpl->SetPanels();
-        m_tpControlDialogImpl->Show();
+      // Cluster-Icon zeichnen
+      // Für OpenGL müssen wir ein Cluster-Bitmap erstellen
+      wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
+      DrawGLBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
+                   cluster.screenPos.y - clusterBmp.GetHeight() / 2);
+      drewSomething = true;
     }
-}
-
-void signalk_notes_opencpn_pi::SaveConfig()
-{
-    #ifndef __WXMSW__
-    wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
-    #if wxCHECK_VERSION(3,0,0)  && !defined(_WXMSW_)
-    //#if wxCHECK_VERSION(3,0,0)
-    wxSetlocale(LC_NUMERIC, "C");
-    #else
-    setlocale(LC_NUMERIC, "C");
-    #endif
-    #endif
-
-    wxFileConfig *pConf = m_pTPConfig;
-
-    if(pConf) {
-        pConf->SetPath( wxS( "/Settings/signalk_notes_opencpn_pi" ) );
-        if(m_bRecreateConfig) {
-            pConf->DeleteGroup( "/Settings/signalk_notes_opencpn_pi" );
-        } else {
-            pConf->Write( wxS( "SaveJSONOnStartup" ), g_bSaveJSONOnStartup );
-            pConf->Write( wxS( "JSONSaveFile" ), m_fnOutputJSON.GetFullPath());
-            pConf->Write( wxS( "JSONInputFile" ), m_fnInputJSON.GetFullPath());
-            pConf->Write( wxS( "CloseSaveFileAferEachWrite" ), m_bCloseSaveFileAfterEachWrite);
-            pConf->Write( wxS( "AppendToSaveFile" ), m_bAppendToSaveFile);
-            pConf->Write( wxS( "SaveIncommingJSONMessages" ), m_bSaveIncommingJSONMessages);
-        }
-    }
-}
-
-void signalk_notes_opencpn_pi::LoadConfig()
-{
-    #ifndef __WXMSW__
-    wxString *l_locale = new wxString(wxSetlocale(LC_NUMERIC, NULL));
-    #if wxCHECK_VERSION(3,0,0)
-    wxSetlocale(LC_NUMERIC, "C");
-    #else
-    setlocale(LC_NUMERIC, "C");
-    #endif
-    #endif
-
-    wxFileConfig *pConf = m_pTPConfig;
-
-    if(pConf)
-    {
-        wxString val;
-        pConf->SetPath( wxS( "/Settings/signalk_notes_opencpn_pi" ) );
-        wxString  l_wxsColour;
-        pConf->Read( wxS( "SaveJSONOnStartup"), &g_bSaveJSONOnStartup, false );
-        if(g_bSaveJSONOnStartup) m_tpControlDialogImpl->SetSaveJSONOnStartup(g_bSaveJSONOnStartup);
-        wxString l_filepath;
-        pConf->Read( wxS("JSONSaveFile"), &l_filepath, wxEmptyString);
-        m_fnOutputJSON.Assign(l_filepath);
-        if(m_fnOutputJSON != wxEmptyString) m_tpControlDialogImpl->SetJSONSaveFile(m_fnOutputJSON.GetFullPath());
-        pConf->Read( wxS( "JSONInputFile" ), &l_filepath, wxEmptyString);
-        m_fnInputJSON.Assign(l_filepath);
-        if(m_fnInputJSON != wxEmptyString) m_tpControlDialogImpl->SetJSONInputFile(m_fnInputJSON.GetFullPath());
-        pConf->Read( wxS( "CloseSaveFileAferEachWrite" ), &m_bCloseSaveFileAfterEachWrite, true);
-        m_tpControlDialogImpl->SetCloseFileAfterEachWrite(m_bCloseSaveFileAfterEachWrite);
-        pConf->Read( wxS( "AppendToSaveFile" ), &m_bAppendToSaveFile, true);
-        m_tpControlDialogImpl->SetAppendToSaveFile(m_bAppendToSaveFile);
-        pConf->Read( wxS( "SaveIncommingJSONMessages" ), &m_bSaveIncommingJSONMessages, false);
-        m_tpControlDialogImpl->SetIncommingJSONMessages(m_bSaveIncommingJSONMessages);
-    }
-}
-void signalk_notes_opencpn_pi::GetODAPI()
-{
-    wxJSONValue jMsg;
-    wxJSONWriter writer;
-    wxString    MsgString;
-
-    jMsg[wxT("Source")] = "SIGNALK_NOTES_OPENCPN_PI";
-    jMsg[wxT("Type")] = wxT("Request");
-    jMsg[wxT("Msg")] = wxT("Version");
-    jMsg[wxT("MsgId")] = wxT("Version");
-    writer.Write( jMsg, MsgString );
-    SendPluginMessage( wxS("OCPN_DRAW_PI"), MsgString );
-    if(g_ReceivedODAPIMessage != wxEmptyString &&  g_ReceivedODAPIJSONMsg[wxT("MsgId")].AsString() == wxS("Version")) {
-        m_iODVersionMajor = g_ReceivedODAPIJSONMsg[wxS("Major")].AsInt();
-        m_iODVersionMinor = g_ReceivedODAPIJSONMsg[wxS("Minor")].AsInt();
-        m_iODVersionPatch = g_ReceivedODAPIJSONMsg[wxS("Patch")].AsInt();
-    }
-    m_bDoneODAPIVersionCall = true;
-
-    wxJSONValue jMsg1;
-    jMsg1[wxT("Source")] = wxT("SIGNALK_NOTES_OPENCPN_PI");
-    jMsg1[wxT("Type")] = wxT("Request");
-    jMsg1[wxT("Msg")] = wxS("GetAPIAddresses");
-    jMsg1[wxT("MsgId")] = wxS("GetAPIAddresses");
-    writer.Write( jMsg1, MsgString );
-    SendPluginMessage( wxS("OCPN_DRAW_PI"), MsgString );
-    if(g_ReceivedODAPIMessage != wxEmptyString &&  g_ReceivedODAPIJSONMsg[wxT("MsgId")].AsString() == wxS("GetAPIAddresses")) {
-        m_iODAPIVersionMajor = g_ReceivedODAPIJSONMsg[_T("ODAPIVersionMajor")].AsInt();
-        m_iODAPIVersionMinor = g_ReceivedODAPIJSONMsg[_T("ODAPIVersionMinor")].AsInt();
-
-        wxString sptr = g_ReceivedODAPIJSONMsg[_T("OD_FindPointInAnyBoundary")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pOD_FindPointInAnyBoundary);
-            m_bOD_FindPointInAnyBoundary = true;
-        }
-
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_FindClosestBoundaryLineCrossing")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODFindClosestBoundaryLineCrossing);
-            m_bODFindClosestBoundaryLineCrossing = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_FindFirstBoundaryLineCrossing")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODFindFirstBoundaryLineCrossing);
-            m_bODFindFirstBoundaryLineCrossing = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_CreateBoundary")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODCreateBoundary);
-            m_bODCreateBoundary = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_CreateBoundaryPoint")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODCreateBoundaryPoint);
-            m_bODCreateBoundaryPoint = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_CreateTextPoint")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODCreateTextPoint);
-            m_bODCreateTextPoint = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_DeleteBoundary")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODDeleteBoundary);
-            m_bODDeleteBoundary = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_DeleteBoundaryPoint")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODDeleteBoundaryPoint);
-            m_bODDeleteBoundaryPoint = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_DeleteTextPoint")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODDeleteTextPoint);
-            m_bODDeleteTextPoint = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_AddPointIcon")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODAddPointIcon);
-            m_bODAddPointIcon = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_DeletePointIcon")].AsString();
-        if(sptr != _T("null")) {
-            sscanf(sptr.To8BitData().data(), "%p", &m_pODDeletePointIcon);
-            m_bODDeletePointIcon = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_FindAllPathsGUIDS")].AsString();
-        if(sptr != _T("null")) {
-          sscanf(sptr.To8BitData().data(), "%p", &m_pODFindAllPathsGUIDS);
-          m_bODFindAllPathsGUIDS = true;
-        }
-        sptr = g_ReceivedODAPIJSONMsg[_T("OD_FindAllPointsGUIDS")].AsString();
-        if(sptr != _T("null")) {
-          sscanf(sptr.To8BitData().data(), "%p", &m_pODFindAllPointsGUIDS);
-          m_bODFindAllPointsGUIDS = true;
-        }
-    }
-
-    wxString l_msg;
-    wxString l_avail;
-    wxString l_notavail;
-    l_msg.Printf(_("OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, Minor: %i\n"), m_iODVersionMajor, m_iODVersionMinor, m_iODVersionPatch, m_iODAPIVersionMajor, m_iODAPIVersionMinor);
-    if(m_bOD_FindPointInAnyBoundary) l_avail.Append(_("OD_FindPointInAnyBoundary\n"));
-    if(m_bODFindClosestBoundaryLineCrossing) l_avail.Append(_("OD_FindClosestBoundaryLineCrossing\n"));
-    if(m_bODFindFirstBoundaryLineCrossing) l_avail.Append(_("OD_FindFirstBoundaryLineCrossing\n"));
-    if(m_bODCreateBoundary) l_avail.Append(_("OD_CreateBoundary\n"));
-    if(m_bODCreateBoundaryPoint) l_avail.Append(_("OD_CreateBoundaryPoint\n"));
-    if(m_bODCreateTextPoint) l_avail.Append(_("OD_CreateTextPoint\n"));
-    if(m_bODAddPointIcon) l_avail.Append(_("OD_AddPointIcon\n"));
-    if(m_bODDeletePointIcon) l_avail.Append(_("OD_DeletePointIcon\n"));
-    if(m_bODFindAllPathsGUIDS) l_avail.Append(_("OD_FindAllPathsGUIDS\n"));
-    if(m_bODFindAllPointsGUIDS) l_avail.Append(_("OD_FindAllPointsGUIDS\n"));
-    if(l_avail.Length() > 0) {
-        l_msg.Append(_("The following ODAPI's are available: \n"));
-        l_msg.Append(l_avail);
-    }
-
-    if(!m_bOD_FindPointInAnyBoundary) l_notavail.Append(_("OD_FindPointInAnyBoundary\n"));
-    if(!m_bODFindClosestBoundaryLineCrossing) l_notavail.Append(_("OD_FindClosestBoundaryLineCrossing\n"));
-    if(!m_bODFindFirstBoundaryLineCrossing) l_notavail.Append(_("OD_FindFirstBoundaryLineCrossing\n"));
-    if(!m_bODCreateBoundary) l_notavail.Append(_("OD_CreateBoundary\n"));
-    if(!m_bODCreateBoundaryPoint) l_notavail.Append(_("OD_CreateBoundaryPoint\n"));
-    if(!m_bODCreateTextPoint) l_notavail.Append(_("OD_CreateTextPoint\n"));
-    if(!m_bODAddPointIcon) l_notavail.Append(_("OD_AddPointIcon\n"));
-    if(!m_bODDeletePointIcon) l_notavail.Append(_("OD_DeletePointIcon\n"));
-    if(!m_bODFindAllPathsGUIDS) l_notavail.Append(_("OD_FindAllPathsGUIDS\n"));
-    if(!m_bODFindAllPointsGUIDS) l_notavail.Append(_("OD_FindAllPointsGUIDS"));
-    if(l_notavail.Length() > 0) {
-        l_msg.Append(_("The following ODAPI's are not available:\n"));
-        l_msg.Append(l_notavail);
-    }
-
-    OCPNMessageBox_PlugIn( m_parent_window, l_msg, _("SIGNALK_NOTES_OPENCPN"), (long) wxYES );
-
-}
-
-void signalk_notes_opencpn_pi::FindClosestBoundaryLineCrossing(FindClosestBoundaryLineCrossing_t *pFCPBLC)
-{
-    if((*m_pODFindClosestBoundaryLineCrossing)(pFCPBLC)) {
-        delete pFCPBLC;
-    }
-    delete pFCPBLC;
-}
-
-void signalk_notes_opencpn_pi::GetGUIDList(GUIDList_t *pGL)
-{
-  if(pGL->GUIDType == "" || pGL->GUIDType == "Boundary" || pGL->GUIDType == "EBL") {
-    pGL->GUIDList = (*m_pODFindAllPathsGUIDS)(pGL);
   }
 
-  if(pGL->GUIDType == "Boundary Point" || pGL->GUIDType == "Text Point") {
-    pGL->GUIDList = (*m_pODFindAllPointsGUIDS)(pGL);
+  return drewSomething;
+}
+
+bool signalk_notes_opencpn_pi::RenderOverlayMultiCanvas(wxDC& dc,
+                                                        PlugIn_ViewPort* vp,
+                                                        int canvasIndex) {
+  return RenderOverlay(dc, vp);
+}
+
+bool signalk_notes_opencpn_pi::RenderGLOverlayMultiCanvas(wxGLContext* pcontext,
+                                                          PlugIn_ViewPort* vp,
+                                                          int canvasIndex) {
+  return RenderGLOverlay(pcontext, vp);
+}
+
+// ---------------------------------------------------------------------------------------
+// Mouse / Keyboard
+// ---------------------------------------------------------------------------------------
+
+bool signalk_notes_opencpn_pi::KeyboardEventHook(wxKeyEvent& event) {
+  return false;
+}
+
+bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
+  if (!event.LeftDown()) {
+    return false;
   }
 
-}
+  if (!m_pSignalKNotesManager || !m_lastViewPortValid) {
+    return false;
+  }
 
-bool signalk_notes_opencpn_pi::CreateBoundaryPoint(CreateBoundaryPoint_t* pCBP)
-{
-    bool l_bRet = (*m_pODCreateBoundaryPoint)(pCBP);
-    DEBUGST("Boundary Point created: ");
-    DEBUGEND(l_bRet);
+  wxPoint mousePos = event.GetPosition();
+  double clickLat, clickLon;
+  GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
+
+  // wxLogMessage("SignalK Notes: Mouse clicked at lat=%.6f lon=%.6f, screen pos
+  // (%d, %d)",clickLat, clickLon, mousePos.x, mousePos.y);
+
+  // 1. ERST einzelne Icons prüfen (höhere Priorität)
+  std::vector<const SignalKNote*> visibleNotes;
+  m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
+
+  const SignalKNote* clickedNote = nullptr;
+  double minDistance = 25.0;  // Pixel-Toleranz für einzelne Icons
+
+  for (const SignalKNote* note : visibleNotes) {
+    if (!note) continue;
+
+    wxBitmap bmp;
+    if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
+
+    wxPoint iconPos;
+    GetCanvasPixLL(&m_lastViewPort, &iconPos, note->latitude, note->longitude);
+
+    int dx = mousePos.x - iconPos.x;
+    int dy = mousePos.y - iconPos.y;
+    double dist = std::sqrt(dx * dx + dy * dy);
+
+    // wxLogMessage("SignalK Notes: Distance to note '%s': %.1f
+    // pixels",note->name.c_str(), dist);
+
+    if (dist < minDistance) {
+      minDistance = dist;
+      clickedNote = note;
+    }
+  }
+
+  // Einzelnes Icon getroffen?
+  if (clickedNote) {
+    // wxLogMessage("SignalK Notes: Single icon clicked: %s (distance %.1f
+    // px)",clickedNote->name.c_str(), minDistance);
+    event.Skip(false);
+    event.StopPropagation();
+    m_pSignalKNotesManager->OnIconClick(clickedNote->id);
     return true;
+  }
+
+  // 2. DANN Cluster prüfen (nur wenn kein einzelnes Icon getroffen)
+  for (const auto& cluster : m_currentClusters) {
+    if (cluster.notes.size() <= 1) continue;  // Nur echte Cluster
+
+    int dx = mousePos.x - cluster.screenPos.x;
+    int dy = mousePos.y - cluster.screenPos.y;
+    double dist = std::sqrt(dx * dx + dy * dy);
+
+    // wxLogMessage("SignalK Notes: Distance to cluster (%zu notes): %.1f
+    // pixels",cluster.notes.size(), dist);
+
+    if (dist <= 25) {  // Cluster-Radius + Toleranz
+      // wxLogMessage("SignalK Notes: Cluster clicked with %zu
+      // notes",cluster.notes.size());
+      event.Skip(false);
+      event.StopPropagation();
+      OnClusterClick(cluster);
+      return true;
+    }
+  }
+
+  // wxLogMessage("SignalK Notes: No icon or cluster hit");
+  return false;
 }
 
-bool signalk_notes_opencpn_pi::CreateBoundary(CreateBoundary_t* pCB)
-{
-    wxString l_GUID;
-    bool l_bRet = (*m_pODCreateBoundary)(pCB);
-    DEBUGST("Boundary GUID: ");
-    DEBUGEND(pCB->GUID);
-    return l_bRet;;
+// ---------------------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------------------
+
+void signalk_notes_opencpn_pi::SaveConfig() {
+  wxFileConfig* pConf = m_pTPConfig;
+  if (!pConf) return;
+
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+
+  // Server
+  pConf->Write("SignalKHost", m_pSignalKNotesManager->GetServerHost());
+  pConf->Write("SignalKPort", m_pSignalKNotesManager->GetServerPort());
+
+  // Provider settings
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi/Providers");
+  for (auto& it : m_pSignalKNotesManager->GetProviderSettings()) {
+    pConf->Write(it.first, it.second);
+  }
+
+  // Icon mappings
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi/IconMappings");
+  for (auto& it : m_pSignalKNotesManager->GetIconMappings()) {
+    pConf->Write(it.first, it.second);
+  }
+
+  // Zurück zum Basis-Pfad
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+
+  // -------------------------
+  // Auth speichern (NEU)
+  // -------------------------
+  pConf->Write("AuthToken", m_pSignalKNotesManager->GetAuthToken());
+  pConf->Write("AuthRequestHref", m_pSignalKNotesManager->GetAuthRequestHref());
+
+  // Client UUID
+  pConf->Write("ClientUUID", m_clientUUID);
 }
 
-bool signalk_notes_opencpn_pi::CreateTextPoint(CreateTextPoint_t* pCTP)
-{
-    wxString l_GUID;
-    bool l_bRet = (*m_pODCreateTextPoint)(pCTP);
-    DEBUGST("Text Point GUID: ");
-    DEBUGEND(l_GUID);
-    return true;
+void signalk_notes_opencpn_pi::LoadConfig() {
+  wxFileConfig* pConf = m_pTPConfig;
+  if (!pConf) return;
+
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+
+  // Server
+  wxString host;
+  int port;
+  pConf->Read("SignalKHost", &host, "192.168.188.25");
+  pConf->Read("SignalKPort", &port, 4000);
+  m_pSignalKNotesManager->SetServerDetails(host, port);
+
+  // Provider-Einstellungen
+  std::map<wxString, bool> providers;
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi/Providers");
+  wxString providerName;
+  long providerIndex;
+  bool hasMore = pConf->GetFirstEntry(providerName, providerIndex);
+  while (hasMore) {
+    bool enabled;
+    pConf->Read(providerName, &enabled, true);
+    providers[providerName] = enabled;
+    hasMore = pConf->GetNextEntry(providerName, providerIndex);
+  }
+  m_pSignalKNotesManager->SetProviderSettings(providers);
+
+  // Icon-Mappings
+  std::map<wxString, wxString> iconMappings;
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi/IconMappings");
+  wxString iconName;
+  long iconIndex;
+  hasMore = pConf->GetFirstEntry(iconName, iconIndex);
+  while (hasMore) {
+    wxString ocpnIcon;
+    pConf->Read(iconName, &ocpnIcon, wxEmptyString);
+    iconMappings[iconName] = ocpnIcon;
+    hasMore = pConf->GetNextEntry(iconName, iconIndex);
+  }
+  m_pSignalKNotesManager->SetIconMappings(iconMappings);
+
+  // Auth-Token & Request-Href
+  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+
+  wxString authToken;
+  wxString requestHref;
+
+  pConf->Read("AuthToken", &authToken, wxEmptyString);
+  pConf->Read("AuthRequestHref", &requestHref, wxEmptyString);
+
+  // wxLogMessage("SignalK Notes LoadConfig: token=%s,
+  // href=%s",authToken.IsEmpty() ? "empty" : "present",requestHref.IsEmpty() ?
+  // "empty" : "present");
+
+  // Token setzen (ohne Validierung beim Laden)
+  m_pSignalKNotesManager->SetAuthToken(authToken);
+
+  // Href setzen falls vorhanden
+  if (!requestHref.IsEmpty()) {
+    m_pSignalKNotesManager->SetAuthRequestHref(requestHref);
+  } else {
+    m_pSignalKNotesManager->ClearAuthRequest();
+  }
+
+  // Client UUID
+  pConf->Read("ClientUUID", &m_clientUUID, "");
+  if (m_clientUUID.IsEmpty()) {
+    uuid_t binuuid;
+    uuid_generate_random(binuuid);
+
+    char uuid_str[37];
+    uuid_unparse_lower(binuuid, uuid_str);
+
+    m_clientUUID = wxString(uuid_str);
+    pConf->Write("ClientUUID", m_clientUUID);
+
+    // wxLogMessage("SignalK Notes: Generated new client UUID: %s",
+    // m_clientUUID);
+  }
 }
 
-bool signalk_notes_opencpn_pi::DeleteBoundaryPoint(DeleteBoundaryPoint_t* pDBP)
-{
-    bool l_bRet = (*m_pODDeleteBoundaryPoint)(pDBP);
-    DEBUGST("Boundary Point Deleted: ");
-    DEBUGEND(l_bRet);
-    return true;
+wxString signalk_notes_opencpn_pi::GetPluginIconDir() const {
+  wxString dir = GetPluginDataDir("signalk_notes_opencpn_pi");
+  if (!dir.EndsWith("/")) dir += "/";
+  dir += "data/icons/";
+  return dir;
 }
 
-bool signalk_notes_opencpn_pi::DeleteBoundary(DeleteBoundary_t* pDB)
-{
-    bool l_bRet = (*m_pODDeleteBoundary)(pDB);
-    DEBUGST("Boundary deleted: ");
-    DEBUGEND(l_bRet);
-    return true;
+wxBitmap* signalk_notes_opencpn_pi::GetPlugInBitmap() {
+  return &m_ptpicons->m_bm_signalk_notes_opencpn_pi;
 }
 
-bool signalk_notes_opencpn_pi::DeleteTextPoint(DeleteTextPoint_t* pDTP)
-{
-    bool l_bRet = (*m_pODDeleteTextPoint)(pDTP);
-    DEBUGST("Text Point created: ");
-    DEBUGEND(l_bRet);
-    return true;
+void signalk_notes_opencpn_pi::appendOSDirSlash(wxString* pString) {
+  wxChar sep = wxFileName::GetPathSeparator();
+  if (pString->Last() != sep) pString->Append(sep);
 }
 
-void signalk_notes_opencpn_pi::AddPointIcon(AddPointIcon_t* pAPI)
-{
-    (*m_pODAddPointIcon)(pAPI);
+double signalk_notes_opencpn_pi::CalculateMaxDistance(PlugIn_ViewPort& vp) {
+  // Viewport-Abmessungen
+  double vpWidth = vp.pix_width;
+  double vpHeight = vp.pix_height;
+
+  // Diagonale in Pixeln (Halbdiagonale)
+  double diagonalPixels =
+      std::sqrt(vpWidth * vpWidth + vpHeight * vpHeight) / 2.0;
+
+  // Meter pro Pixel
+  double metersPerPixel = vp.view_scale_ppm;
+  if (metersPerPixel > 0) {
+    double maxDistance = diagonalPixels / metersPerPixel;
+
+    // Immer aufrunden, selbst bei 0.0000000001 → 1
+    return std::ceil(maxDistance);
+  }
+
+  // Fallback: grobe Abschätzung über Breiten-Ausdehnung
+  double latSpan = vpHeight * vp.view_scale_ppm / 111000.0;
+  double maxDistanceKm = latSpan * 111.0 / 2.0;
+
+  // Auch hier: immer aufrunden
+  return std::ceil(maxDistanceKm * 1000.0);
+}
+
+int signalk_notes_opencpn_pi::GetVisibleNoteCount() const {
+  std::vector<const SignalKNote*> notes;
+  m_pSignalKNotesManager->GetVisibleNotes(notes);
+  return notes.size();
+}
+
+std::vector<signalk_notes_opencpn_pi::NoteCluster>
+signalk_notes_opencpn_pi::BuildClusters(
+    const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
+    int clusterRadius) {
+  // wxLogMessage("SignalK Notes: BuildClusters called with %zu notes,
+  // radius=%d",notes.size(), clusterRadius);
+
+  std::vector<NoteCluster> clusters;
+  std::vector<bool> clustered(notes.size(), false);
+
+  // Nicht-const Kopie für GetCanvasPixLL
+  PlugIn_ViewPort vpCopy = vp;
+
+  for (size_t i = 0; i < notes.size(); i++) {
+    if (clustered[i]) continue;
+
+    wxPoint p1;
+    GetCanvasPixLL(&vpCopy, &p1, notes[i]->latitude, notes[i]->longitude);
+
+    // wxLogMessage("SignalK Notes: Note %zu at screen pos (%d, %d)", i,
+    // p1.x,p1.y);
+
+    NoteCluster cluster;
+    cluster.notes.push_back(notes[i]);
+    clustered[i] = true;
+
+    // Finde alle Notes im Cluster-Radius
+    for (size_t j = i + 1; j < notes.size(); j++) {
+      if (clustered[j]) continue;
+
+      wxPoint p2;
+      GetCanvasPixLL(&vpCopy, &p2, notes[j]->latitude, notes[j]->longitude);
+
+      int dx = p2.x - p1.x;
+      int dy = p2.y - p1.y;
+      double dist = std::sqrt(dx * dx + dy * dy);
+
+      // wxLogMessage("SignalK Notes: Distance from note %zu to %zu: %.1f pixels
+      // (threshold: %d)",i, j, dist, clusterRadius);
+
+      if (dist < clusterRadius) {
+        // wxLogMessage("SignalK Notes: Adding note %zu to cluster (distance
+        // %.1f < %d)", j,dist, clusterRadius);
+        cluster.notes.push_back(notes[j]);
+        clustered[j] = true;
+      }
+    }
+
+    // Cluster-Zentrum berechnen
+    double sumLat = 0, sumLon = 0;
+    for (const auto* note : cluster.notes) {
+      sumLat += note->latitude;
+      sumLon += note->longitude;
+    }
+    cluster.centerLat = sumLat / cluster.notes.size();
+    cluster.centerLon = sumLon / cluster.notes.size();
+
+    GetCanvasPixLL(&vpCopy, &cluster.screenPos, cluster.centerLat,
+                   cluster.centerLon);
+
+    // wxLogMessage("SignalK Notes: Created cluster with %zu notes at screen pos
+    // (%d, %d)",cluster.notes.size(), cluster.screenPos.x,
+    // cluster.screenPos.y);
+
+    clusters.push_back(cluster);
+  }
+
+  // wxLogMessage("SignalK Notes: BuildClusters created %zu clusters
+  // total",clusters.size());
+
+  return clusters;
+}
+
+void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
+  // wxLogMessage("SignalK Notes: Cluster clicked with %zu
+  // notes",cluster.notes.size());
+
+  // Bounding Box der Notes berechnen
+  double minLat = cluster.notes[0]->latitude;
+  double maxLat = cluster.notes[0]->latitude;
+  double minLon = cluster.notes[0]->longitude;
+  double maxLon = cluster.notes[0]->longitude;
+
+  for (const auto* note : cluster.notes) {
+    minLat = std::min(minLat, note->latitude);
+    maxLat = std::max(maxLat, note->latitude);
+    minLon = std::min(minLon, note->longitude);
+    maxLon = std::max(maxLon, note->longitude);
+  }
+
+  double centerLat = (minLat + maxLat) / 2.0;
+  double centerLon = (minLon + maxLon) / 2.0;
+
+  // Berechne benötigten Zoom-Level
+  // Distanz zwischen den äußersten Notes
+  double latSpan = maxLat - minLat;
+  double lonSpan = maxLon - minLon;
+
+  // wxLogMessage("SignalK Notes: Cluster span: lat=%.6f, lon=%.6f",
+  // latSpan,lonSpan);
+
+  // Wenn alle Notes am gleichen Punkt sind, fixe Zoom-Stufe
+  if (latSpan < 0.00001 && lonSpan < 0.00001) {
+    // Sehr stark zoomen für überlappende Notes
+    double newScale = m_lastViewPort.chart_scale * 0.1;  // 10x Zoom
+    // wxLogMessage("SignalK Notes: Notes overlap, zooming to scale
+    // %.2f",newScale);
+    JumpToPosition(centerLat, centerLon, newScale);
     return;
+  }
+
+  // Berechne erforderlichen Scale damit Notes mind. 60 Pixel auseinander sind
+  // (größer als Cluster-Radius von 40 Pixeln)
+  double requiredPixelDistance = 80;  // Mindestabstand in Pixeln
+
+  // Konvertiere Lat/Lon-Spanne in Meter
+  double latMeters = latSpan * 111000.0;  // 1° ≈ 111km
+  double lonMeters = lonSpan * 111000.0 * cos(centerLat * M_PI / 180.0);
+  double maxSpanMeters = std::max(latMeters, lonMeters);
+
+  // Berechne benötigten PPM (Pixel per Meter)
+  double requiredPPM = requiredPixelDistance / maxSpanMeters;
+
+  // Chart scale berechnen (scale = 1 / ppm)
+  double newScale = 1.0 / requiredPPM;
+
+  // Limitiere den Zoom (nicht zu nah, nicht zu weit)
+  double minScale = m_lastViewPort.chart_scale * 0.05;  // Max 20x Zoom
+  double maxScale = m_lastViewPort.chart_scale * 0.5;   // Min 2x Zoom
+  newScale = std::max(minScale, std::min(maxScale, newScale));
+
+  // wxLogMessage("SignalK Notes: Zooming to scale %.2f (current: %.2f)",
+  // newScale,m_lastViewPort.chart_scale);
+
+  JumpToPosition(centerLat, centerLon, newScale);
 }
 
-void signalk_notes_opencpn_pi::DeletePointIcon(DeletePointIcon_t* pDPI)
-{
-    (*m_pODDeletePointIcon)(pDPI);
-    return;
+wxBitmap signalk_notes_opencpn_pi::CreateClusterBitmap(size_t count) {
+  const int size = 24;
+  const int radius = 10;
+  const int centerX = size / 2;
+  const int centerY = size / 2;
+
+  // Bitmap mit Alpha
+  wxBitmap bmp(size, size, 32);
+  bmp.UseAlpha(true);
+
+  wxMemoryDC dc;
+  dc.SelectObject(bmp);
+
+  // Voll transparent löschen
+  dc.SetBackground(*wxTRANSPARENT_BRUSH);
+  dc.Clear();
+
+  wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
+  if (!gc) {
+    dc.SelectObject(wxNullBitmap);
+    return bmp;
+  }
+
+  gc->SetAntialiasMode(wxANTIALIAS_DEFAULT);
+
+  wxColour fill(30, 144, 255, 200);  // leicht transparenter Blau-Kreis
+  wxColour border(0, 0, 0, 220);
+
+  gc->SetBrush(wxBrush(fill));
+  gc->SetPen(wxPen(border, 1));
+  gc->DrawEllipse(centerX - radius, centerY - radius, radius * 2, radius * 2);
+
+  wxFont font(8, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD,
+              false, "Arial");
+  gc->SetFont(font, *wxWHITE);
+
+  wxString text = wxString::Format("%zu", count);
+
+  double tw, th;
+  gc->GetTextExtent(text, &tw, &th);
+
+  gc->SetTransform(gc->CreateMatrix());
+  gc->DrawText(text, centerX - tw / 2, centerY - th / 2);
+
+  delete gc;
+  dc.SelectObject(wxNullBitmap);
+
+  // Y-Flip für OpenGL UND konsistente Darstellung
+  wxImage img = bmp.ConvertToImage();
+  img = img.Mirror(false);
+  wxBitmap flipped(img);
+  flipped.UseAlpha(true);
+
+  return flipped;
 }
 
-bool signalk_notes_opencpn_pi::ImportJSONFile()
-{
-    wxFFile l_ffile;
-    l_ffile.Open(m_fnInputJSON.GetFullPath(), "r");
-    if(!l_ffile.IsOpened()) {
-        OCPNMessageBox_PlugIn(NULL, m_fnInputJSON.GetFullPath(), _("File not found"), wxICON_EXCLAMATION | wxCANCEL);
-        return false;
-    }
-    wxString l_str;
-    l_ffile.ReadAll(&l_str);
-    wxFileInputStream l_input( m_fnInputJSON.GetFullPath() );
-    wxTextInputStream l_text( l_input );
-/*    for(size_t i = 0; i < l_str.Length();) {
-        //wxString l_ext = l_str.Mid(i, l_str_find)
-        //wxStringTokenizer tokenizer("first:second:third:fourth", ":");
-    }
-*/
-    wxJSONValue jMsg;
-    wxJSONWriter writer;
-    wxString    MsgString;
+wxBitmap signalk_notes_opencpn_pi::PrepareIconBitmapForGL(const wxBitmap& src,
+                                                          int targetSize) {
+  // Neues Bitmap mit Alpha
+  wxBitmap bmp(targetSize, targetSize, 32);
+  bmp.UseAlpha(true);
 
-    writer.Write( jMsg, MsgString );
-    SendPluginMessage( wxS("OCPN_DRAW_PI"), l_str );
-    return true;
+  wxMemoryDC dc;
+  dc.SelectObject(bmp);
+
+  dc.SetBackground(*wxTRANSPARENT_BRUSH);
+  dc.Clear();
+
+  wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
+  if (!gc) {
+    dc.SelectObject(wxNullBitmap);
+    return src;
+  }
+
+  gc->SetAntialiasMode(wxANTIALIAS_DEFAULT);
+
+  // Quelle skalieren
+  wxImage img = src.ConvertToImage();
+  img.InitAlpha();
+  wxImage scaled = img.Scale(targetSize, targetSize, wxIMAGE_QUALITY_HIGH);
+
+  wxBitmap scaledBmp(scaled);
+
+  // Bitmap zeichnen
+  gc->DrawBitmap(scaledBmp, 0, 0, targetSize, targetSize);
+
+  delete gc;
+  dc.SelectObject(wxNullBitmap);
+
+  // Y-Flip für OpenGL
+  wxImage flipped = bmp.ConvertToImage().Mirror(false);
+  wxBitmap finalBmp(flipped);
+  finalBmp.UseAlpha(true);
+
+  return finalBmp;
 }
 
-void signalk_notes_opencpn_pi::UpdateCloseAfterSave(bool bCloseAfterSave)
-{
-    if(m_bCloseSaveFileAfterEachWrite != bCloseAfterSave) {
-        m_bCloseSaveFileAfterEachWrite = bCloseAfterSave;
-        if(bCloseAfterSave) {
-            g_ptpJSON->CloseJSONOutputFile();
-        }
-    }
-}
+#if !defined(__OCPN__ANDROID__)
+void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
+  wxImage img = bmp.ConvertToImage();  // bereits Y-gefliipt aus
+                                       // CreateClusterBitmap / Icons
+  img.InitAlpha();
 
-void signalk_notes_opencpn_pi::UpdateAppendToFile(bool bAppendToFile)
-{
+  int w = img.GetWidth();
+  int h = img.GetHeight();
+
+  unsigned char* rgb = img.GetData();
+  unsigned char* alpha = img.GetAlpha();
+
+  if (!rgb) return;
+
+  std::vector<unsigned char> buffer(w * h * 4);
+  for (int i = 0; i < w * h; i++) {
+    buffer[i * 4 + 0] = rgb[i * 3 + 0];
+    buffer[i * 4 + 1] = rgb[i * 3 + 1];
+    buffer[i * 4 + 2] = rgb[i * 3 + 2];
+    buffer[i * 4 + 3] = alpha ? alpha[i] : 255;
+  }
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glRasterPos2i(x, y);
+  glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
 }
+#endif
+
+#if defined(__OCPN__ANDROID__)
+void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
+  wxImage img = bmp.ConvertToImage();  // bereits Y-gefliipt
+  img.InitAlpha();
+
+  int w = img.GetWidth();
+  int h = img.GetHeight();
+
+  if (!img.GetData()) return;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  GLuint texId;
+  glGenTextures(1, &texId);
+  glBindTexture(GL_TEXTURE_2D, texId);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               img.GetData());
+
+  glEnable(GL_TEXTURE_2D);
+
+  glBegin(GL_QUADS);
+  glTexCoord2f(0, 0);
+  glVertex2f(x, y);
+  glTexCoord2f(1, 0);
+  glVertex2f(x + w, y);
+  glTexCoord2f(1, 1);
+  glVertex2f(x + w, y + h);
+  glTexCoord2f(0, 1);
+  glVertex2f(x, y + h);
+  glEnd();
+
+  glDisable(GL_TEXTURE_2D);
+  glDeleteTextures(1, &texId);
+}
+#endif

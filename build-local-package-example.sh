@@ -11,9 +11,9 @@ export LOCAL_DEPLOY=true
 # this removes old xml files from the build directory
 rm *.xml
 # the actual configuration, build and installable package creation
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-make -j2
-make package
+cmake -DCMAKE_BUILD_TYPE=Debug .. || exit 1
+make -j2 || exit 1
+make package || exit 1
 chmod a+x cloudsmith-upload.sh
 ./cloudsmith-upload.sh
 
