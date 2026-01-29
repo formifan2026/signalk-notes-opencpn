@@ -3,6 +3,7 @@
 
 #include "ocpn_plugin.h"
 #include <wx/string.h>
+#include <vector>
 
 class tpicons;
 class tpSignalKNotesManager;
@@ -13,6 +14,35 @@ class signalk_notes_opencpn_pi : public opencpn_plugin_118 {
 public:
   signalk_notes_opencpn_pi(void* ppimgr);
   ~signalk_notes_opencpn_pi() override;
+
+  // ---------------------------------------------------------
+  // CLUSTER-STRUKTUR
+  // ---------------------------------------------------------
+  struct NoteCluster {
+    std::vector<const SignalKNote*> notes;
+    double centerLat = 0.0;
+    double centerLon = 0.0;
+    wxPoint screenPos;
+  };
+
+struct ClusterZoomState {
+    bool active = false;
+    bool justStarted = false;
+
+    // Zielpunkt des Clusters (aus OnClusterClick)
+    double targetLat = 0.0;
+    double targetLon = 0.0;
+
+    // Mittelpunkt während des Pan/Zoom-Prozesses
+    double centerLat = 0.0;
+    double centerLon = 0.0;
+
+    // Alle Notes, die zu diesem Cluster gehören
+    std::vector<const SignalKNote*> notes;
+};
+
+
+  ClusterZoomState m_clusterZoom;
 
   // Bitmap-Erzeugung / GL-Vorbereitung
   wxBitmap PrepareIconBitmapForGL(const wxBitmap& src, int targetSize);
@@ -75,6 +105,12 @@ public:
   wxWindow* m_parent_window = nullptr;
   wxString m_clientUUID;
 
+  void SetDisplaySettings(int iconSize, int clusterSize, int clusterRadius,
+                          const wxColour& clusterColor,
+                          const wxColour& textColor, int fontSize);
+
+  void ProcessClusterPanStep();
+
 private:
   // Config + UI
   wxFileConfig* m_pTPConfig = nullptr;
@@ -92,13 +128,6 @@ private:
   wxLongLong m_lastFetchTime = 0;
 
   // Clustering
-  struct NoteCluster {
-    std::vector<const SignalKNote*> notes;
-    double centerLat;
-    double centerLon;
-    wxPoint screenPos;
-  };
-
   std::vector<NoteCluster> BuildClusters(
       const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
       int clusterRadius = 60);
@@ -106,6 +135,19 @@ private:
   void OnClusterClick(const NoteCluster& cluster);
 
   std::vector<NoteCluster> m_currentClusters;
+
+  // Display-Einstellungen
+  int m_iconSize;
+  int m_clusterSize;
+  int m_clusterRadius;
+  wxColour m_clusterColor;
+  wxColour m_clusterTextColor;
+  int m_clusterFontSize;
+
+  bool IsClusterVisible(const PlugIn_ViewPort& vp);
+  void MoveViewportTowardsCluster(PlugIn_ViewPort& vp);
+  bool AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp, double zoomFactor) const;
+
 };
 
 #endif

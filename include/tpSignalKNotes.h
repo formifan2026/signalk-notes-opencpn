@@ -107,6 +107,14 @@ public:
   bool FetchInstalledPlugins(std::map<wxString, bool>& plugins);
   void CleanupDisabledProviders();
 
+  struct ProviderInfo {
+    wxString id;
+    wxString name;
+    wxString description;
+  };
+
+  std::vector<ProviderInfo> GetProviderInfos() const;
+
 private:
   signalk_notes_opencpn_pi* m_parent = nullptr;
 
@@ -145,6 +153,14 @@ private:
 
   std::set<wxString> m_discoveredProviders;
   std::set<wxString> m_discoveredIcons;
+
+  struct ProviderDetails {
+    wxString id;
+    wxString name;
+    wxString description;
+    bool enabled;
+};
+std::map<wxString, ProviderDetails> m_providerDetails;
 };
 
 #endif  // _TPSIGNALKNOTES_H_

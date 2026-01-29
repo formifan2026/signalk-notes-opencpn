@@ -53,97 +53,99 @@ bool tpSignalKNotesManager::FetchNotesForViewport(double centerLat,
 
 void tpSignalKNotesManager::UpdateDisplayedIcons(double centerLat,
                                                  double centerLon,
-                                                 double maxDistance) {
-  bool ok = FetchNotesForViewport(centerLat, centerLon, maxDistance);
-  if (!ok) {
-    wxLogMessage(_("SignalK Notes: Failed to fetch notes"));
-    return;
-  }
-
-  // Neue Icon-Mappings speichern (sofort!)
-  bool newMappingsFound = false;
-
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    if (!note.iconName.IsEmpty()) {
-      if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
-        wxString iconPath = ResolveIconPath(note.iconName);
-        m_iconMappings[note.iconName] = iconPath;
-        newMappingsFound = true;
-      }
-    }
-  }
-
-  if (newMappingsFound && m_parent) {
-    m_parent->SaveConfig();
-  }
-
-  // Filter: Nur Notes von aktivierten Providern
-  std::set<wxString> currentNoteIds;
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    // Provider-Filter anwenden
-    bool providerEnabled = true;
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
+                                                 double maxDistance)
+{
+    // 1. Notes vom Server holen
+    if (!FetchNotesForViewport(centerLat, centerLon, maxDistance)) {
+        wxLogMessage("SignalK Notes: Failed to fetch notes");
+        return;
     }
 
-    if (providerEnabled) {
-      currentNoteIds.insert(pair.first);
-    }
-  }
+    // 2. Neue Icon-Mappings automatisch speichern
+    bool newMappingsFound = false;
 
-  // Entferne Notes, die nicht mehr im Viewport sind ODER deren Provider
-  // deaktiviert ist
-  for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
-    if (currentNoteIds.find(*it) == currentNoteIds.end()) {
-      auto noteIt = m_notes.find(*it);
-      if (noteIt != m_notes.end()) {
-        noteIt->second.isDisplayed = false;
-        noteIt->second.GUID = wxEmptyString;
-      }
-      it = m_displayedGUIDs.erase(it);
-    } else {
-      ++it;
-    }
-  }
+    for (auto& pair : m_notes) {
+        SignalKNote& note = pair.second;
 
-  // Create icons nur für NEUE notes von AKTIVIERTEN Providern
-  // WICHTIG: Details NICHT mehr hier laden!
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    // Provider-Check
-    bool providerEnabled = true;
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
-    }
-
-    if (!providerEnabled) {
-      continue;  // Provider deaktiviert - überspringen
-    }
-
-    if (!note.isDisplayed) {
-      // KEINE Details mehr holen - nur Icon erstellen
-      if (CreateNoteIcon(note)) {
-        note.isDisplayed = true;
-        note.GUID = note.id;
-
-        if (std::find(m_displayedGUIDs.begin(), m_displayedGUIDs.end(),
-                      note.GUID) == m_displayedGUIDs.end()) {
-          m_displayedGUIDs.push_back(note.GUID);
+        if (!note.iconName.IsEmpty()) {
+            if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
+                wxString iconPath = ResolveIconPath(note.iconName);
+                m_iconMappings[note.iconName] = iconPath;
+                newMappingsFound = true;
+            }
         }
-      }
     }
-  }
+
+    if (newMappingsFound && m_parent) {
+        m_parent->SaveConfig();
+    }
+
+    // 3. Provider-Filter anwenden
+    std::set<wxString> visibleNoteIds;
+
+    for (auto& pair : m_notes) {
+        SignalKNote& note = pair.second;
+
+        bool providerEnabled = true;
+
+        if (!note.source.IsEmpty()) {
+            auto it = m_providerSettings.find(note.source);
+            if (it != m_providerSettings.end()) {
+                providerEnabled = it->second;
+            }
+        }
+
+        if (providerEnabled) {
+            visibleNoteIds.insert(note.id);
+        }
+    }
+
+    // 4. Notes entfernen, die nicht mehr sichtbar sind
+    for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
+        if (visibleNoteIds.find(*it) == visibleNoteIds.end()) {
+            // Note aus Anzeige entfernen
+            auto noteIt = m_notes.find(*it);
+            if (noteIt != m_notes.end()) {
+                noteIt->second.isDisplayed = false;
+            }
+            it = m_displayedGUIDs.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // 5. Neue Notes anzeigen
+    for (auto& pair : m_notes) {
+        SignalKNote& note = pair.second;
+
+        // Provider deaktiviert?
+        bool providerEnabled = true;
+        if (!note.source.IsEmpty()) {
+            auto it = m_providerSettings.find(note.source);
+            if (it != m_providerSettings.end()) {
+                providerEnabled = it->second;
+            }
+        }
+        if (!providerEnabled)
+            continue;
+
+        // Bereits sichtbar?
+        if (note.isDisplayed)
+            continue;
+
+        // Icon laden (Details NICHT laden!)
+        if (CreateNoteIcon(note)) {
+            note.isDisplayed = true;
+
+            // ID in Liste aufnehmen
+            if (std::find(m_displayedGUIDs.begin(),
+                          m_displayedGUIDs.end(),
+                          note.id) == m_displayedGUIDs.end())
+            {
+                m_displayedGUIDs.push_back(note.id);
+            }
+        }
+    }
 }
 
 void tpSignalKNotesManager::ClearAllIcons() {
@@ -152,29 +154,27 @@ void tpSignalKNotesManager::ClearAllIcons() {
 
   for (auto& pair : m_notes) {
     pair.second.isDisplayed = false;
-    pair.second.GUID = wxEmptyString;
   }
 }
 
 SignalKNote* tpSignalKNotesManager::GetNoteByGUID(const wxString& guid) {
-  // GUID wird intern als note.id verwendet
-  auto it = m_notes.find(guid);
-  if (it != m_notes.end()) return &it->second;
+    auto it = m_notes.find(guid);
+    if (it != m_notes.end())
+        return &it->second;
 
-  // Fallback: alte Semantik (GUID-Feld)
-  for (auto& pair : m_notes) {
-    if (pair.second.GUID == guid) {
-      return &pair.second;
-    }
-  }
-  return nullptr;
+    return nullptr;
 }
 
+
 void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
+  wxLogMessage("SignalK Notes: OnIconClick called with guid='%s'", guid);  // ← guid statt noteId
+  
   SignalKNote* note = GetNoteByGUID(guid);
   if (!note) {
+    wxLogMessage("SignalK Notes: Note with guid='%s' not found!", guid);  // ← guid statt noteId
     return;
   }
+  
   // Details beim Klick laden
   if (note->name.IsEmpty() || note->description.IsEmpty()) {
     if (!FetchNoteDetails(note->id, *note)) {
@@ -184,7 +184,9 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
         note->description = _("Details konnten nicht geladen werden.");
     }
   }
-
+  
+  wxLogMessage("SignalK Notes: Found note '%s'", note->name);  // ← note->name statt note.name
+  
   // Dialog erstellen und anzeigen
   wxDialog* dlg =
       new wxDialog(NULL, wxID_ANY, _("SignalK Note Details"), wxDefaultPosition,
@@ -360,7 +362,6 @@ bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
     }
 
     note.isDisplayed = false;
-    note.GUID = wxEmptyString;
     m_notes[noteId] = note;
   }
   return true;
@@ -487,7 +488,6 @@ bool tpSignalKNotesManager::DeleteNoteIcon(const wxString& guid) {
   if (it == m_notes.end()) return false;
 
   it->second.isDisplayed = false;
-  it->second.GUID = wxEmptyString;
   return true;
 }
 
@@ -587,34 +587,34 @@ void tpSignalKNotesManager::SetIconMappings(
   m_iconMappings = mappings;
 }
 
-// In tpSignalKNotes.cpp
 wxString tpSignalKNotesManager::ResolveIconPath(const wxString& skIconName) {
-  wxString iconFileName = skIconName;
-  if (!iconFileName.EndsWith(wxT(".svg"))) {
-    iconFileName += wxT(".svg");
+  wxFileName fn;
+  fn.SetPath(GetPluginDataDir(
+      "signalk_notes_opencpn_pi"));  // ✅ Plugin-Name hinzufügen!
+  fn.AppendDir("data");
+  fn.AppendDir("icons");
+
+  // Zuerst gemappten Namen versuchen
+  auto it = m_iconMappings.find(skIconName);
+  if (it != m_iconMappings.end()) {
+    fn.SetName(it->second);
+    fn.SetExt("svg");
+    if (fn.FileExists()) {
+      return fn.GetFullPath();
+    }
   }
 
-  // Plugin-Datenverzeichnis ermitteln
-  wxString pluginDataDir = GetPluginDataDir("signalk_notes_opencpn_pi");
-
-  // Pfad zum Icon-Verzeichnis (plattformunabhängig)
-  wxFileName iconDir(pluginDataDir);
-  iconDir.AppendDir(wxT("data"));
-  iconDir.AppendDir(wxT("icons"));
-  iconDir.SetFullName(iconFileName);
-
-  wxString fullPath = iconDir.GetFullPath();
-
-  // Prüfen ob Datei existiert
-  if (wxFileExists(fullPath)) {
-    return fullPath;
+  // Dann Original-Icon-Namen
+  fn.SetName(skIconName);
+  fn.SetExt("svg");
+  if (fn.FileExists()) {
+    return fn.GetFullPath();
   }
 
-  // Fallback: notice-to-mariners.svg
-  iconDir.SetFullName(wxT("notice-to-mariners.svg"));
-  fullPath = iconDir.GetFullPath();
-
-  return fullPath;
+  // Fallback: notice-to-mariners
+  fn.SetName("notice-to-mariners");
+  fn.SetExt("svg");
+  return fn.GetFullPath();
 }
 
 wxString tpSignalKNotesManager::RenderHTMLDescription(
@@ -895,22 +895,34 @@ bool tpSignalKNotesManager::FetchInstalledPlugins(
   }
 
   plugins.clear();
+  m_providerDetails.clear();  // NEU: Details auch löschen
 
   for (int i = 0; i < root.Size(); i++) {
     wxJSONValue plugin = root[i];
 
-    if (plugin.HasMember("id") && plugin.HasMember("data")) {
+    if (plugin.HasMember("id")) {
       wxString id = plugin["id"].AsString();
-      wxJSONValue data = plugin["data"];
-
+      
+      // NEU: Details extrahieren
+      ProviderDetails details;
+      details.id = id;
+      details.name = plugin.Get("name", id).AsString();
+      details.description = plugin.Get("description", "").AsString();
+      
       bool enabled = false;
-      if (data.HasMember("enabled")) {
-        enabled = data["enabled"].AsBool();
+      if (plugin.HasMember("data")) {
+        wxJSONValue data = plugin["data"];
+        if (data.HasMember("enabled")) {
+          enabled = data["enabled"].AsBool();
+        }
       }
-
+      
+      details.enabled = enabled;
       plugins[id] = enabled;
-      // wxLogMessage("SignalK Notes: Plugin '%s' is %s", id,enabled ? "enabled"
-      // : "disabled");
+      m_providerDetails[id] = details;  // NEU: Details speichern
+      
+      wxLogMessage("SignalK Notes: Plugin '%s' (%s) is %s", 
+                   id, details.name, enabled ? "enabled" : "disabled");
     }
   }
 
@@ -955,4 +967,19 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
   if (!providersToRemove.empty() && m_parent) {
     m_parent->SaveConfig();
   }
+}
+
+std::vector<tpSignalKNotesManager::ProviderInfo> tpSignalKNotesManager::GetProviderInfos() const
+{
+    std::vector<ProviderInfo> infos;
+    
+    for (const auto& pair : m_providerDetails) {
+        ProviderInfo info;
+        info.id = pair.second.id;
+        info.name = pair.second.name;
+        info.description = pair.second.description;
+        infos.push_back(info);
+    }
+    
+    return infos;
 }

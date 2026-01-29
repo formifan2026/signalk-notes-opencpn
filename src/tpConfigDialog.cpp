@@ -18,19 +18,20 @@ EVT_BUTTON(wxID_OK, tpConfigDialog::OnOK)
 EVT_BUTTON(wxID_CANCEL, tpConfigDialog::OnCancel)
 END_EVENT_TABLE()
 
+const wxColour tpConfigDialog::DEFAULT_CLUSTER_COLOR(30, 144, 255);
+const wxColour tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR(*wxWHITE);
+
 tpConfigDialog::tpConfigDialog(signalk_notes_opencpn_pi* parent,
                                wxWindow* winparent)
     : wxDialog(winparent, wxID_ANY, _("SignalK Notes Konfiguration"),
-               wxDefaultPosition, wxSize(700, 600),  // ← Größer für Icon-Grid
+               wxDefaultPosition, wxSize(700, 800),
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER) {
   m_parent = parent;
 
-  // Icon-Ordner bestimmen
   m_iconDir = m_parent->GetPluginIconDir();
 
   CreateControls();
-  LoadPluginIcons();  // Icons FRÜH laden, bevor UpdateIconMappings aufgerufen
-                      // wird
+  LoadPluginIcons();
 }
 
 void tpConfigDialog::CreateControls() {
@@ -50,10 +51,10 @@ void tpConfigDialog::CreateControls() {
   mainSizer->Add(m_infoLabel, 0, wxALL | wxEXPAND, 5);
 
   // --- Notebook ---
-  wxNotebook* notebook = new wxNotebook(this, wxID_ANY);
+  m_notebook = new wxNotebook(this, wxID_ANY);
 
-  // ========== Provider-Tab ==========
-  wxPanel* providerPanel = new wxPanel(notebook);
+  // ========== Tab 1: Provider ==========
+  wxPanel* providerPanel = new wxPanel(m_notebook);
   wxBoxSizer* providerSizer = new wxBoxSizer(wxVERTICAL);
 
   providerSizer->Add(
@@ -78,10 +79,10 @@ void tpConfigDialog::CreateControls() {
   providerSizer->Add(authStatusSizer, 0, wxALL, 5);
 
   providerPanel->SetSizer(providerSizer);
-  notebook->AddPage(providerPanel, _("Provider"));
+  m_notebook->AddPage(providerPanel, _("Provider"));
 
-  // ========== Icon-Zuordnung ==========
-  wxPanel* iconPanel = new wxPanel(notebook);
+  // ========== Tab 2: Icon-Zuordnung ==========
+  wxPanel* iconPanel = new wxPanel(m_notebook);
   wxBoxSizer* iconPanelSizer = new wxBoxSizer(wxVERTICAL);
 
   iconPanelSizer->Add(
@@ -101,9 +102,13 @@ void tpConfigDialog::CreateControls() {
   iconPanelSizer->Add(m_iconMappingPanel, 1, wxALL | wxEXPAND, 5);
 
   iconPanel->SetSizer(iconPanelSizer);
-  notebook->AddPage(iconPanel, _("Icon-Zuordnung"));
+  m_notebook->AddPage(iconPanel, _("Icon-Zuordnung"));
 
-  mainSizer->Add(notebook, 1, wxALL | wxEXPAND, 5);
+  // ========== Tab 3: Display Settings ==========
+  CreateDisplayTab();
+  m_notebook->AddPage(m_displayPanel, _("Darstellung"));
+
+  mainSizer->Add(m_notebook, 1, wxALL | wxEXPAND, 5);
 
   // ========== BUTTON-BEREICH AM UNTEREN RAND ==========
   wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -141,6 +146,7 @@ void tpConfigDialog::CreateControls() {
 
   Layout();
 }
+
 void tpConfigDialog::LoadPluginIcons() {
   m_pluginIcons.Clear();
   m_pluginIconBitmaps.clear();
@@ -185,27 +191,6 @@ wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
 void tpConfigDialog::UpdateCount(int count) {
   m_countLabel->SetLabel(
       wxString::Format(_("Icons im Kartenausschnitt: %d"), count));
-}
-
-void tpConfigDialog::UpdateProviders(const std::set<wxString>& providers) {
-  // Bestehende Provider-Liste NICHT löschen!
-  // Nur neue hinzufügen
-
-  for (const wxString& provider : providers) {
-    // Prüfen ob Provider schon in Liste ist
-    if (m_providerList->FindString(provider) == wxNOT_FOUND) {
-      int index = m_providerList->Append(provider);
-      // Standardmäßig aktiviert
-      m_providerList->Check(index, true);
-    }
-  }
-
-  // Info-Label ausblenden wenn Provider da sind
-  if (m_providerList->GetCount() > 0) {
-    m_infoLabel->Hide();
-  }
-
-  Layout();
 }
 
 void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
@@ -337,7 +322,13 @@ std::map<wxString, bool> tpConfigDialog::GetProviderSettings() const {
   std::map<wxString, bool> settings;
 
   for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
-    settings[m_providerList->GetString(i)] = m_providerList->IsChecked(i);
+    wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
+    if (idPtr) {
+      settings[*idPtr] = m_providerList->IsChecked(i);
+    } else {
+      // Fallback: String direkt verwenden
+      settings[m_providerList->GetString(i)] = m_providerList->IsChecked(i);
+    }
   }
 
   return settings;
@@ -355,6 +346,13 @@ void tpConfigDialog::SaveProviderSettings() {
 void tpConfigDialog::OnOK(wxCommandEvent& event) {
   SaveProviderSettings();
 
+  // Display-Einstellungen an Plugin übergeben (NEU!)
+  if (m_parent) {
+    m_parent->SetDisplaySettings(GetIconSize(), GetClusterSize(),
+                                 GetClusterRadius(), GetClusterColor(),
+                                 GetClusterTextColor(), GetClusterFontSize());
+  }
+
   // Icon-Update triggern
   if (m_parent && m_parent->m_pSignalKNotesManager &&
       m_parent->m_lastViewPortValid) {
@@ -369,7 +367,7 @@ void tpConfigDialog::OnOK(wxCommandEvent& event) {
     m_authCheckTimer->Stop();
   }
 
-  // Config speichern
+  // Config speichern (speichert jetzt auch die Display-Einstellungen!)
   m_parent->SaveConfig();
 
   EndModal(wxID_OK);
@@ -436,6 +434,12 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
 tpConfigDialog::~tpConfigDialog() {
   if (m_authCheckTimer && m_authCheckTimer->IsRunning())
     m_authCheckTimer->Stop();
+
+  // ClientData aufräumen
+  for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
+    wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
+    delete idPtr;
+  }
 }
 
 void tpConfigDialog::OnCancelAuthRequest(wxCommandEvent& event) {
@@ -508,6 +512,15 @@ void tpConfigDialog::ShowAuthenticatedState() {
     m_authCheckTimer->Stop();
   }
 
+  // NEU: Plugin-Liste und Provider-Namen aktualisieren
+  if (m_parent && m_parent->m_pSignalKNotesManager) {
+    std::map<wxString, bool> plugins;
+    m_parent->m_pSignalKNotesManager->FetchInstalledPlugins(plugins);
+
+    // Provider-Namen jetzt aktualisieren
+    UpdateProviders(m_parent->m_pSignalKNotesManager->GetDiscoveredProviders());
+  }
+
   Layout();
 }
 
@@ -553,4 +566,275 @@ void tpConfigDialog::ShowInitialState() {
   m_cancelAuthButton->Hide();
 
   Layout();
+}
+
+void tpConfigDialog::UpdateProviders(
+    const std::set<wxString>& providersFromNotes) {
+  wxLogMessage(
+      "SignalK Notes: UpdateProviders called with %zu providers from notes",
+      providersFromNotes.size());
+
+  // ---------------------------------------------------------
+  // 1. Provider-Infos vom Manager holen (falls authentifiziert)
+  // ---------------------------------------------------------
+  std::map<wxString, ProviderDisplayInfo> providerDisplayInfos;
+
+  wxString token = m_parent->m_pSignalKNotesManager->GetAuthToken();
+  if (!token.IsEmpty()) {
+    auto providerInfos = m_parent->m_pSignalKNotesManager->GetProviderInfos();
+
+    for (const auto& info : providerInfos) {
+      ProviderDisplayInfo displayInfo;
+      displayInfo.id = info.id;
+      displayInfo.name = info.name;
+      displayInfo.description = info.description;
+      providerDisplayInfos[info.id] = displayInfo;
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 2. Bisherige Checked-States sichern
+  // ---------------------------------------------------------
+  std::map<wxString, bool> existingChecked;
+
+  for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
+    wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
+    if (idPtr) {
+      existingChecked[*idPtr] = m_providerList->IsChecked(i);
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 3. Provider aus Notes + Provider aus Plugins zusammenführen
+  // ---------------------------------------------------------
+  std::set<wxString> allProviders = providersFromNotes;
+
+  for (const auto& p : providerDisplayInfos) {
+    allProviders.insert(p.first);
+  }
+
+  // ---------------------------------------------------------
+  // 4. Liste neu aufbauen
+  // ---------------------------------------------------------
+  m_providerList->Clear();
+
+  for (const wxString& providerId : allProviders) {
+    wxString displayText;
+
+    // Falls Plugin-Infos vorhanden → Name + Beschreibung anzeigen
+    auto it = providerDisplayInfos.find(providerId);
+    if (it != providerDisplayInfos.end() && !it->second.name.IsEmpty()) {
+      displayText = it->second.name;
+
+      if (!it->second.description.IsEmpty()) {
+        displayText += "\n  " + it->second.description;
+      }
+
+    } else {
+      // Fallback: Provider-ID
+      displayText = providerId;
+    }
+
+    int index = m_providerList->Append(displayText);
+
+    // Provider-ID als ClientData speichern
+    m_providerList->SetClientData(index, new wxString(providerId));
+
+    // Checked-Status wiederherstellen oder Standard (true)
+    bool checked = true;
+
+    auto it2 = existingChecked.find(providerId);
+    if (it2 != existingChecked.end()) {
+      checked = it2->second;
+    }
+
+    m_providerList->Check(index, checked);
+  }
+
+  // Hinweis ausblenden, wenn Provider existieren
+  if (m_providerList->GetCount() > 0) {
+    m_infoLabel->Hide();
+  }
+
+  Layout();
+}
+
+void tpConfigDialog::CreateDisplayTab() {
+  m_displayPanel = new wxPanel(m_notebook);
+  wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+
+  // Icon-Einstellungen
+  wxStaticBoxSizer* iconBox =
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Icon Settings"));
+
+  wxFlexGridSizer* iconGrid = new wxFlexGridSizer(2, 5, 5);
+  iconGrid->AddGrowableCol(1);
+
+  iconGrid->Add(
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Icon Size (px):")), 0,
+      wxALIGN_CENTER_VERTICAL);
+  m_iconSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_iconSizeCtrl->SetRange(12, 64);
+  m_iconSizeCtrl->SetValue(DEFAULT_ICON_SIZE);
+  iconGrid->Add(m_iconSizeCtrl, 1, wxEXPAND);
+
+  iconBox->Add(iconGrid, 0, wxEXPAND | wxALL, 5);
+
+  // Icon-Vorschau
+  m_iconPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
+  iconBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
+               wxALL, 5);
+  iconBox->Add(m_iconPreview, 0, wxALL | wxALIGN_CENTER, 5);
+
+  mainSizer->Add(iconBox, 0, wxEXPAND | wxALL, 10);
+
+  // Cluster-Einstellungen
+  wxStaticBoxSizer* clusterBox =
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster Settings"));
+
+  wxFlexGridSizer* clusterGrid = new wxFlexGridSizer(2, 5, 5);
+  clusterGrid->AddGrowableCol(1);
+
+  clusterGrid->Add(
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster Size (px):")), 0,
+      wxALIGN_CENTER_VERTICAL);
+  m_clusterSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_clusterSizeCtrl->SetRange(16, 64);
+  m_clusterSizeCtrl->SetValue(DEFAULT_CLUSTER_SIZE);
+  clusterGrid->Add(m_clusterSizeCtrl, 1, wxEXPAND);
+
+  clusterGrid->Add(
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster Radius (px):")), 0,
+      wxALIGN_CENTER_VERTICAL);
+  m_clusterRadiusCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_clusterRadiusCtrl->SetRange(5, 32);
+  m_clusterRadiusCtrl->SetValue(DEFAULT_CLUSTER_RADIUS);
+  clusterGrid->Add(m_clusterRadiusCtrl, 1, wxEXPAND);
+
+  clusterGrid->Add(
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Circle Color:")), 0,
+      wxALIGN_CENTER_VERTICAL);
+  m_clusterColorCtrl =
+      new wxColourPickerCtrl(m_displayPanel, wxID_ANY, DEFAULT_CLUSTER_COLOR);
+  clusterGrid->Add(m_clusterColorCtrl, 1, wxEXPAND);
+
+  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Text Color:")),
+                   0, wxALIGN_CENTER_VERTICAL);
+  m_clusterTextColorCtrl = new wxColourPickerCtrl(m_displayPanel, wxID_ANY,
+                                                  DEFAULT_CLUSTER_TEXT_COLOR);
+  clusterGrid->Add(m_clusterTextColorCtrl, 1, wxEXPAND);
+
+  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Font Size:")),
+                   0, wxALIGN_CENTER_VERTICAL);
+  m_clusterFontSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_clusterFontSizeCtrl->SetRange(6, 16);
+  m_clusterFontSizeCtrl->SetValue(DEFAULT_CLUSTER_FONT_SIZE);
+  clusterGrid->Add(m_clusterFontSizeCtrl, 1, wxEXPAND);
+
+  clusterBox->Add(clusterGrid, 0, wxEXPAND | wxALL, 5);
+
+  // Cluster-Vorschau
+  m_clusterPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
+  clusterBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
+                  wxALL, 5);
+  clusterBox->Add(m_clusterPreview, 0, wxALL | wxALIGN_CENTER, 5);
+
+  mainSizer->Add(clusterBox, 0, wxEXPAND | wxALL, 10);
+
+  m_displayPanel->SetSizer(mainSizer);
+
+  // Event-Handler
+  m_iconSizeCtrl->Bind(wxEVT_SPINCTRL, &tpConfigDialog::OnDisplaySettingChanged,
+                       this);
+  m_clusterSizeCtrl->Bind(wxEVT_SPINCTRL,
+                          &tpConfigDialog::OnDisplaySettingChanged, this);
+  m_clusterRadiusCtrl->Bind(wxEVT_SPINCTRL,
+                            &tpConfigDialog::OnDisplaySettingChanged, this);
+  m_clusterFontSizeCtrl->Bind(wxEVT_SPINCTRL,
+                              &tpConfigDialog::OnDisplaySettingChanged, this);
+  m_clusterColorCtrl->Bind(wxEVT_COLOURPICKER_CHANGED,
+                           &tpConfigDialog::OnColorChanged, this);
+  m_clusterTextColorCtrl->Bind(wxEVT_COLOURPICKER_CHANGED,
+                               &tpConfigDialog::OnColorChanged, this);
+
+  // Initiale Vorschau
+  UpdateIconPreview();
+  UpdateClusterPreview();
+}
+
+void tpConfigDialog::UpdateIconPreview() {
+  wxFileName fn;
+  fn.SetPath(m_parent->GetPluginIconDir());
+  fn.SetName("notice-to-mariners");
+  fn.SetExt("svg");
+
+  int size = GetIconSize();
+  wxBitmap bmp = LoadSvgBitmap(fn.GetFullPath(), size);
+
+  if (bmp.IsOk()) {
+    m_iconPreview->SetBitmap(bmp);
+  }
+}
+
+void tpConfigDialog::UpdateClusterPreview() {
+  int size = GetClusterSize();
+  int radius = GetClusterRadius();
+  wxColour circleColor = GetClusterColor();
+  wxColour textColor = GetClusterTextColor();
+  int fontSize = GetClusterFontSize();
+
+  const wxColour maskColor(255, 0, 255);
+
+  wxBitmap bmp(size, size);
+  wxMemoryDC dc;
+  dc.SelectObject(bmp);
+
+  dc.SetBackground(wxBrush(maskColor));
+  dc.Clear();
+
+  int centerX = size / 2;
+  int centerY = size / 2;
+
+  dc.SetBrush(wxBrush(circleColor));
+  dc.SetPen(wxPen(*wxBLACK, 1));
+  dc.DrawCircle(centerX, centerY, radius);
+
+  dc.SetTextForeground(textColor);
+  wxFont font(fontSize, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL,
+              wxFONTWEIGHT_BOLD);
+  dc.SetFont(font);
+
+  wxString text = "5";
+  wxSize ts = dc.GetTextExtent(text);
+  dc.DrawText(text, centerX - ts.x / 2, centerY - ts.y / 2);
+
+  dc.SelectObject(wxNullBitmap);
+  bmp.SetMask(new wxMask(bmp, maskColor));
+
+  m_clusterPreview->SetBitmap(bmp);
+}
+
+void tpConfigDialog::OnDisplaySettingChanged(wxSpinEvent& event) {
+  UpdateIconPreview();
+  UpdateClusterPreview();
+}
+
+void tpConfigDialog::OnColorChanged(wxColourPickerEvent& event) {
+  UpdateClusterPreview();
+}
+
+void tpConfigDialog::LoadDisplaySettings(int iconSize, int clusterSize,
+                                         int clusterRadius,
+                                         const wxColour& clusterColor,
+                                         const wxColour& textColor,
+                                         int fontSize) {
+  if (m_iconSizeCtrl) m_iconSizeCtrl->SetValue(iconSize);
+  if (m_clusterSizeCtrl) m_clusterSizeCtrl->SetValue(clusterSize);
+  if (m_clusterRadiusCtrl) m_clusterRadiusCtrl->SetValue(clusterRadius);
+  if (m_clusterColorCtrl) m_clusterColorCtrl->SetColour(clusterColor);
+  if (m_clusterTextColorCtrl) m_clusterTextColorCtrl->SetColour(textColor);
+  if (m_clusterFontSizeCtrl) m_clusterFontSizeCtrl->SetValue(fontSize);
+
+  UpdateIconPreview();
+  UpdateClusterPreview();
 }

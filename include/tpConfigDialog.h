@@ -7,6 +7,9 @@
 #include <wx/scrolwin.h>
 #include <map>
 #include <set>
+#include <wx/notebook.h>
+#include <wx/spinctrl.h>
+#include <wx/clrpicker.h>
 
 class signalk_notes_opencpn_pi;
 
@@ -24,6 +27,43 @@ public:
   void LoadSettings(const std::map<wxString, bool>& providers,
                     const std::map<wxString, wxString>& iconMappings);
   void UpdateVisibleCount(int count);
+
+  void LoadDisplaySettings(int iconSize, int clusterSize, int clusterRadius,
+                           const wxColour& clusterColor,
+                           const wxColour& textColor, int fontSize);
+
+  // Getter für Einstellungen
+  int GetIconSize() const {
+    return m_iconSizeCtrl ? m_iconSizeCtrl->GetValue() : DEFAULT_ICON_SIZE;
+  }
+  int GetClusterSize() const {
+    return m_clusterSizeCtrl ? m_clusterSizeCtrl->GetValue()
+                             : DEFAULT_CLUSTER_SIZE;
+  }
+  int GetClusterRadius() const {
+    return m_clusterRadiusCtrl ? m_clusterRadiusCtrl->GetValue()
+                               : DEFAULT_CLUSTER_RADIUS;
+  }
+  wxColour GetClusterColor() const {
+    return m_clusterColorCtrl ? m_clusterColorCtrl->GetColour()
+                              : DEFAULT_CLUSTER_COLOR;
+  }
+  wxColour GetClusterTextColor() const {
+    return m_clusterTextColorCtrl ? m_clusterTextColorCtrl->GetColour()
+                                  : DEFAULT_CLUSTER_TEXT_COLOR;
+  }
+  int GetClusterFontSize() const {
+    return m_clusterFontSizeCtrl ? m_clusterFontSizeCtrl->GetValue()
+                                 : DEFAULT_CLUSTER_FONT_SIZE;
+  }
+
+  // Default-Werte
+  static const int DEFAULT_ICON_SIZE = 24;
+  static const int DEFAULT_CLUSTER_SIZE = 24;
+  static const int DEFAULT_CLUSTER_RADIUS = 10;
+  static const wxColour DEFAULT_CLUSTER_COLOR;
+  static const wxColour DEFAULT_CLUSTER_TEXT_COLOR;
+  static const int DEFAULT_CLUSTER_FONT_SIZE = 8;
 
 private:
   void InitializeAuthUI();
@@ -73,6 +113,34 @@ private:
 
   void OnCancelAuthRequest(wxCommandEvent& event);
   wxButton* m_cancelAuthButton;
+
+  struct ProviderDisplayInfo {
+    wxString id;
+    wxString name;
+    wxString description;
+  };
+  std::map<wxString, ProviderDisplayInfo> m_providerDisplayInfos;
+
+  // Neue Member-Variablen
+  wxNotebook* m_notebook;
+  wxPanel* m_displayPanel;
+
+  // Display-Einstellungen
+  wxSpinCtrl* m_iconSizeCtrl;
+  wxSpinCtrl* m_clusterSizeCtrl;
+  wxSpinCtrl* m_clusterRadiusCtrl;
+  wxColourPickerCtrl* m_clusterColorCtrl;
+  wxColourPickerCtrl* m_clusterTextColorCtrl;
+  wxSpinCtrl* m_clusterFontSizeCtrl;
+
+  wxStaticBitmap* m_iconPreview;
+  wxStaticBitmap* m_clusterPreview;
+
+  void CreateDisplayTab();
+  void UpdateIconPreview();
+  void UpdateClusterPreview();
+  void OnDisplaySettingChanged(wxSpinEvent& event);
+  void OnColorChanged(wxColourPickerEvent& event);
 
   DECLARE_EVENT_TABLE()
 };
