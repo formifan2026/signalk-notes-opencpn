@@ -25,13 +25,13 @@ tpConfigDialog::tpConfigDialog(signalk_notes_opencpn_pi* parent,
                                wxWindow* winparent)
     : wxDialog(winparent, wxID_ANY, _("SignalK Notes Konfiguration"),
                wxDefaultPosition, wxSize(700, 800),
-               wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER) {
+               wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+      m_settingsLoaded(false) {
   m_parent = parent;
 
   m_iconDir = m_parent->GetPluginIconDir();
-
-  CreateControls();
   LoadPluginIcons();
+  CreateControls();
 }
 
 void tpConfigDialog::CreateControls() {
@@ -65,9 +65,8 @@ void tpConfigDialog::CreateControls() {
   m_providerList = new wxCheckListBox(providerPanel, wxID_ANY);
   providerSizer->Add(m_providerList, 1, wxALL | wxEXPAND, 5);
 
-  // === Auth-Status Bereich (NUR Status-Anzeige) ===
+  // Auth-Status-Anzeige
   wxBoxSizer* authStatusSizer = new wxBoxSizer(wxHORIZONTAL);
-
   m_authStatusIcon = new wxStaticBitmap(providerPanel, wxID_ANY, wxNullBitmap);
   authStatusSizer->Add(m_authStatusIcon, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
@@ -110,10 +109,9 @@ void tpConfigDialog::CreateControls() {
 
   mainSizer->Add(m_notebook, 1, wxALL | wxEXPAND, 5);
 
-  // ========== BUTTON-BEREICH AM UNTEREN RAND ==========
+  // ========== BUTTON-BEREICH ==========
   wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
 
-  // Auth-Buttons (links)
   m_authButton = new wxButton(this, wxID_ANY, _("SignalK Authentifizierung"));
   m_authButton->Bind(wxEVT_BUTTON, &tpConfigDialog::OnAuthButtonClick, this);
   buttonSizer->Add(m_authButton, 0, wxALL, 5);
@@ -125,10 +123,8 @@ void tpConfigDialog::CreateControls() {
   m_cancelAuthButton->Hide();
   buttonSizer->Add(m_cancelAuthButton, 0, wxALL, 5);
 
-  // Platz zwischen Auth-Buttons und OK/Abbrechen
   buttonSizer->AddStretchSpacer();
 
-  // OK/Abbrechen (rechts)
   buttonSizer->Add(new wxButton(this, wxID_OK, _("OK")), 0, wxALL, 5);
   buttonSizer->Add(new wxButton(this, wxID_CANCEL, _("Abbrechen")), 0, wxALL,
                    5);
@@ -141,9 +137,44 @@ void tpConfigDialog::CreateControls() {
 
   SetSizer(mainSizer);
 
-  // Auth-UI initialisieren
-  InitializeAuthUI();
+  // ========================================================================
+  // SETTINGS LADEN (NICHT Auth!)
+  // ========================================================================
 
+  auto* mgr = m_parent->m_pSignalKNotesManager;
+
+  // Provider-Settings laden
+  std::map<wxString, bool> savedProviders = mgr->GetProviderSettings();
+  for (const auto& pair : savedProviders) {
+    int index = m_providerList->Append(pair.first);
+    m_providerList->Check(index, pair.second);
+    m_providerList->SetClientData(index, new wxString(pair.first));
+  }
+
+  // Icon-Mappings laden
+  m_currentIconMappings = mgr->GetIconMappings();
+
+  std::set<wxString> skIconNames;
+  for (const auto& mapping : m_currentIconMappings)
+    skIconNames.insert(mapping.first);
+
+  UpdateIconMappings(skIconNames);
+  UpdateIconMappings(mgr->GetDiscoveredIcons());
+
+  // Display Settings laden
+  LoadDisplaySettings(m_parent->GetIconSize(), m_parent->GetClusterSize(),
+                      m_parent->GetClusterRadius(), m_parent->GetClusterColor(),
+                      m_parent->GetClusterTextColor(),
+                      m_parent->GetClusterFontSize());
+
+  // ========================================================================
+  // 🔥 EINZIGE STELLE, DIE DEN AUTH-STATUS SETZT
+  // ========================================================================
+  InitializeAuthUI();
+  if (!m_authCheckTimer->IsRunning()) {
+    m_authCheckTimer->Start(2000);
+  }
+  m_settingsLoaded = true;
   Layout();
 }
 
@@ -153,8 +184,8 @@ void tpConfigDialog::LoadPluginIcons() {
 
   wxDir dir(m_iconDir);
   if (!dir.IsOpened()) {
-    wxLogMessage("SignalK Notes Config: Icon directory not found: %s",
-                 m_iconDir);
+    SKN_LOG(m_parent, "SignalK Notes Config: Icon directory not found: %s",
+            m_iconDir);
     return;
   }
 
@@ -177,8 +208,8 @@ void tpConfigDialog::LoadPluginIcons() {
     cont = dir.GetNext(&filename);
   }
 
-  // wxLogMessage("SignalK Notes Config: Loaded %zu plugin
-  // icons",m_pluginIcons.GetCount());
+  SKN_LOG(m_parent, "SignalK Notes Config: Loaded %zu plugin icons",
+          m_pluginIcons.GetCount());
 }
 
 wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
@@ -186,11 +217,6 @@ wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
   if (bundle.IsOk()) return bundle.GetBitmap(wxSize(size, size));
 
   return wxBitmap(size, size);  // Fallback: leeres Bitmap
-}
-
-void tpConfigDialog::UpdateCount(int count) {
-  m_countLabel->SetLabel(
-      wxString::Format(_("Icons im Kartenausschnitt: %d"), count));
 }
 
 void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
@@ -344,21 +370,37 @@ void tpConfigDialog::SaveProviderSettings() {
 }
 
 void tpConfigDialog::OnOK(wxCommandEvent& event) {
+  // Provider-Settings aus UI übernehmen
   SaveProviderSettings();
 
-  // Display-Einstellungen an Plugin übergeben (NEU!)
+  // Provider-Settings an Manager übergeben
+  if (m_parent && m_parent->m_pSignalKNotesManager) {
+    m_parent->m_pSignalKNotesManager->SetProviderSettings(
+        GetProviderSettings());
+  }
+
+  // Icon-Mappings an Manager übergeben
+  if (m_parent && m_parent->m_pSignalKNotesManager) {
+    m_parent->m_pSignalKNotesManager->SetIconMappings(GetIconMappings());
+  }
+
+  // Display-Einstellungen an Plugin übergeben
   if (m_parent) {
     m_parent->SetDisplaySettings(GetIconSize(), GetClusterSize(),
                                  GetClusterRadius(), GetClusterColor(),
                                  GetClusterTextColor(), GetClusterFontSize());
   }
-
-  // Icon-Update triggern
+  // Debug-Einstellungen an Plugin übergeben
+  if (m_debugCheckbox && m_parent) {
+    m_parent->SetDebugMode(m_debugCheckbox->GetValue());
+  }
+  // Icons neu berechnen und Karte aktualisieren
   if (m_parent && m_parent->m_pSignalKNotesManager &&
       m_parent->m_lastViewPortValid) {
     m_parent->m_pSignalKNotesManager->UpdateDisplayedIcons(
         m_parent->m_lastViewPort.clat, m_parent->m_lastViewPort.clon,
         m_parent->CalculateMaxDistance(m_parent->m_lastViewPort));
+
     RequestRefresh(m_parent->m_parent_window);
   }
 
@@ -367,7 +409,7 @@ void tpConfigDialog::OnOK(wxCommandEvent& event) {
     m_authCheckTimer->Stop();
   }
 
-  // Config speichern (speichert jetzt auch die Display-Einstellungen!)
+  // Plugin-Konfiguration speichern
   m_parent->SaveConfig();
 
   EndModal(wxID_OK);
@@ -391,10 +433,14 @@ void tpConfigDialog::UpdateVisibleCount(int count) {
 
 void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
   if (m_parent->m_pSignalKNotesManager->RequestAuthorization()) {
-    // wxLogMessage("SignalK Notes: Auth request started");
+    SKN_LOG(m_parent, "Auth request started");
     ShowPendingState();
-    m_authCheckTimer->Start(2000);
     m_parent->SaveConfig();
+    wxMessageBox(
+        _("Bitte in SignalK den Request im Menüpunkt 'Access Requests' "
+          "mit 'Permission' Admin und 'Authentication Timeout' NEVER "
+          "bestätigen."),
+        _("SignalK Authentifizierung"), wxOK | wxICON_INFORMATION, this);
   } else {
     wxMessageBox(_("Fehler beim Anfordern der Authentifizierung"), _("Fehler"),
                  wxOK | wxICON_ERROR);
@@ -402,39 +448,58 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
 }
 
 void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
-  // wxLogMessage("SignalK Notes: Auth check timer triggered");
-
   auto* mgr = m_parent->m_pSignalKNotesManager;
 
-  // Prüfe ob Token empfangen wurde
-  if (mgr->CheckAuthorizationStatus()) {
-    // wxLogMessage("SignalK Notes: Token received!");
-    m_authCheckTimer->Stop();
-    m_parent->SaveConfig();
-
-    ShowAuthenticatedState();
-
-    // wxMessageBox(_("Authentifizierung erfolgreich!"), _("Erfolg"),wxOK |
-    // wxICON_INFORMATION);
-    return;
-  }
-
-  // Noch pending?
+  // 1. Wenn noch eine Auth-Anfrage läuft → alten Flow benutzen
   if (mgr->IsAuthPending()) {
-    // wxLogMessage("SignalK Notes: Still pending, continue waiting");
+    if (mgr->CheckAuthorizationStatus()) {
+      // Token erhalten
+      m_parent->SaveConfig();
+      ShowAuthenticatedState();
+
+      // Provider laden und Liste aktualisieren
+      std::map<wxString, bool> plugins;
+      mgr->FetchInstalledPlugins(plugins);
+
+      auto providerInfos = mgr->GetProviderInfos();
+      if (providerInfos.empty()) {
+        SKN_LOG(m_parent, "ProviderInfos empty → will retry on next tick");
+        return;
+      }
+
+      SKN_LOG(m_parent, "ProviderInfos available → updating provider list");
+      UpdateProviders(mgr->GetDiscoveredProviders());
+    }
+
+    // Wenn noch pending und kein Token → einfach auf nächsten Tick warten
     return;
   }
 
-  // Anfrage fehlgeschlagen
-  // wxLogMessage("SignalK Notes: Request failed or denied");
-  m_authCheckTimer->Stop();
-  ShowInitialState();
+  // 2. Keine Auth-Anfrage mehr pending → Token-Laufzeit überwachen
+  wxString token = mgr->GetAuthToken();
+
+  if (token.IsEmpty()) {
+    // Kein Token → Initialzustand
+    ShowInitialState();
+    return;
+  }
+
+  // Token vorhanden → validieren
+  if (!mgr->ValidateToken()) {
+    SKN_LOG(m_parent,
+            "OnAuthCheckTimer: token became invalid → resetting auth");
+    mgr->SetAuthToken("");
+    mgr->ClearAuthRequest();
+    m_parent->SaveConfig();
+    ShowInitialState();
+    return;
+  }
+
+  // Token ist gültig → sicherstellen, dass UI im Auth-Status ist
+  ShowAuthenticatedState();
 }
 
 tpConfigDialog::~tpConfigDialog() {
-  if (m_authCheckTimer && m_authCheckTimer->IsRunning())
-    m_authCheckTimer->Stop();
-
   // ClientData aufräumen
   for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
     wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
@@ -443,8 +508,7 @@ tpConfigDialog::~tpConfigDialog() {
 }
 
 void tpConfigDialog::OnCancelAuthRequest(wxCommandEvent& event) {
-  // wxLogMessage("SignalK Notes: User cancelled auth request");
-  m_authCheckTimer->Stop();
+  SKN_LOG(m_parent, "User cancelled auth request");
   m_parent->m_pSignalKNotesManager->ClearAuthRequest();
   m_parent->SaveConfig();
   ShowInitialState();
@@ -457,26 +521,20 @@ void tpConfigDialog::InitializeAuthUI() {
   wxString requestHref = mgr->GetAuthRequestHref();
   bool pending = mgr->IsAuthPending();
 
-  // wxLogMessage("SignalK Notes: InitializeAuthUI - token=%s, href=%s,
-  // pending=%d",token.IsEmpty() ? "empty" : "present",requestHref.IsEmpty() ?
-  // "empty" : "present", pending);
-
   // 1. Token vorhanden → NUR validieren wenn KEINE Anfrage läuft
   if (!token.IsEmpty() && !pending) {
-    // wxLogMessage("SignalK Notes: Token present, validating...");
+    SKN_LOG(m_parent, "Token present, validating...");
 
     // Kleine Verzögerung falls Token gerade erst empfangen wurde
     wxMilliSleep(500);
 
     if (mgr->ValidateToken()) {
-      // wxLogMessage("SignalK Notes: Token is valid → showing authenticated
-      // state");
+      SKN_LOG(m_parent, "Token is valid → showing authenticated state");
       ShowAuthenticatedState();
       return;
     } else {
       // Token ungültig → löschen
-      wxLogMessage(
-          "SignalK Notes: Token INVALID → clearing and showing initial state");
+      SKN_LOG(m_parent, "Token INVALID → clearing and showing initial state");
       mgr->SetAuthToken("");
       mgr->ClearAuthRequest();
       m_parent->SaveConfig();
@@ -488,40 +546,44 @@ void tpConfigDialog::InitializeAuthUI() {
 
   // 2. Authentifizierung läuft
   if (pending && !requestHref.IsEmpty()) {
-    // wxLogMessage("SignalK Notes: Auth pending → showing pending state");
+    SKN_LOG(m_parent, "Auth pending → showing pending state");
     ShowPendingState();
     return;
   }
 
   // 3. Keine gültige Authentifizierung
-  wxLogMessage("SignalK Notes: No valid auth → showing initial state");
+  SKN_LOG(m_parent, "No valid auth → showing initial state");
   ShowInitialState();
 }
 
 void tpConfigDialog::ShowAuthenticatedState() {
+  SKN_LOG(m_parent, "ShowAuthenticatedState() ENTER");
+
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_TICK_MARK, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxGREEN);
 
-  // Beide Buttons verstecken
   m_authButton->Hide();
   m_cancelAuthButton->Hide();
 
-  // Timer stoppen
-  if (m_authCheckTimer->IsRunning()) {
-    m_authCheckTimer->Stop();
+  auto* mgr = m_parent->m_pSignalKNotesManager;
+
+  // Pluginliste und Provider-Namen aktualisieren
+  std::map<wxString, bool> plugins;
+  mgr->FetchInstalledPlugins(plugins);
+
+  auto providerInfos = mgr->GetProviderInfos();
+
+  if (providerInfos.empty()) {
+    SKN_LOG(m_parent, "providerInfos EMPTY → retrying in 500ms");
+    return;
   }
 
-  // NEU: Plugin-Liste und Provider-Namen aktualisieren
-  if (m_parent && m_parent->m_pSignalKNotesManager) {
-    std::map<wxString, bool> plugins;
-    m_parent->m_pSignalKNotesManager->FetchInstalledPlugins(plugins);
-
-    // Provider-Namen jetzt aktualisieren
-    UpdateProviders(m_parent->m_pSignalKNotesManager->GetDiscoveredProviders());
-  }
+  // Provider-Namen aktualisieren
+  UpdateProviders(mgr->GetDiscoveredProviders());
 
   Layout();
+  SKN_LOG(m_parent, "ShowAuthenticatedState() EXIT");
 }
 
 void tpConfigDialog::ShowPendingState() {
@@ -538,21 +600,11 @@ void tpConfigDialog::ShowPendingState() {
   m_cancelAuthButton->Show();
   m_cancelAuthButton->Enable(true);
 
-  // Timer mit 2 Sekunden
-  if (m_authCheckTimer->IsRunning()) {
-    m_authCheckTimer->Stop();
-  }
-  m_authCheckTimer->Start(2000);
-
   Layout();
 }
 
 void tpConfigDialog::ShowInitialState() {
   // Timer stoppen
-  if (m_authCheckTimer->IsRunning()) {
-    m_authCheckTimer->Stop();
-  }
-
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_ERROR, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxRED);
@@ -570,33 +622,26 @@ void tpConfigDialog::ShowInitialState() {
 
 void tpConfigDialog::UpdateProviders(
     const std::set<wxString>& providersFromNotes) {
-  wxLogMessage(
-      "SignalK Notes: UpdateProviders called with %zu providers from notes",
-      providersFromNotes.size());
+  SKN_LOG(m_parent, "UpdateProviders called with %zu providers from notes",
+          providersFromNotes.size());
 
-  // ---------------------------------------------------------
-  // 1. Provider-Infos vom Manager holen (falls authentifiziert)
-  // ---------------------------------------------------------
+  auto* mgr = m_parent->m_pSignalKNotesManager;
+
+  // 1. ProviderInfos (Name + Description) holen, falls authentifiziert
   std::map<wxString, ProviderDisplayInfo> providerDisplayInfos;
-
-  wxString token = m_parent->m_pSignalKNotesManager->GetAuthToken();
-  if (!token.IsEmpty()) {
-    auto providerInfos = m_parent->m_pSignalKNotesManager->GetProviderInfos();
-
-    for (const auto& info : providerInfos) {
-      ProviderDisplayInfo displayInfo;
-      displayInfo.id = info.id;
-      displayInfo.name = info.name;
-      displayInfo.description = info.description;
-      providerDisplayInfos[info.id] = displayInfo;
+  if (!mgr->GetAuthToken().IsEmpty()) {
+    auto infos = mgr->GetProviderInfos();
+    for (const auto& info : infos) {
+      ProviderDisplayInfo d;
+      d.id = info.id;
+      d.name = info.name;
+      d.description = info.description;
+      providerDisplayInfos[info.id] = d;
     }
   }
 
-  // ---------------------------------------------------------
   // 2. Bisherige Checked-States sichern
-  // ---------------------------------------------------------
   std::map<wxString, bool> existingChecked;
-
   for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
     wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
     if (idPtr) {
@@ -604,34 +649,29 @@ void tpConfigDialog::UpdateProviders(
     }
   }
 
-  // ---------------------------------------------------------
-  // 3. Provider aus Notes + Provider aus Plugins zusammenführen
-  // ---------------------------------------------------------
+  // 3. Provider bestimmen, die angezeigt werden sollen
+  //    = Provider aus Notes + Provider aus gespeicherten Settings
   std::set<wxString> allProviders = providersFromNotes;
 
-  for (const auto& p : providerDisplayInfos) {
+  for (const auto& p : mgr->GetProviderSettings()) {
     allProviders.insert(p.first);
   }
 
-  // ---------------------------------------------------------
   // 4. Liste neu aufbauen
-  // ---------------------------------------------------------
   m_providerList->Clear();
 
   for (const wxString& providerId : allProviders) {
     wxString displayText;
 
-    // Falls Plugin-Infos vorhanden → Name + Beschreibung anzeigen
+    // Falls ProviderInfos vorhanden → Name + Description
     auto it = providerDisplayInfos.find(providerId);
     if (it != providerDisplayInfos.end() && !it->second.name.IsEmpty()) {
       displayText = it->second.name;
-
       if (!it->second.description.IsEmpty()) {
         displayText += "\n  " + it->second.description;
       }
-
     } else {
-      // Fallback: Provider-ID
+      // Fallback: ID
       displayText = providerId;
     }
 
@@ -642,7 +682,6 @@ void tpConfigDialog::UpdateProviders(
 
     // Checked-Status wiederherstellen oder Standard (true)
     bool checked = true;
-
     auto it2 = existingChecked.find(providerId);
     if (it2 != existingChecked.end()) {
       checked = it2->second;
@@ -740,6 +779,14 @@ void tpConfigDialog::CreateDisplayTab() {
   clusterBox->Add(m_clusterPreview, 0, wxALL | wxALIGN_CENTER, 5);
 
   mainSizer->Add(clusterBox, 0, wxEXPAND | wxALL, 10);
+
+  // ---------------------------------------------------------
+  // Debug-Checkbox ("Erweitertes Logging")
+  // ---------------------------------------------------------
+  m_debugCheckbox =
+      new wxCheckBox(m_displayPanel, wxID_ANY, _("Erweitertes Logging"));
+  m_debugCheckbox->SetValue(m_parent->IsDebugMode());
+  mainSizer->Add(m_debugCheckbox, 0, wxALL, 10);
 
   m_displayPanel->SetSizer(mainSizer);
 

@@ -25,7 +25,7 @@ public:
     wxPoint screenPos;
   };
 
-struct ClusterZoomState {
+  struct ClusterZoomState {
     bool active = false;
     bool justStarted = false;
 
@@ -39,8 +39,7 @@ struct ClusterZoomState {
 
     // Alle Notes, die zu diesem Cluster gehören
     std::vector<const SignalKNote*> notes;
-};
-
+  };
 
   ClusterZoomState m_clusterZoom;
 
@@ -50,7 +49,6 @@ struct ClusterZoomState {
   void DrawGLBitmap(const wxBitmap& bmp, int x, int y);
 
   // Plugin-Interface
-  void ShowPreferencesDialog(wxWindow* parent) override;
   int Init(void) override;
   bool DeInit(void) override;
 
@@ -110,6 +108,14 @@ struct ClusterZoomState {
                           const wxColour& textColor, int fontSize);
 
   void ProcessClusterPanStep();
+  int GetIconSize() const { return m_iconSize; }
+  int GetClusterSize() const { return m_clusterSize; }
+  int GetClusterRadius() const { return m_clusterRadius; }
+  wxColour GetClusterColor() const { return m_clusterColor; }
+  wxColour GetClusterTextColor() const { return m_clusterTextColor; }
+  int GetClusterFontSize() const { return m_clusterFontSize; }
+  bool IsDebugMode() const { return m_debugMode; }
+  void SetDebugMode(bool v) { m_debugMode = v; }
 
 private:
   // Config + UI
@@ -119,7 +125,7 @@ private:
   tpicons* m_ptpicons = nullptr;
   tpConfigDialog* m_pOverviewDialog = nullptr;
   tpConfigDialog* m_pConfigDialog = nullptr;
-  bool m_btpDialog = false;
+  friend class tpSignalKNotesManager;
 
   // Fetch-Tracking
   double m_lastFetchCenterLat = 0.0;
@@ -143,11 +149,20 @@ private:
   wxColour m_clusterColor;
   wxColour m_clusterTextColor;
   int m_clusterFontSize;
-
-  bool IsClusterVisible(const PlugIn_ViewPort& vp);
+  bool m_debugMode = false;
   void MoveViewportTowardsCluster(PlugIn_ViewPort& vp);
-  bool AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp, double zoomFactor) const;
-
+  bool AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp,
+                                       double zoomFactor) const;
 };
+
+// LOGGING-MAKRO
+#define SKN_LOG(plugin, fmt, ...)                                      \
+  do {                                                                 \
+    if ((plugin)->IsDebugMode())                                       \
+      wxLogMessage(wxString::Format("SignalK Notes: %s",               \
+                                    wxString::Format(fmt, ##__VA_ARGS__))); \
+  } while (0)
+
+
 
 #endif

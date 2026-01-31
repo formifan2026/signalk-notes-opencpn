@@ -87,22 +87,16 @@ public:
   bool ValidateToken();
 
   wxString GetAuthToken() const { return m_authToken; }
-  void SetAuthToken(const wxString& token) { m_authToken = token; }
+  void SetAuthToken(const wxString& token);
 
   wxString GetAuthRequestHref() const { return m_authRequestHref; }
-  void SetAuthRequestHref(const wxString& href) {
-    m_authRequestHref = href;
-    m_authPending = !href.IsEmpty();
-  }
+  void SetAuthRequestHref(const wxString& href);
 
   bool IsAuthPending() const {
     return m_authPending && !m_authRequestHref.IsEmpty();
   }
 
-  void ClearAuthRequest() {
-    m_authRequestHref.Clear();
-    m_authPending = false;
-  }
+  void ClearAuthRequest();
 
   bool FetchInstalledPlugins(std::map<wxString, bool>& plugins);
   void CleanupDisabledProviders();
@@ -159,8 +153,8 @@ private:
     wxString name;
     wxString description;
     bool enabled;
-};
-std::map<wxString, ProviderDetails> m_providerDetails;
+  };
+  std::map<wxString, ProviderDetails> m_providerDetails;
 };
 
 #endif  // _TPSIGNALKNOTES_H_

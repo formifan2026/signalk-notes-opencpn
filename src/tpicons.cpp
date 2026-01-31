@@ -22,6 +22,7 @@
  ***************************************************************************
  */
 
+#include "signalk_notes_opencpn_pi.h"
 #include "ocpn_plugin.h"
 #include <wx/wxprec.h>
 #ifndef WX_PRECOMP
@@ -32,7 +33,7 @@
 #include <wx/mstream.h>
 #include <wx/filename.h>
 
-tpicons::tpicons() {
+tpicons::tpicons(signalk_notes_opencpn_pi* plugin) : m_plugin(plugin) {
   m_dScaleFactor = 1.0;
   m_iDisplayScaleFactor = 32;
   m_iToolScaleFactor = GetOCPNGUIToolScaleFactor_PlugIn();
@@ -54,7 +55,7 @@ void tpicons::initialize_images(void) {
   fn.SetPath(GetPluginDataDir("signalk_notes_opencpn_pi"));
   fn.AppendDir("data");
 
-  wxLogMessage("signalk_notes_opencpn_pi data location: %s", fn.GetFullPath());
+  SKN_LOG(m_plugin,"signalk_notes_opencpn_pi data location: %s", fn.GetFullPath());
 
   m_failedBitmapLoad = false;
 

@@ -40,15 +40,15 @@ set(PACKAGE_CONTACT "Jon Gough")
 set(PACKAGE "signalk_notes_opencpn")
 
 set(SHORT_DESCRIPTION
-    "Plugin to test examples of the ODAPI and JSON interface for ODRAW"
+    "Plugin to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' on the map"
 )
 set(LONG_DESCRIPTION
-    "signalk_notes_opencpn Plugin is used to test out the ODraw API and demonstrate how to use it successfully from another plugin"
+    "signalk_notes_opencpn Plugin is used to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' on the map"
 )
 
 set(VERSION_MAJOR "1")
 set(VERSION_MINOR "0")
-set(VERSION_PATCH "358")
+set(VERSION_PATCH "0")
 set(VERSION_TWEAK "1")
 set(VERSION_DATE "15/01/2026")
 set(OCPN_MIN_VERSION "ov58")
@@ -70,7 +70,7 @@ set(CLOUDSMITH_BASE_REPOSITORY "signalk_notes_opencpn")
 set(CLOUDSMITH_USER "opencpn")
 
 set(XML_INFO_URL
-    "https://opencpn.org/wiki/dokuwiki/doku.php?id=opencpn:opencpn_user_manual:plugins:safety:odraw1.6_pi"
+    "https://github.com/formifan2002/signalk-notes-opencpn"
 )
 set(XML_SUMMARY ${SHORT_DESCRIPTION})
 set(XML_DESCRIPTION ${LONG_DESCRIPTION})

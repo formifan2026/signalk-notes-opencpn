@@ -17,7 +17,6 @@ class tpConfigDialog : public wxDialog {
 public:
   tpConfigDialog(signalk_notes_opencpn_pi* parent, wxWindow* winparent);
   ~tpConfigDialog();
-  void UpdateCount(int count);
   void UpdateProviders(const std::set<wxString>& providers);
   void UpdateIconMappings(const std::set<wxString>& skIcons);
 
@@ -66,6 +65,7 @@ public:
   static const int DEFAULT_CLUSTER_FONT_SIZE = 8;
 
 private:
+  bool m_settingsLoaded = false;
   void InitializeAuthUI();
   void ShowAuthenticatedState();
   void ShowPendingState();
@@ -132,7 +132,7 @@ private:
   wxColourPickerCtrl* m_clusterColorCtrl;
   wxColourPickerCtrl* m_clusterTextColorCtrl;
   wxSpinCtrl* m_clusterFontSizeCtrl;
-
+wxCheckBox* m_debugCheckbox;
   wxStaticBitmap* m_iconPreview;
   wxStaticBitmap* m_clusterPreview;
 

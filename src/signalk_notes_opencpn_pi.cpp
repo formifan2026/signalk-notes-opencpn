@@ -119,7 +119,7 @@ signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void* ppimgr)
   g_pLayerDir = new wxString(layerDir);
 
   // Plugin-Komponenten initialisieren
-  m_ptpicons = new tpicons();
+  m_ptpicons = new tpicons(this);
   m_pSignalKNotesManager = new tpSignalKNotesManager(this);
   m_lastViewPortValid = false;
 }
@@ -131,102 +131,71 @@ signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi() {
   if (m_pSignalKNotesManager) delete m_pSignalKNotesManager;
 }
 
-bool signalk_notes_opencpn_pi::IsClusterVisible(const PlugIn_ViewPort& vp)
-{
-    // 1. Bounding Box der Notes berechnen
-    double minLat = 90.0, maxLat = -90.0;
-    double minLon = 180.0, maxLon = -180.0;
+void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
+  const double zoomFactor = 2.0;  // ein Zoomschritt
 
-    for (const auto* note : m_clusterZoom.notes) {
-        minLat = std::min(minLat, note->latitude);
-        maxLat = std::max(maxLat, note->latitude);
-        minLon = std::min(minLon, note->longitude);
-        maxLon = std::max(maxLon, note->longitude);
-    }
+  SKN_LOG(this,"MoveViewportTowardsCluster: ENTER scale=%.3f",vp.view_scale_ppm);
 
-    // 2. Viewport nach dem nächsten Zoomschritt simulieren
-    double zoomFactor = 0.8; // z. B. 20% hineinzoomen
-    double newLatSpan = (vp.lat_max - vp.lat_min) * zoomFactor;
-    double newLonSpan = (vp.lon_max - vp.lon_min) * zoomFactor;
+  bool allVisible = AreAllNotesVisibleAfterNextZoom(vp, zoomFactor);
+  SKN_LOG(this,"MoveViewportTowardsCluster: allVisibleAfterZoom=%d",allVisible);
 
-    double newLatMin = vp.clat - newLatSpan / 2.0;
-    double newLatMax = vp.clat + newLatSpan / 2.0;
-    double newLonMin = vp.clon - newLonSpan / 2.0;
-    double newLonMax = vp.clon + newLonSpan / 2.0;
+  if (!allVisible) {
+    // PAN wie bisher
+    double vpCenterLat = (vp.lat_min + vp.lat_max) / 2.0;
+    double vpCenterLon = (vp.lon_min + vp.lon_max) / 2.0;
 
-    // 3. Prüfen, ob ALLE Notes nach dem Zoom noch sichtbar wären
-    return (minLat >= newLatMin && maxLat <= newLatMax &&
-            minLon >= newLonMin && maxLon <= newLonMax);
+    double dLat = m_clusterZoom.targetLat - vpCenterLat;
+    double dLon = m_clusterZoom.targetLon - vpCenterLon;
+
+    double step = 0.3;
+
+    double newCenterLat = vpCenterLat + dLat * step;
+    double newCenterLon = vpCenterLon + dLon * step;
+
+    double latSpan = vp.lat_max - vp.lat_min;
+    double lonSpan = vp.lon_max - vp.lon_min;
+
+    vp.lat_min = newCenterLat - latSpan / 2.0;
+    vp.lat_max = newCenterLat + latSpan / 2.0;
+    vp.lon_min = newCenterLon - lonSpan / 2.0;
+    vp.lon_max = newCenterLon + lonSpan / 2.0;
+
+    SKN_LOG(this,"MoveViewportTowardsCluster: PAN -> center=%.6f/%.6fscale=%.3f",newCenterLat, newCenterLon, vp.view_scale_ppm);
+
+    JumpToPosition(newCenterLat, newCenterLon, vp.view_scale_ppm);
+    return;
+  }
+
+  double newScale = vp.view_scale_ppm * zoomFactor;
+
+  SKN_LOG(this,"MoveViewportTowardsCluster: ZOOM -> targetLat=%.6f targetLon=%.6f newScale=%.3f (deactivating)",m_clusterZoom.targetLat,m_clusterZoom.targetLon, newScale);
+
+  JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
+
+  m_clusterZoom.active = false;
 }
 
+void signalk_notes_opencpn_pi::ProcessClusterPanStep() {
+  if (!m_lastViewPortValid) {
+    // SKN_LOG(this,"ProcessClusterPanStep: lastViewPort INVALID");
+    return;
+  }
 
-void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp)
-{
-    const double zoomFactor = 2.0; // ein Zoomschritt
+  SKN_LOG(this,"ProcessClusterPanStep: ENTER active=%d notes=%zu",m_clusterZoom.active, m_clusterZoom.notes.size());
 
-    // wxLogMessage("SKN: MoveViewportTowardsCluster: ENTER scale=%.3f", vp.view_scale_ppm);
+  PlugIn_ViewPort vp = m_lastViewPort;
 
-    bool allVisible = AreAllNotesVisibleAfterNextZoom(vp, zoomFactor);
-    // wxLogMessage("SKN: MoveViewportTowardsCluster: allVisibleAfterZoom=%d", allVisible);
+  SKN_LOG(this,"ProcessClusterPanStep: BEFORE MoveViewportTowardsCluster scale=%.3f",vp.view_scale_ppm);
 
-    if (!allVisible) {
-        // PAN wie bisher
-        double vpCenterLat = (vp.lat_min + vp.lat_max) / 2.0;
-        double vpCenterLon = (vp.lon_min + vp.lon_max) / 2.0;
+  MoveViewportTowardsCluster(vp);
 
-        double dLat = m_clusterZoom.targetLat - vpCenterLat;
-        double dLon = m_clusterZoom.targetLon - vpCenterLon;
+  SKN_LOG(this,"ProcessClusterPanStep: AFTER MoveViewportTowardsCluster (local vp) scale=%.3f active=%d",vp.view_scale_ppm, m_clusterZoom.active);
 
-        double step = 0.3;
-
-        double newCenterLat = vpCenterLat + dLat * step;
-        double newCenterLon = vpCenterLon + dLon * step;
-
-        double latSpan = vp.lat_max - vp.lat_min;
-        double lonSpan = vp.lon_max - vp.lon_min;
-
-        vp.lat_min = newCenterLat - latSpan / 2.0;
-        vp.lat_max = newCenterLat + latSpan / 2.0;
-        vp.lon_min = newCenterLon - lonSpan / 2.0;
-        vp.lon_max = newCenterLon + lonSpan / 2.0;
-
-        // wxLogMessage("SKN: MoveViewportTowardsCluster: PAN -> center=%.6f/%.6f scale=%.3f",newCenterLat, newCenterLon, vp.view_scale_ppm);
-
-        JumpToPosition(newCenterLat, newCenterLon, vp.view_scale_ppm);
-        return;
-    }
-
-    double newScale = vp.view_scale_ppm * zoomFactor;
-
-    // wxLogMessage("SKN: MoveViewportTowardsCluster: ZOOM -> targetLat=%.6f targetLon=%.6f newScale=%.3f (deactivating)",m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
-
-    JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
-
+  // Optionaler Fallback, falls aus irgendeinem Grund nichts passiert:
+  if (m_clusterZoom.notes.size() <= 1) {
+    SKN_LOG(this,"ProcessClusterPanStep: cluster resolved by notes.size -> deactivating");
     m_clusterZoom.active = false;
-}
-
-void signalk_notes_opencpn_pi::ProcessClusterPanStep()
-{
-    if (!m_lastViewPortValid) {
-        // wxLogMessage("SKN: ProcessClusterPanStep: lastViewPort INVALID");
-        return;
-    }
-
-    // wxLogMessage("SKN: ProcessClusterPanStep: ENTER active=%d notes=%zu",m_clusterZoom.active, m_clusterZoom.notes.size());
-
-    PlugIn_ViewPort vp = m_lastViewPort;
-
-    // wxLogMessage("SKN: ProcessClusterPanStep: BEFORE MoveViewportTowardsCluster scale=%.3f",vp.view_scale_ppm);
-
-    MoveViewportTowardsCluster(vp);
-
-    // wxLogMessage("SKN: ProcessClusterPanStep: AFTER MoveViewportTowardsCluster (local vp) scale=%.3f active=%d",vp.view_scale_ppm, m_clusterZoom.active);
-
-    // Optionaler Fallback, falls aus irgendeinem Grund nichts passiert:
-    if (m_clusterZoom.notes.size() <= 1) {
-        // wxLogMessage("SKN: ProcessClusterPanStep: cluster resolved by notes.size -> deactivating");
-        m_clusterZoom.active = false;
-    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -325,7 +294,7 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
   // Token validieren BEVOR Dialog geöffnet wird
   if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
     if (!m_pSignalKNotesManager->ValidateToken()) {
-      wxLogMessage("SignalK Notes: Token invalid - clearing");
+      SKN_LOG(this,"Token invalid - clearing");
       m_pSignalKNotesManager->SetAuthToken("");
       m_pSignalKNotesManager->ClearAuthRequest();
       SaveConfig();
@@ -337,27 +306,27 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
     m_pSignalKNotesManager->CleanupDisabledProviders();
   }
 
+  // Falls Dialog noch existiert → sauber zerstören
   if (m_pConfigDialog) {
     m_pConfigDialog->Destroy();
     m_pConfigDialog = nullptr;
   }
 
+  // Dialog erzeugen
   m_pConfigDialog = new tpConfigDialog(this, GetOCPNCanvasWindow());
 
-  // Provider-Infos laden, falls Token vorhanden
-  if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
-    std::map<wxString, bool> plugins;
-    m_pSignalKNotesManager->FetchInstalledPlugins(plugins);
-  }
+  // WICHTIG:
+  // KEIN UpdateProviders() hier!
+  // KEIN UpdateIconMappings() hier!
+  // KEIN LoadSettings() hier!
+  //
+  // Das macht jetzt alles ShowAuthenticatedState() im Dialog.
 
-  m_pConfigDialog->UpdateProviders(
-      m_pSignalKNotesManager->GetDiscoveredProviders());
-  m_pConfigDialog->UpdateIconMappings(
-      m_pSignalKNotesManager->GetDiscoveredIcons());
-  m_pConfigDialog->LoadSettings(m_pSignalKNotesManager->GetProviderSettings(),
-                                m_pSignalKNotesManager->GetIconMappings());
+  // Dialog anzeigen
+  m_pConfigDialog->ShowModal();
 
-  if (m_pConfigDialog->ShowModal() == wxID_OK) {
+  // Einstellungen übernehmen, falls OK
+  if (m_pConfigDialog->GetReturnCode() == wxID_OK) {
     m_pSignalKNotesManager->SetProviderSettings(
         m_pConfigDialog->GetProviderSettings());
     m_pSignalKNotesManager->SetIconMappings(m_pConfigDialog->GetIconMappings());
@@ -369,50 +338,14 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
           m_lastViewPort.clat, m_lastViewPort.clon,
           CalculateMaxDistance(m_lastViewPort));
     }
-
     RequestRefresh(m_parent_window);
   }
 
+  // Dialog zerstören
   m_pConfigDialog->Destroy();
   m_pConfigDialog = nullptr;
 
   UpdateOverviewDialog();
-}
-
-void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
-  if (m_pConfigDialog) {
-    m_pConfigDialog->Destroy();
-    m_pConfigDialog = nullptr;
-  }
-
-  m_pConfigDialog = new tpConfigDialog(this, parent);
-
-  // Falls authentifiziert: Plugin-Liste holen (NEU!)
-  if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
-    std::map<wxString, bool> plugins;
-    m_pSignalKNotesManager->FetchInstalledPlugins(plugins);
-  }
-
-  // Provider und Icon-Mappings laden
-  m_pConfigDialog->UpdateProviders(
-      m_pSignalKNotesManager->GetDiscoveredProviders());
-  m_pConfigDialog->UpdateIconMappings(
-      m_pSignalKNotesManager->GetDiscoveredIcons());
-  m_pConfigDialog->LoadSettings(m_pSignalKNotesManager->GetProviderSettings(),
-                                m_pSignalKNotesManager->GetIconMappings());
-
-  // Display-Einstellungen laden
-  m_pConfigDialog->LoadDisplaySettings(m_iconSize, m_clusterSize,
-                                       m_clusterRadius, m_clusterColor,
-                                       m_clusterTextColor, m_clusterFontSize);
-
-  // Sichtbare Note-Anzahl aktualisieren
-  if (m_pSignalKNotesManager) {
-    int visibleCount = GetVisibleNoteCount();
-    m_pConfigDialog->UpdateVisibleCount(visibleCount);
-  }
-
-  m_pConfigDialog->Show();
 }
 
 void signalk_notes_opencpn_pi::OnToolbarToolDownCallback(int id) {}
@@ -434,7 +367,7 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
   int count = m_pSignalKNotesManager->GetVisibleIconCount(m_lastViewPort);
 
   // 3. Dialog aktualisieren
-  if (m_pOverviewDialog) m_pOverviewDialog->UpdateCount(count);
+  if (m_pOverviewDialog) m_pOverviewDialog->UpdateVisibleCount(count);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -444,16 +377,20 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
 bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
   if (!vp || !m_pSignalKNotesManager) return false;
 
+  // Viewport speichern
   m_lastViewPort = *vp;
   m_lastViewPortValid = true;
+
+  // --- PAN / ZOOM STEUERUNG (wie in RenderGLOverlay) ---
   if (m_clusterZoom.active) {
     if (m_clusterZoom.justStarted) {
       m_clusterZoom.justStarted = false;
     } else {
-      ProcessClusterPanStep();
+      ProcessClusterPanStep();  // <<< WICHTIG!
     }
   }
 
+  // --- ICON FETCH ---
   double centerLat = vp->clat;
   double centerLon = vp->clon;
   double maxDistance = CalculateMaxDistance(*vp);
@@ -472,39 +409,33 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
     m_lastFetchTime = now;
   }
 
+  // --- SICHTBARE NOTES ---
   std::vector<const SignalKNote*> visibleNotes;
   m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
   if (visibleNotes.empty()) return false;
 
-  // Clustering
+  // --- CLUSTERING ---
   m_currentClusters = BuildClusters(visibleNotes, *vp);
 
   bool drewSomething = false;
 
+  // --- ZEICHNEN ---
   for (const auto& cluster : m_currentClusters) {
-    // ---------------------------------------------------------
-    // EINZEL-ICON
-    // ---------------------------------------------------------
     if (cluster.notes.size() == 1) {
       const SignalKNote* note = cluster.notes[0];
 
       wxBitmap bmp;
       if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
 
-      // ICON SCHÄRFEN + ANTI-ALIASING + Y-FLIP
+      // Anti-Aliasing / Y-Flip wie GL-Version
       wxBitmap glBmp = PrepareIconBitmapForGL(bmp, bmp.GetWidth());
 
       dc.DrawBitmap(glBmp, cluster.screenPos.x - glBmp.GetWidth() / 2,
                     cluster.screenPos.y - glBmp.GetHeight() / 2, true);
 
       drewSomething = true;
-    }
-
-    // ---------------------------------------------------------
-    // CLUSTER-ICON
-    // ---------------------------------------------------------
-    else {
+    } else {
       wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
 
       dc.DrawBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
@@ -518,89 +449,72 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
 }
 
 bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
-                                               PlugIn_ViewPort* vp)
-{
-    if (!vp || !m_pSignalKNotesManager)
-        return false;
+                                               PlugIn_ViewPort* vp) {
+  if (!vp || !m_pSignalKNotesManager) return false;
 
-    // Viewport speichern
-    m_lastViewPort = *vp;
-    m_lastViewPortValid = true;
-// wxLogMessage("SKN: RenderGLOverlay: active=%d justStarted=%d scale=%.3f lat_span=%.6f lon_span=%.6f",m_clusterZoom.active, m_clusterZoom.justStarted,vp->view_scale_ppm,vp->lat_max - vp->lat_min,vp->lon_max - vp->lon_min);
+  // Viewport speichern
+  m_lastViewPort = *vp;
+  m_lastViewPortValid = true;
 
-    // --- PAN / ZOOM STEUERUNG -----------------------------------------
-    //wxLogMessage("SKN: RenderGLOverlay, clusterZoom.active=%d, justStarted=%d",m_clusterZoom.active, m_clusterZoom.justStarted);
-
-if (m_clusterZoom.active) {
-  // wxLogMessage("SKN: RenderGLOverlay: clusterZoom active, justStarted=%d", m_clusterZoom.justStarted);
-  if (m_clusterZoom.justStarted) {
-    m_clusterZoom.justStarted = false;
-  } else {
-    // wxLogMessage("SKN: RenderGLOverlay: calling ProcessClusterPanStep()");
-    ProcessClusterPanStep();
+  if (m_clusterZoom.active) {
+    if (m_clusterZoom.justStarted) {
+      m_clusterZoom.justStarted = false;
+    } else {
+      ProcessClusterPanStep();
+    }
   }
-}
 
+  // --- ICON FETCH ----------------------------------------------------
+  double centerLat = vp->clat;
+  double centerLon = vp->clon;
+  double maxDistance = CalculateMaxDistance(*vp);
 
+  wxLongLong now = wxGetLocalTimeMillis();
 
-    // --- ICON FETCH ----------------------------------------------------
-    double centerLat = vp->clat;
-    double centerLon = vp->clon;
-    double maxDistance = CalculateMaxDistance(*vp);
+  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
+      fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
+      fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
+      fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
+    m_lastFetchCenterLat = centerLat;
+    m_lastFetchCenterLon = centerLon;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
+  }
 
-    wxLongLong now = wxGetLocalTimeMillis();
+  // --- SICHTBARE NOTES HOLEN ----------------------------------------
+  std::vector<const SignalKNote*> visibleNotes;
+  m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
-    if (m_lastFetchTime == 0 ||
-        (now - m_lastFetchTime).ToLong() > 30000 ||
-        fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
-        fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
-        fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2)
-    {
-        m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon, maxDistance);
-        m_lastFetchCenterLat = centerLat;
-        m_lastFetchCenterLon = centerLon;
-        m_lastFetchDistance = maxDistance;
-        m_lastFetchTime = now;
+  if (visibleNotes.empty()) return false;
+
+  // --- CLUSTERING ----------------------------------------------------
+  m_currentClusters = BuildClusters(visibleNotes, *vp);
+
+  // --- ZEICHNEN ------------------------------------------------------
+  bool drewSomething = false;
+
+  for (const auto& cluster : m_currentClusters) {
+    if (cluster.notes.size() == 1) {
+      const SignalKNote* note = cluster.notes[0];
+      wxBitmap bmp;
+      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
+
+      DrawGLBitmap(bmp, cluster.screenPos.x - bmp.GetWidth() / 2,
+                   cluster.screenPos.y - bmp.GetHeight() / 2);
+
+      drewSomething = true;
+    } else {
+      wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
+      DrawGLBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
+                   cluster.screenPos.y - clusterBmp.GetHeight() / 2);
+
+      drewSomething = true;
     }
+  }
 
-    // --- SICHTBARE NOTES HOLEN ----------------------------------------
-    std::vector<const SignalKNote*> visibleNotes;
-    m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
-
-    if (visibleNotes.empty())
-        return false;
-
-    // --- CLUSTERING ----------------------------------------------------
-    m_currentClusters = BuildClusters(visibleNotes, *vp);
-
-    // --- ZEICHNEN ------------------------------------------------------
-    bool drewSomething = false;
-
-    for (const auto& cluster : m_currentClusters) {
-
-        if (cluster.notes.size() == 1) {
-            const SignalKNote* note = cluster.notes[0];
-            wxBitmap bmp;
-            if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp))
-                continue;
-
-            DrawGLBitmap(bmp,
-                         cluster.screenPos.x - bmp.GetWidth() / 2,
-                         cluster.screenPos.y - bmp.GetHeight() / 2);
-
-            drewSomething = true;
-        }
-        else {
-            wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
-            DrawGLBitmap(clusterBmp,
-                         cluster.screenPos.x - clusterBmp.GetWidth() / 2,
-                         cluster.screenPos.y - clusterBmp.GetHeight() / 2);
-
-            drewSomething = true;
-        }
-    }
-
-    return drewSomething;
+  return drewSomething;
 }
 
 bool signalk_notes_opencpn_pi::RenderOverlayMultiCanvas(wxDC& dc,
@@ -632,8 +546,7 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   double clickLat, clickLon;
   GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
 
-  // wxLogMessage("SignalK Notes: Mouse clicked at lat=%.6f lon=%.6f, screen
-  // pos(%d, %d)",clickLat, clickLon, mousePos.x, mousePos.y);
+  SKN_LOG(this,"Mouse clicked at lat=%.6f lon=%.6f, screenpos(%d, %d)",clickLat, clickLon, mousePos.x, mousePos.y);
 
   auto pxToMeters = [&](int px) { return px * m_lastViewPort.view_scale_ppm; };
 
@@ -701,8 +614,8 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
     }
   }
 
-  // wxLogMessage("SignalK Notes: No icon or cluster hit");
-  return false;  // ← KLAR: nichts getroffen
+  SKN_LOG(this,"No icon or cluster hit");
+  return false; 
 }
 
 // ---------------------------------------------------------------------------------------
@@ -768,6 +681,7 @@ void signalk_notes_opencpn_pi::SaveConfig() {
 
     m_pTPConfig->Write("DisplaySettings/ClusterFontSize",
                        m_pConfigDialog->GetClusterFontSize());
+    m_pTPConfig->Write("DisplaySettings/DebugMode", (long)m_debugMode);
   }
 }
 
@@ -821,10 +735,6 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   pConf->Read("AuthToken", &authToken, wxEmptyString);
   pConf->Read("AuthRequestHref", &requestHref, wxEmptyString);
 
-  // wxLogMessage("SignalK Notes LoadConfig: token=%s,
-  // href=%s",authToken.IsEmpty() ? "empty" : "present",requestHref.IsEmpty() ?
-  // "empty" : "present");
-
   // Token setzen (ohne Validierung beim Laden)
   m_pSignalKNotesManager->SetAuthToken(authToken);
 
@@ -847,8 +757,7 @@ void signalk_notes_opencpn_pi::LoadConfig() {
     m_clientUUID = wxString(uuid_str);
     pConf->Write("ClientUUID", m_clientUUID);
 
-    // wxLogMessage("SignalK Notes: Generated new client UUID: %s",
-    // m_clientUUID);
+    SKN_LOG(this,"Generated new client UUID: %s",m_clientUUID);
   }
   // Display-Einstellungen laden
   m_iconSize = m_pTPConfig->Read("DisplaySettings/IconSize",
@@ -881,6 +790,7 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   m_clusterFontSize =
       m_pTPConfig->Read("DisplaySettings/ClusterFontSize",
                         (long)tpConfigDialog::DEFAULT_CLUSTER_FONT_SIZE);
+  m_debugMode = m_pTPConfig->Read("DisplaySettings/DebugMode", (long)0);
 }
 
 wxString signalk_notes_opencpn_pi::GetPluginIconDir() const {
@@ -935,10 +845,8 @@ std::vector<signalk_notes_opencpn_pi::NoteCluster>
 signalk_notes_opencpn_pi::BuildClusters(
     const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
     int clusterRadius) {
-  // wxLogMessage("SignalK Notes: BuildClusters called with %zu notes,
-  // radius=%d",notes.size(), clusterRadius);
 
-  std::vector<NoteCluster> clusters;
+      std::vector<NoteCluster> clusters;
   std::vector<bool> clustered(notes.size(), false);
 
   // Nicht-const Kopie für GetCanvasPixLL
@@ -949,9 +857,6 @@ signalk_notes_opencpn_pi::BuildClusters(
 
     wxPoint p1;
     GetCanvasPixLL(&vpCopy, &p1, notes[i]->latitude, notes[i]->longitude);
-
-    // wxLogMessage("SignalK Notes: Note %zu at screen pos (%d, %d)", i,
-    // p1.x,p1.y);
 
     NoteCluster cluster;
     cluster.notes.push_back(notes[i]);
@@ -968,12 +873,7 @@ signalk_notes_opencpn_pi::BuildClusters(
       int dy = p2.y - p1.y;
       double dist = std::sqrt(dx * dx + dy * dy);
 
-      // wxLogMessage("SignalK Notes: Distance from note %zu to %zu: %.1f pixels
-      // (threshold: %d)",i, j, dist, clusterRadius);
-
       if (dist < clusterRadius) {
-        // wxLogMessage("SignalK Notes: Adding note %zu to cluster (distance
-        // %.1f < %d)", j,dist, clusterRadius);
         cluster.notes.push_back(notes[j]);
         clustered[j] = true;
       }
@@ -991,40 +891,32 @@ signalk_notes_opencpn_pi::BuildClusters(
     GetCanvasPixLL(&vpCopy, &cluster.screenPos, cluster.centerLat,
                    cluster.centerLon);
 
-    // wxLogMessage("SignalK Notes: Created cluster with %zu notes at screen pos
-    // (%d, %d)",cluster.notes.size(), cluster.screenPos.x,
-    // cluster.screenPos.y);
-
     clusters.push_back(cluster);
   }
 
-  // wxLogMessage("SignalK Notes: BuildClusters created %zu clusters
-  // total",clusters.size());
+  SKN_LOG(this,"BuildClusters created %zu clusters total",clusters.size());
 
   return clusters;
 }
 
 void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
-    // wxLogMessage("SKN: ===== ClusterClick START =====");
-    // wxLogMessage("SKN: Cluster with %zu notes", cluster.notes.size());
+  SKN_LOG(this,"===== ClusterClick START =====");
+  SKN_LOG(this,"Cluster with %zu notes", cluster.notes.size());
 
-    // Notes übernehmen
-    m_clusterZoom.notes = cluster.notes;
+  // Notes übernehmen
+  m_clusterZoom.notes = cluster.notes;
 
-    // Zielpunkt setzen
-    m_clusterZoom.targetLat = cluster.centerLat;
-    m_clusterZoom.targetLon = cluster.centerLon;
+  // Zielpunkt setzen
+  m_clusterZoom.targetLat = cluster.centerLat;
+  m_clusterZoom.targetLon = cluster.centerLon;
 
-    // wxLogMessage("SKN: ClusterClick: targetLat=%.6f targetLon=%.6f",m_clusterZoom.targetLat, m_clusterZoom.targetLon);
+  // State aktivieren
+  m_clusterZoom.active = true;
+  m_clusterZoom.justStarted = true;
 
-    // State aktivieren
-    m_clusterZoom.active = true;
-    m_clusterZoom.justStarted = true;
+   SKN_LOG(this,"===== ClusterClick END =====");
 
-    // wxLogMessage("SKN: clusterZoom activated (active=1, justStarted=1)");
-    // wxLogMessage("SKN: ===== ClusterClick END =====");
-
-    RequestRefresh(m_parent_window);
+  RequestRefresh(m_parent_window);
 }
 
 void signalk_notes_opencpn_pi::SetDisplaySettings(int iconSize, int clusterSize,
@@ -1212,72 +1104,60 @@ void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
 }
 #endif
 
-
 struct FutureViewPort {
-    double lat_min, lat_max;
-    double lon_min, lon_max;
+  double lat_min, lat_max;
+  double lon_min, lon_max;
 };
 
 static FutureViewPort MakeFutureViewportForCluster(const PlugIn_ViewPort& vp,
                                                    double centerLat,
                                                    double centerLon,
-                                                   double zoomFactor)
-{
-    double curLatSpan = vp.lat_max - vp.lat_min;
-    double curLonSpan = vp.lon_max - vp.lon_min;
+                                                   double zoomFactor) {
+  double curLatSpan = vp.lat_max - vp.lat_min;
+  double curLonSpan = vp.lon_max - vp.lon_min;
 
-    double newLatSpan = curLatSpan / zoomFactor;
-    double newLonSpan = curLonSpan / zoomFactor;
+  double newLatSpan = curLatSpan / zoomFactor;
+  double newLonSpan = curLonSpan / zoomFactor;
 
-    FutureViewPort fvp;
-    fvp.lat_min = centerLat - newLatSpan / 2.0;
-    fvp.lat_max = centerLat + newLatSpan / 2.0;
-    fvp.lon_min = centerLon - newLonSpan / 2.0;
-    fvp.lon_max = centerLon + newLonSpan / 2.0;
+  FutureViewPort fvp;
+  fvp.lat_min = centerLat - newLatSpan / 2.0;
+  fvp.lat_max = centerLat + newLatSpan / 2.0;
+  fvp.lon_min = centerLon - newLonSpan / 2.0;
+  fvp.lon_max = centerLon + newLonSpan / 2.0;
 
-    return fvp;
+  return fvp;
 }
 
-bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp,
-                                                               double zoomFactor) const
-{
-    // wxLogMessage("SKN: AreAllNotesVisibleAfterNextZoom: ENTER zoomFactor=%.2f", zoomFactor);
+bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
+    const PlugIn_ViewPort& vp, double zoomFactor) const {
+  SKN_LOG(this,"AreAllNotesVisibleAfterNextZoom: ENTER zoomFactor=%.2f",zoomFactor);
 
-    if (m_clusterZoom.notes.empty()) {
-        // wxLogMessage("SKN:   no notes -> false");
-        return false;
-    }
+  if (m_clusterZoom.notes.empty()) {
+    SKN_LOG(this,"  no notes -> false");
+    return false;
+  }
 
-    double centerLat = m_clusterZoom.targetLat;
-    double centerLon = m_clusterZoom.targetLon;
+  double centerLat = m_clusterZoom.targetLat;
+  double centerLon = m_clusterZoom.targetLon;
 
-    // wxLogMessage("SKN:   target center = %.6f / %.6f", centerLat, centerLon);
+  FutureViewPort fvp =
+      MakeFutureViewportForCluster(vp, centerLat, centerLon, zoomFactor);
 
-    FutureViewPort fvp = MakeFutureViewportForCluster(vp, centerLat, centerLon, zoomFactor);
+  bool allInside = true;
 
-    // wxLogMessage("SKN:   future viewport lat=[%.6f .. %.6f] lon=[%.6f .. %.6f]",fvp.lat_min, fvp.lat_max, fvp.lon_min, fvp.lon_max);
+  for (const auto* note : m_clusterZoom.notes) {
+    if (!note) continue;
 
-    bool allInside = true;
+    double lat = note->latitude;
+    double lon = note->longitude;
 
-    for (const auto* note : m_clusterZoom.notes) {
-        if (!note)
-            continue;
+    bool inside = !(lat < fvp.lat_min || lat > fvp.lat_max ||
+                    lon < fvp.lon_min || lon > fvp.lon_max);
 
-        double lat = note->latitude;
-        double lon = note->longitude;
+    if (!inside) allInside = false;
+  }
 
-        bool inside =
-            !(lat < fvp.lat_min || lat > fvp.lat_max ||
-              lon < fvp.lon_min || lon > fvp.lon_max);
+  SKN_LOG(this,"AreAllNotesVisibleAfterNextZoom: result=%s",allInside ? "true" : "false");
 
-        // wxLogMessage("SKN:     note at %.6f / %.6f -> %s",lat, lon, inside ? "inside" : "OUTSIDE");
-
-        if (!inside)
-            allInside = false;
-    }
-
-    // wxLogMessage("SKN: AreAllNotesVisibleAfterNextZoom: result=%s",allInside ? "true" : "false");
-
-    return allInside;
+  return allInside;
 }
-

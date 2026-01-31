@@ -8,6 +8,7 @@
 
 #ifndef TPICONS_H
 #define TPICONS_H 1
+class signalk_notes_opencpn_pi;
 
 #include "ocpn_plugin.h"
 #include <wx/wxprec.h>
@@ -35,8 +36,10 @@ public:
   wxString m_s_signalk_notes_opencpn_grey_pi;
 
   bool m_bUpdateIcons;
+  tpicons(signalk_notes_opencpn_pi* plugin);
 
 private:
+  signalk_notes_opencpn_pi* m_plugin;
   wxBitmap* ScaleIcon(wxBitmap bitmap, double sf);
   void CreateSchemeIcons(void);
   wxBitmap BuildDimmedToolBitmap(wxBitmap bmp_normal, unsigned char dim_ratio);

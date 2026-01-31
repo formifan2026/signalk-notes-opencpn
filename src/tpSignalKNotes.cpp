@@ -15,6 +15,7 @@
 #include "ocpn_plugin.h"
 #include "tpSignalKNotes.h"
 #include "signalk_notes_opencpn_pi.h"
+#include "tpConfigDialog.h"
 #include <wx/filename.h>
 #include <wx/jsonreader.h>
 #include <wx/url.h>
@@ -44,7 +45,7 @@ bool tpSignalKNotesManager::FetchNotesForViewport(double centerLat,
                                                   double centerLon,
                                                   double maxDistance) {
   if (m_serverHost.IsEmpty()) {
-    wxLogMessage(_("SignalK Notes: Server host not configured"));
+    SKN_LOG(m_parent, _("Server host not configured"));
     return false;
   }
 
@@ -53,99 +54,94 @@ bool tpSignalKNotesManager::FetchNotesForViewport(double centerLat,
 
 void tpSignalKNotesManager::UpdateDisplayedIcons(double centerLat,
                                                  double centerLon,
-                                                 double maxDistance)
-{
-    // 1. Notes vom Server holen
-    if (!FetchNotesForViewport(centerLat, centerLon, maxDistance)) {
-        wxLogMessage("SignalK Notes: Failed to fetch notes");
-        return;
+                                                 double maxDistance) {
+  // 1. Notes vom Server holen
+  if (!FetchNotesForViewport(centerLat, centerLon, maxDistance)) {
+    SKN_LOG(m_parent, "Failed to fetch notes");
+    return;
+  }
+
+  // 2. Neue Icon-Mappings automatisch speichern
+  bool newMappingsFound = false;
+
+  for (auto& pair : m_notes) {
+    SignalKNote& note = pair.second;
+
+    if (!note.iconName.IsEmpty()) {
+      if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
+        wxString iconPath = ResolveIconPath(note.iconName);
+        m_iconMappings[note.iconName] = iconPath;
+        newMappingsFound = true;
+      }
+    }
+  }
+
+  if (newMappingsFound && m_parent) {
+    m_parent->SaveConfig();
+  }
+
+  // 3. Provider-Filter anwenden
+  std::set<wxString> visibleNoteIds;
+
+  for (auto& pair : m_notes) {
+    SignalKNote& note = pair.second;
+
+    bool providerEnabled = true;
+
+    if (!note.source.IsEmpty()) {
+      auto it = m_providerSettings.find(note.source);
+      if (it != m_providerSettings.end()) {
+        providerEnabled = it->second;
+      }
     }
 
-    // 2. Neue Icon-Mappings automatisch speichern
-    bool newMappingsFound = false;
-
-    for (auto& pair : m_notes) {
-        SignalKNote& note = pair.second;
-
-        if (!note.iconName.IsEmpty()) {
-            if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
-                wxString iconPath = ResolveIconPath(note.iconName);
-                m_iconMappings[note.iconName] = iconPath;
-                newMappingsFound = true;
-            }
-        }
+    if (providerEnabled) {
+      visibleNoteIds.insert(note.id);
     }
+  }
 
-    if (newMappingsFound && m_parent) {
-        m_parent->SaveConfig();
+  // 4. Notes entfernen, die nicht mehr sichtbar sind
+  for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
+    if (visibleNoteIds.find(*it) == visibleNoteIds.end()) {
+      // Note aus Anzeige entfernen
+      auto noteIt = m_notes.find(*it);
+      if (noteIt != m_notes.end()) {
+        noteIt->second.isDisplayed = false;
+      }
+      it = m_displayedGUIDs.erase(it);
+    } else {
+      ++it;
     }
+  }
 
-    // 3. Provider-Filter anwenden
-    std::set<wxString> visibleNoteIds;
+  // 5. Neue Notes anzeigen
+  for (auto& pair : m_notes) {
+    SignalKNote& note = pair.second;
 
-    for (auto& pair : m_notes) {
-        SignalKNote& note = pair.second;
-
-        bool providerEnabled = true;
-
-        if (!note.source.IsEmpty()) {
-            auto it = m_providerSettings.find(note.source);
-            if (it != m_providerSettings.end()) {
-                providerEnabled = it->second;
-            }
-        }
-
-        if (providerEnabled) {
-            visibleNoteIds.insert(note.id);
-        }
+    // Provider deaktiviert?
+    bool providerEnabled = true;
+    if (!note.source.IsEmpty()) {
+      auto it = m_providerSettings.find(note.source);
+      if (it != m_providerSettings.end()) {
+        providerEnabled = it->second;
+      }
     }
+    if (!providerEnabled) continue;
 
-    // 4. Notes entfernen, die nicht mehr sichtbar sind
-    for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
-        if (visibleNoteIds.find(*it) == visibleNoteIds.end()) {
-            // Note aus Anzeige entfernen
-            auto noteIt = m_notes.find(*it);
-            if (noteIt != m_notes.end()) {
-                noteIt->second.isDisplayed = false;
-            }
-            it = m_displayedGUIDs.erase(it);
-        } else {
-            ++it;
-        }
+    // Bereits sichtbar?
+    if (note.isDisplayed) continue;
+
+    // Icon laden (Details NICHT laden!)
+    if (CreateNoteIcon(note)) {
+      note.isDisplayed = true;
+
+      // ID in Liste aufnehmen
+      if (std::find(m_displayedGUIDs.begin(), m_displayedGUIDs.end(),
+                    note.id) == m_displayedGUIDs.end()) {
+        m_displayedGUIDs.push_back(note.id);
+      }
     }
-
-    // 5. Neue Notes anzeigen
-    for (auto& pair : m_notes) {
-        SignalKNote& note = pair.second;
-
-        // Provider deaktiviert?
-        bool providerEnabled = true;
-        if (!note.source.IsEmpty()) {
-            auto it = m_providerSettings.find(note.source);
-            if (it != m_providerSettings.end()) {
-                providerEnabled = it->second;
-            }
-        }
-        if (!providerEnabled)
-            continue;
-
-        // Bereits sichtbar?
-        if (note.isDisplayed)
-            continue;
-
-        // Icon laden (Details NICHT laden!)
-        if (CreateNoteIcon(note)) {
-            note.isDisplayed = true;
-
-            // ID in Liste aufnehmen
-            if (std::find(m_displayedGUIDs.begin(),
-                          m_displayedGUIDs.end(),
-                          note.id) == m_displayedGUIDs.end())
-            {
-                m_displayedGUIDs.push_back(note.id);
-            }
-        }
-    }
+  }
 }
 
 void tpSignalKNotesManager::ClearAllIcons() {
@@ -158,36 +154,34 @@ void tpSignalKNotesManager::ClearAllIcons() {
 }
 
 SignalKNote* tpSignalKNotesManager::GetNoteByGUID(const wxString& guid) {
-    auto it = m_notes.find(guid);
-    if (it != m_notes.end())
-        return &it->second;
+  auto it = m_notes.find(guid);
+  if (it != m_notes.end()) return &it->second;
 
-    return nullptr;
+  return nullptr;
 }
 
-
 void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
-  wxLogMessage("SignalK Notes: OnIconClick called with guid='%s'", guid);  // ← guid statt noteId
-  
+  SKN_LOG(m_parent, "OnIconClick called with guid='%s'", guid);
+
   SignalKNote* note = GetNoteByGUID(guid);
   if (!note) {
-    wxLogMessage("SignalK Notes: Note with guid='%s' not found!", guid);  // ← guid statt noteId
+    SKN_LOG(m_parent, "Note with guid='%s' not found!", guid);
     return;
   }
-  
+
   // Details beim Klick laden
   if (note->name.IsEmpty() || note->description.IsEmpty()) {
     if (!FetchNoteDetails(note->id, *note)) {
-      wxLogMessage("SignalK Notes: Failed to fetch details for %s", note->id);
+      SKN_LOG(m_parent, "Failed to fetch details for %s",
+              note->id);
       if (note->name.IsEmpty()) note->name = note->id;
       if (note->description.IsEmpty())
         note->description = _("Details konnten nicht geladen werden.");
     }
   }
-  
-  wxLogMessage("SignalK Notes: Found note '%s'", note->name);  // ← note->name statt note.name
-  
-  // Dialog erstellen und anzeigen
+
+  SKN_LOG(m_parent, "Found note '%s'", note->name);
+
   wxDialog* dlg =
       new wxDialog(NULL, wxID_ANY, _("SignalK Note Details"), wxDefaultPosition,
                    wxSize(500, 400), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
@@ -206,9 +200,23 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
   wxHtmlWindow* htmlWin = new wxHtmlWindow(dlg, wxID_ANY, wxDefaultPosition,
                                            wxDefaultSize, wxHW_SCROLLBAR_AUTO);
 
-  wxString htmlContent =
-      wxString::Format("<html><body><font size=\"3\">%s</font></body></html>",
-                       note->description);
+  htmlWin->Bind(wxEVT_HTML_LINK_CLICKED, [this](wxHtmlLinkEvent& evt) {
+    wxString url = evt.GetLinkInfo().GetHref();
+    SKN_LOG(m_parent, "Opening URL: %s", url);
+    wxLaunchDefaultBrowser(url);
+  });
+
+  wxString htmlContent;
+  htmlContent << "<html><body><font size=\"3\">" << note->description
+              << "</font>";
+
+  if (!note->url.IsEmpty()) {
+    htmlContent << "<br><br>"
+                << "<b>Link:</b> "
+                << "<a href=\"" << note->url << "\">" << note->url << "</a>";
+  }
+
+  htmlContent << "</body></html>";
 
   htmlWin->SetPage(htmlContent);
   sizer->Add(htmlWin, 1, wxALL | wxEXPAND, 10);
@@ -219,14 +227,37 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
   // Zentrieren-Button
   wxButton* centerBtn = new wxButton(dlg, wxID_ANY, _("Auf Karte zentrieren"));
   centerBtn->Bind(wxEVT_BUTTON, [note, this](wxCommandEvent&) {
-    JumpToPosition(note->latitude, note->longitude,
-                   m_parent->m_lastViewPort.chart_scale);
+    PlugIn_ViewPort vp = m_parent->m_lastViewPort;
+
+    double lat = note->latitude;
+    double lon = note->longitude;
+
+    double scale =
+        vp.view_scale_ppm;  // oder chart_scale, je nachdem was gültig ist
+
+    // Mittelpunkt setzen
+    vp.clat = lat;
+    vp.clon = lon;
+
+    // min/max neu berechnen
+    double latSpan = vp.lat_max - vp.lat_min;
+    double lonSpan = vp.lon_max - vp.lon_min;
+
+    vp.lat_min = lat - latSpan / 2.0;
+    vp.lat_max = lat + latSpan / 2.0;
+    vp.lon_min = lon - lonSpan / 2.0;
+    vp.lon_max = lon + lonSpan / 2.0;
+
+    SKN_LOG(m_parent,
+            "Centering via VP lat=%.6f lon=%.6f scale=%.6f", lat,
+            lon, scale);
+
+    JumpToPosition(lat, lon, scale);
   });
   btnSizer->Add(centerBtn, 0, wxALL, 5);
 
   btnSizer->AddStretchSpacer();
 
-  // OK-Button
   wxButton* okBtn = new wxButton(dlg, wxID_OK, _("OK"));
   btnSizer->Add(okBtn, 0, wxALL, 5);
 
@@ -251,7 +282,7 @@ bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
 
   // Ergebnis ins Log schreiben
   if (response.IsEmpty()) {
-    wxLogMessage("SignalK Notes: FetchNotesList FAILED - empty response");
+    SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
     return false;
   }
 
@@ -259,7 +290,8 @@ bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
   bool ok = ParseNotesListJSON(response);
 
   if (!ok) {
-    wxLogMessage("SignalK Notes: FetchNotesList FAILED - JSON parse error");
+    SKN_LOG(m_parent,
+            "FetchNotesList FAILED - JSON parse error");
   }
   return ok;
 }
@@ -280,16 +312,16 @@ bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
 wxString tpSignalKNotesManager::MakeHTTPRequest(const wxString& path) {
   wxString urlStr;
   urlStr.Printf(wxT("http://%s:%d%s"), m_serverHost, m_serverPort, path);
-  wxLogMessage(_("SignalKNotes: fetching data with URL: %s"), urlStr);
+  SKN_LOG(m_parent, _("SignalKNotes: fetching data with URL: %s"), urlStr);
   wxURL url(urlStr);
   if (!url.IsOk()) {
-    wxLogMessage(_("SignalK Notes: Invalid URL: %s"), urlStr);
+    SKN_LOG(m_parent, _("Invalid URL: %s"), urlStr);
     return wxEmptyString;
   }
 
   wxInputStream* in_stream = url.GetInputStream();
   if (!in_stream || !in_stream->IsOk()) {
-    wxLogMessage(_("SignalK Notes: Failed to connect to: %s"), urlStr);
+    SKN_LOG(m_parent, _("Failed to connect to: %s"), urlStr);
     if (in_stream) delete in_stream;
     return wxEmptyString;
   }
@@ -308,7 +340,7 @@ bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
 
   int errors = reader.Parse(json, &root);
   if (errors > 0) {
-    wxLogMessage(_("SignalK Notes: Failed to parse notes list JSON"));
+    SKN_LOG(m_parent, _("Failed to parse notes list JSON"));
     return false;
   }
 
@@ -374,7 +406,7 @@ bool tpSignalKNotesManager::ParseNoteDetailsJSON(const wxString& json,
 
   int errors = reader.Parse(json, &root);
   if (errors > 0) {
-    wxLogMessage(_("SignalK Notes: Failed to parse note details JSON"));
+    SKN_LOG(m_parent, _("Failed to parse note details JSON"));
     return false;
   }
 
@@ -449,7 +481,7 @@ bool tpSignalKNotesManager::DownloadIcon(const wxString& iconName,
   }
 
   if (!bmp.IsOk()) {
-    wxLogMessage("SignalK Notes: Failed to load icon from: %s", iconPath);
+    SKN_LOG(m_parent, "Failed to load icon from: %s", iconPath);
     return false;
   }
 
@@ -471,8 +503,9 @@ bool tpSignalKNotesManager::CreateNoteIcon(SignalKNote& note) {
 
   wxBitmap bmp;
   if (!DownloadIcon(iconName, bmp)) {
-    wxLogMessage("SignalK Notes: CreateNoteIcon - failed to load icon '%s'",
-                 iconName);
+    SKN_LOG(m_parent,
+            "CreateNoteIcon - failed to load icon '%s'",
+            iconName);
     return false;
   }
 
@@ -644,8 +677,8 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   wxHTTP http;
   http.SetTimeout(10);
   if (!http.Connect(m_serverHost, m_serverPort)) {
-    wxLogMessage(
-        "SignalK Notes Auth: Connection failed (RequestAuthorization)");
+    SKN_LOG(m_parent,
+            "SignalK Notes Auth: Connection failed (RequestAuthorization)");
     return false;
   }
 
@@ -659,7 +692,7 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   wxInputStream* in = http.GetInputStream(path);
 
   if (!in || !in->IsOk()) {
-    wxLogMessage("SignalK Notes Auth: POST request failed (no response)");
+    SKN_LOG(m_parent, "SignalK Notes Auth: POST request failed (no response)");
     delete in;
     return false;
   }
@@ -674,7 +707,7 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   wxJSONReader reader;
   wxJSONValue root;
   if (reader.Parse(response, &root) > 0) {
-    wxLogMessage("SignalK Notes Auth: Failed to parse JSON response");
+    SKN_LOG(m_parent, "SignalK Notes Auth: Failed to parse JSON response");
     return false;
   }
 
@@ -688,7 +721,7 @@ bool tpSignalKNotesManager::RequestAuthorization() {
     return true;
   }
 
-  wxLogMessage("SignalK Notes Auth: ERROR – server did not return href");
+  SKN_LOG(m_parent, "SignalK Notes Auth: ERROR – server did not return href");
   return false;
 }
 
@@ -704,7 +737,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   wxJSONReader reader;
   wxJSONValue root;
   if (reader.Parse(response, &root) > 0) {
-    wxLogMessage("SignalK Notes Auth: Failed to parse JSON");
+    SKN_LOG(m_parent, "SignalK Notes Auth: Failed to parse JSON");
     return false;
   }
 
@@ -721,8 +754,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
 
   // 2. Nicht pending, aber accessRequest fehlt → Fehler
   if (!root.HasMember("accessRequest")) {
-    // wxLogMessage("SignalK Notes Auth: No accessRequest although state !=
-    // PENDING → treating as failed");
+    SKN_LOG(m_parent,"SignalK Notes Auth: No accessRequest although state !=PENDING → treating as failed");
     ClearAuthRequest();
     return false;
   }
@@ -732,7 +764,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   // 3. Abgelehnt
   if (access.HasMember("permission") &&
       access["permission"].AsString() == "DENIED") {
-    wxLogMessage("SignalK Notes Auth: Request denied by server");
+    SKN_LOG(m_parent, "SignalK Notes Auth: Request denied by server");
     ClearAuthRequest();
     return false;
   }
@@ -745,15 +777,15 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   }
 
   // 5. Completed ohne Token → Fehler
-  wxLogMessage(
-      "SignalK Notes Auth: Completed without token → treating as failed");
+  SKN_LOG(m_parent,
+          "SignalK Notes Auth: Completed without token → treating as failed");
   ClearAuthRequest();
   return false;
 }
 
 bool tpSignalKNotesManager::ValidateToken() {
   if (m_authToken.IsEmpty()) {
-    wxLogMessage("SignalK Notes: ValidateToken - token is empty");
+    SKN_LOG(m_parent, "ValidateToken - token is empty");
     return false;
   }
 
@@ -761,7 +793,7 @@ bool tpSignalKNotesManager::ValidateToken() {
   http.SetTimeout(10);
 
   if (!http.Connect(m_serverHost, m_serverPort)) {
-    wxLogMessage("SignalK Notes: ValidateToken - connection failed");
+    SKN_LOG(m_parent, "ValidateToken - connection failed");
     return false;
   }
 
@@ -771,14 +803,16 @@ bool tpSignalKNotesManager::ValidateToken() {
   wxInputStream* in = http.GetInputStream("/plugins/");
 
   if (!in) {
-    wxLogMessage(
-        "SignalK Notes: ValidateToken - GetInputStream returned NULL (likely "
+    SKN_LOG(
+        m_parent,
+        "ValidateToken - GetInputStream returned NULL (likely "
         "401/403 - no admin rights)");
     return false;
   }
 
   if (!in->IsOk()) {
-    wxLogMessage("SignalK Notes: ValidateToken - stream not ok (unauthorized)");
+    SKN_LOG(m_parent,
+            "ValidateToken - stream not ok (unauthorized)");
     delete in;
     return false;
   }
@@ -794,9 +828,9 @@ bool tpSignalKNotesManager::ValidateToken() {
 
   // 401 oder 403 = Token ungültig oder keine Admin-Rechte
   if (responseCode == 401 || responseCode == 403) {
-    wxLogMessage(
-        "SignalK Notes: Token is invalid or lacks admin rights (HTTP %d)",
-        responseCode);
+    SKN_LOG(m_parent,
+            "Token is invalid or lacks admin rights (HTTP %d)",
+            responseCode);
     return false;
   }
 
@@ -804,8 +838,9 @@ bool tpSignalKNotesManager::ValidateToken() {
   if (responseCode == 200) {
     // Leere Response wäre verdächtig
     if (response.IsEmpty()) {
-      wxLogMessage(
-          "SignalK Notes: Token validation - EMPTY response despite HTTP 200 "
+      SKN_LOG(
+          m_parent,
+          "Token validation - EMPTY response despite HTTP 200 "
           "(suspicious)");
       return false;
     }
@@ -817,27 +852,24 @@ bool tpSignalKNotesManager::ValidateToken() {
     if (reader.Parse(response, &root) == 0) {
       // Sollte ein Array sein
       if (!root.IsArray()) {
-        wxLogMessage(
-            "SignalK Notes: Token validation - Response is not an array "
-            "(expected plugin list)");
+        SKN_LOG(m_parent,
+                "Token validation - Response is not an array "
+                "(expected plugin list)");
         return false;
       }
 
-      // Ein leeres Array ist OK (keine Plugins installiert)
-      // wxLogMessage("SignalK Notes: Token is VALID - has admin rights (got
-      // plugin list with %d entries)", root.Size());
       return true;
     } else {
-      wxLogMessage(
-          "SignalK Notes: Token validation - Response is not valid JSON");
+      SKN_LOG(m_parent,
+              "Token validation - Response is not valid JSON");
       return false;
     }
   }
 
   // Alle anderen Codes als ungültig behandeln
-  wxLogMessage(
-      "SignalK Notes: Unexpected response code %d - treating as invalid",
-      responseCode);
+  SKN_LOG(m_parent,
+          "Unexpected response code %d - treating as invalid",
+          responseCode);
   return false;
 }
 
@@ -878,19 +910,19 @@ bool tpSignalKNotesManager::FetchInstalledPlugins(
   wxString response = MakeAuthenticatedHTTPRequest(path);
 
   if (response.IsEmpty()) {
-    wxLogMessage("SignalK Notes: Failed to fetch installed plugins");
+    SKN_LOG(m_parent, "Failed to fetch installed plugins");
     return false;
   }
 
   wxJSONReader reader;
   wxJSONValue root;
   if (reader.Parse(response, &root) > 0) {
-    wxLogMessage("SignalK Notes: Failed to parse plugins JSON");
+    SKN_LOG(m_parent, "Failed to parse plugins JSON");
     return false;
   }
 
   if (!root.IsArray()) {
-    wxLogMessage("SignalK Notes: Expected array in plugins response");
+    SKN_LOG(m_parent, "Expected array in plugins response");
     return false;
   }
 
@@ -902,13 +934,13 @@ bool tpSignalKNotesManager::FetchInstalledPlugins(
 
     if (plugin.HasMember("id")) {
       wxString id = plugin["id"].AsString();
-      
+
       // NEU: Details extrahieren
       ProviderDetails details;
       details.id = id;
       details.name = plugin.Get("name", id).AsString();
       details.description = plugin.Get("description", "").AsString();
-      
+
       bool enabled = false;
       if (plugin.HasMember("data")) {
         wxJSONValue data = plugin["data"];
@@ -916,13 +948,11 @@ bool tpSignalKNotesManager::FetchInstalledPlugins(
           enabled = data["enabled"].AsBool();
         }
       }
-      
+
       details.enabled = enabled;
       plugins[id] = enabled;
       m_providerDetails[id] = details;  // NEU: Details speichern
-      
-      wxLogMessage("SignalK Notes: Plugin '%s' (%s) is %s", 
-                   id, details.name, enabled ? "enabled" : "disabled");
+
     }
   }
 
@@ -933,8 +963,8 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
   std::map<wxString, bool> installedPlugins;
 
   if (!FetchInstalledPlugins(installedPlugins)) {
-    wxLogMessage(
-        "SignalK Notes: Cannot cleanup providers - plugin fetch failed");
+    SKN_LOG(m_parent,
+            "Cannot cleanup providers - plugin fetch failed");
     return;
   }
 
@@ -947,14 +977,14 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
 
     if (it == installedPlugins.end()) {
       // Provider nicht in SignalK installiert
-      wxLogMessage("SignalK Notes: Removing provider '%s' - not installed",
-                   provider);
+      SKN_LOG(m_parent, "Removing provider '%s' - not installed",
+              provider);
       providersToRemove.push_back(provider);
     } else if (!it->second) {
       // Provider deaktiviert in SignalK
-      wxLogMessage(
-          "SignalK Notes: Removing provider '%s' - disabled in SignalK",
-          provider);
+      SKN_LOG(m_parent,
+              "Removing provider '%s' - disabled in SignalK",
+              provider);
       providersToRemove.push_back(provider);
     }
   }
@@ -969,17 +999,42 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
   }
 }
 
-std::vector<tpSignalKNotesManager::ProviderInfo> tpSignalKNotesManager::GetProviderInfos() const
-{
-    std::vector<ProviderInfo> infos;
-    
-    for (const auto& pair : m_providerDetails) {
-        ProviderInfo info;
-        info.id = pair.second.id;
-        info.name = pair.second.name;
-        info.description = pair.second.description;
-        infos.push_back(info);
+std::vector<tpSignalKNotesManager::ProviderInfo>
+tpSignalKNotesManager::GetProviderInfos() const {
+  std::vector<ProviderInfo> infos;
+
+  for (const auto& pair : m_providerDetails) {
+    ProviderInfo info;
+    info.id = pair.second.id;
+    info.name = pair.second.name;
+    info.description = pair.second.description;
+    infos.push_back(info);
+  }
+
+  return infos;
+}
+
+void tpSignalKNotesManager::SetAuthToken(const wxString& token) {
+  m_authToken = token;
+  if (m_parent) {
+    m_parent->SaveConfig();
+  }
+}
+
+void tpSignalKNotesManager::SetAuthRequestHref(const wxString& href) {
+    m_authRequestHref = href;
+    m_authPending = !href.IsEmpty();
+
+    if (m_parent) {
+        m_parent->SaveConfig();
     }
-    
-    return infos;
+}
+
+void tpSignalKNotesManager::ClearAuthRequest() {
+    m_authRequestHref.Clear();
+    m_authPending = false;
+
+    if (m_parent) {
+        m_parent->SaveConfig();
+    }
 }
