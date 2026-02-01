@@ -1,17 +1,14 @@
 /******************************************************************************
- * Project:  OpenCPN
- * Purpose:  SignalK Notes Manager Implementation
- * Author:   Jon Gough
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   Handling of SignalK note objects and data updates
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
  *
- ***************************************************************************
- *   Copyright (C) 2026 by Jon Gough                                       *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- **************************************************************************/
-
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #include "ocpn_plugin.h"
 #include "tpSignalKNotes.h"
 #include "signalk_notes_opencpn_pi.h"

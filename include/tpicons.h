@@ -1,11 +1,14 @@
-/***************************************************************************
+/******************************************************************************
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   Icon definitions and icon resource declarations
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
  *
- * Project:  OpenCPN
- * Purpose:  tpicons
- * Author:   Dirk
- *
- **************************************************************************/
-
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #ifndef TPICONS_H
 #define TPICONS_H 1
 class signalk_notes_opencpn_pi;

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-02 22:04+1000\n"
+"POT-Creation-Date: 2026-02-01 00:55+0100\n"
 "PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
 "Language-Team: Greek\n"
@@ -14,476 +14,537 @@ msgstr ""
 "X-Crowdin-Project: opencpn\n"
 "X-Crowdin-Project-ID: 49843\n"
 "X-Crowdin-Language: el\n"
-"X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/signalk_notes_opencpn_pi.pot\n"
+"X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/"
+"signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
 
-#: include/tpControlDialogDef.h:196
-msgid "Test Plugin Control Dialog"
-msgstr "Διάλογος ελέγχου του πρόσθετου Test"
+#: src/tpConfigDialog.cpp:129
+msgid "Abbrechen"
+msgstr "Cancel"
 
-#: src/signalk_notes_opencpn_pi.cpp:251 src/signalk_notes_opencpn_pi.cpp:252 src/signalk_notes_opencpn_pi.cpp:254
-#: src/signalk_notes_opencpn_pi.cpp:255
-msgid "Test Plugin"
-msgstr "Πρόσθετο Test"
+#. Zentrieren-Button
+#: src/tpSignalKNotes.cpp:228
+msgid "Auf Karte zentrieren"
+msgstr "Center on map"
 
-#: src/signalk_notes_opencpn_pi.cpp:345
-msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-msgstr "πρόσθετο Test για το OCPN"
+#: src/tpConfigDialog.cpp:120
+msgid "Authentifizierung abbrechen"
+msgstr "Cancel authentication"
 
-#: src/signalk_notes_opencpn_pi.cpp:350
-msgid "signalk_notes_opencpn PlugIn for OpenCPN\n"
-"demonstrates PlugIn processing of NMEA messages."
-msgstr "πρόσθετο Test για το OCPN\n"
-"επιδεικνύει την επεξεργασία μηνυμάτων NMEA"
+#. Auth-Button deaktiviert mit neuem Text
+#: src/tpConfigDialog.cpp:590
+msgid "Authentifizierung läuft..."
+msgstr "Authentication in progress..."
 
-#: src/signalk_notes_opencpn_pi.cpp:625
+#: src/tpConfigDialog.cpp:435
+msgid ""
+"Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
+"Admin und 'Authentication Timeout' NEVER bestätigen."
+msgstr ""
+"In SignalK, please confirm the request in the menu item 'Access Requests' "
+"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+
+#: src/tpConfigDialog.cpp:727
+msgid "Cluster Einstellungen"
+msgstr "Cluster settings"
+
+#: src/tpConfigDialog.cpp:741
+msgid "Cluster Radius (px):"
+msgstr "Cluster radius (px):"
+
+#: src/tpConfigDialog.cpp:733
+msgid "Cluster-Größe (px):"
+msgstr "Cluster size (px):"
+
+#: src/tpConfigDialog.cpp:108
+msgid "Darstellung"
+msgstr "Deciption"
+
+#: src/tpSignalKNotes.cpp:179
+msgid "Details konnten nicht geladen werden."
+msgstr "Details could not be loaded."
+
+#: src/tpConfigDialog.cpp:782
+msgid "Erweitertes Debug-Logging in opencpn.log"
+msgstr "Advanced debug logging in opencpn.log"
+
+#: src/tpSignalKNotes.cpp:324
 #, c-format
-msgid "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, Minor: %i\n"
-msgstr "Έκδοση OD: Μείζον: %i,  Έλασσον: %i, Διόρθωση: %i, Έκδοση ODAPI: : Μείζον: %i,  Έλασσον: %i\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:626 src/signalk_notes_opencpn_pi.cpp:639
-msgid "OD_FindPointInAnyBoundary\n"
-msgstr "OD_FindPointInAnyBoundary\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:627 src/signalk_notes_opencpn_pi.cpp:640
-msgid "OD_FindClosestBoundaryLineCrossing\n"
-msgstr "OD_FindClosestBoundaryLineCrossing\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:628 src/signalk_notes_opencpn_pi.cpp:641
-msgid "OD_FindFirstBoundaryLineCrossing\n"
-msgstr "OD_FindFirstBoundaryLineCrossing\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:629 src/signalk_notes_opencpn_pi.cpp:642
-msgid "OD_CreateBoundary\n"
-msgstr "OD_CreateBoundary\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:630 src/signalk_notes_opencpn_pi.cpp:643
-msgid "OD_CreateBoundaryPoint\n"
-msgstr "OD_CreateBoundaryPoint\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:631 src/signalk_notes_opencpn_pi.cpp:644
-msgid "OD_CreateTextPoint\n"
-msgstr "OD_CreateTextPoint\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:632 src/signalk_notes_opencpn_pi.cpp:645
-msgid "OD_AddPointIcon\n"
-msgstr "OD_AddPointIcon\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:633 src/signalk_notes_opencpn_pi.cpp:646
-msgid "OD_DeletePointIcon\n"
-msgstr "OD_DeletePointIcon\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:635
-msgid "The following ODAPI's are available: \n"
-msgstr "Τα ακόλουθα ODAPI είναι διαθέσιμα:\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:648
-msgid "The following ODAPI's are not available:\n"
-msgstr "Τα ακόλουθα ODAPI δεν είναι διαθέσιμα:\n"
-
-#: src/signalk_notes_opencpn_pi.cpp:652
-msgid "SIGNALK_NOTES_OPENCPN"
-msgstr "SIGNALK_NOTES_OPENCPN"
-
-#: src/signalk_notes_opencpn_pi.cpp:731 src/tpControlDialogImpl.cpp:907
-#: src/tpControlDialogImpl.cpp:916 src/tpJSON.cpp:133
-msgid "File not found"
-msgstr "Το αρχείο δεν βρέθηκε"
-
-#: src/tpControlDialogDef.cpp:32
-msgid "Save JSON on startup"
-msgstr "Αποθήκευση του JSON στην εκκίνηση"
-
-#: src/tpControlDialogDef.cpp:35
-msgid "Delete config from conf\n"
-"on shutdown"
-msgstr "Διαγραφή του config κατά το κλείσιμο"
-
-#: src/tpControlDialogDef.cpp:42
-msgid "General"
-msgstr "Γενικά"
-
-#: src/tpControlDialogDef.cpp:49
-msgid "Select JSON file to import"
-msgstr "Επιλέξτε αρχείο JSON για εισαγωγή"
-
-#: src/tpControlDialogDef.cpp:53 src/tpControlDialogDef.cpp:59
-msgid "*.*"
-msgstr "*.*"
-
-#: src/tpControlDialogDef.cpp:53
-msgid "Select a JSON file"
-msgstr "Επιλέξτε ένα αρχείο JSON"
-
-#: src/tpControlDialogDef.cpp:56
-msgid "Save incoming JSON\n"
-"messages"
-msgstr "Αποθήκευση εισερχομένων μηνυμάτων JSON"
-
-#: src/tpControlDialogDef.cpp:59
-msgid "Select a file"
-msgstr "Επιλέξτε αρχείο"
-
-#: src/tpControlDialogDef.cpp:62
-msgid "Close save file after\n"
-"each write"
-msgstr "Κλείσιμο του αρχείου μετά από κάθε εγγραφή"
-
-#: src/tpControlDialogDef.cpp:66
-msgid "Append to file"
-msgstr "Προσάρτηση στο αρχείο"
-
-#: src/tpControlDialogDef.cpp:70
-msgid "Import JSON"
-msgstr "Εισαγωγή JSON"
-
-#: src/tpControlDialogDef.cpp:77
-msgid "File Input"
-msgstr "Είσοδος αρχείου"
-
-#: src/tpControlDialogDef.cpp:93 src/tpControlDialogDef.cpp:326
-#: src/tpControlDialogDef.cpp:533
-msgid "Name"
-msgstr "Όνομα"
-
-#: src/tpControlDialogDef.cpp:100 src/tpControlDialogDef.cpp:338
-msgid "Type"
-msgstr "Είδος"
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Exclusion"
-msgstr "Αποκλεισμός"
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Inclusion"
-msgstr "Περίλαμβάνεται"
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Neither"
-msgstr "Κανένα"
-
-#: src/tpControlDialogDef.cpp:110
-msgid "Active"
-msgstr "Ενεργό"
-
-#: src/tpControlDialogDef.cpp:114 src/tpControlDialogDef.cpp:398
-#: src/tpControlDialogDef.cpp:579
-msgid "Visible"
-msgstr "Ορατό"
-
-#: src/tpControlDialogDef.cpp:123
-msgid "Line Colour"
-msgstr "Χρώμα γραμμής"
-
-#: src/tpControlDialogDef.cpp:138
-msgid "Fill Colour"
-msgstr "Εσωτερικό χρώμα"
-
-#: src/tpControlDialogDef.cpp:148
-msgid "Boundary Points"
-msgstr "Σημεία ορίου"
-
-#: src/tpControlDialogDef.cpp:160
-msgid "Corner Lat"
-msgstr "Πλάτος γωνίας"
-
-#: src/tpControlDialogDef.cpp:175
-msgid "Corner Lon"
-msgstr "Μήκος γωνίας"
-
-#: src/tpControlDialogDef.cpp:185
-msgid "Number of Points"
-msgstr "Αριθμός σημείων"
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "2"
-msgstr "2"
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "3"
-msgstr "3"
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "4"
-msgstr "4"
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "5"
-msgstr "5"
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "6"
-msgstr "6"
-
-#: src/tpControlDialogDef.cpp:195
-msgid "Boundary Point Visible"
-msgstr "Ορατό σημείο ορίου"
-
-#: src/tpControlDialogDef.cpp:199
-msgid "Boundary Point\n"
-"Range Rings Visible"
-msgstr "Ορατοί δακτύλιοι σημείου ορίου"
-
-#: src/tpControlDialogDef.cpp:207 src/tpControlDialogDef.cpp:411
-msgid "Number of Rings"
-msgstr "Αριθμός δακτυλίων"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "0"
-msgstr "0"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "1"
-msgstr "1"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "10"
-msgstr "10"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "7"
-msgstr "7"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "8"
-msgstr "8"
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "9"
-msgstr "9"
-
-#: src/tpControlDialogDef.cpp:225 src/tpControlDialogDef.cpp:429
-msgid "Rings Step"
-msgstr "Απόσταση δακτυλίων"
-
-#: src/tpControlDialogDef.cpp:229 src/tpControlDialogDef.cpp:433
-msgid "0.5"
-msgstr "0.5"
-
-#: src/tpControlDialogDef.cpp:248 src/tpControlDialogDef.cpp:266
-#: src/tpControlDialogDef.cpp:470
-msgid "Ring Colour"
-msgstr "Χρώμα δακτυλίων"
-
-#: src/tpControlDialogDef.cpp:252 src/tpControlDialogDef.cpp:456
-msgid "Kilometers"
-msgstr "Χιλιόμετρα"
-
-#: src/tpControlDialogDef.cpp:252 src/tpControlDialogDef.cpp:456
-msgid "Nautical Miles"
-msgstr "Ναυτικά μίλια"
-
-#: src/tpControlDialogDef.cpp:276 src/tpControlDialogDef.cpp:480
-#: src/tpControlDialogDef.cpp:666
-msgid "Create ODAPI"
-msgstr "Δημιουργία ODAPI"
-
-#: src/tpControlDialogDef.cpp:279 src/tpControlDialogDef.cpp:483
-#: src/tpControlDialogDef.cpp:669
-msgid "Create JSON"
-msgstr "Δημιουργία JSON"
-
-#: src/tpControlDialogDef.cpp:286
-msgid "Create Boundary"
-msgstr "Δημιουργία ορίου"
-
-#: src/tpControlDialogDef.cpp:294 src/tpControlDialogDef.cpp:501
-#: src/tpControlDialogDef.cpp:687
-msgid "GUID"
-msgstr "GUID"
-
-#: src/tpControlDialogDef.cpp:301 src/tpControlDialogDef.cpp:508
-#: src/tpControlDialogDef.cpp:694
-msgid "Delete ODAPI"
-msgstr "Διαγραφή ODAPI"
-
-#: src/tpControlDialogDef.cpp:304 src/tpControlDialogDef.cpp:511
-#: src/tpControlDialogDef.cpp:697
-msgid "Delete JSON"
-msgstr "Διαγραφή JSON"
-
-#: src/tpControlDialogDef.cpp:311
-msgid "Delete Boundary"
-msgstr "Διαγραφή ορίου"
-
-#: src/tpControlDialogDef.cpp:356 src/tpControlDialogDef.cpp:540
-msgid "Icon Name"
-msgstr "Όνομα εικονιδίου"
-
-#: src/tpControlDialogDef.cpp:372 src/tpControlDialogDef.cpp:553
-msgid "Lat"
-msgstr "πλάτος"
-
-#: src/tpControlDialogDef.cpp:388 src/tpControlDialogDef.cpp:569
-msgid "Lon"
-msgstr "μήκος"
-
-#: src/tpControlDialogDef.cpp:402
-msgid "Rings Visible"
-msgstr "Ορατοί δακτύλιοι"
-
-#: src/tpControlDialogDef.cpp:452
-msgid "Step Units"
-msgstr "Μονάδες"
-
-#: src/tpControlDialogDef.cpp:493
-msgid "Create Boundary Point"
-msgstr "Δημιουργία σημείου ορίου"
-
-#: src/tpControlDialogDef.cpp:518
-msgid "Delete Boundary Point"
-msgstr "Διαγραφή σημείου ορίου"
-
-#: src/tpControlDialogDef.cpp:586
-msgid "Text to Display with Point"
-msgstr "Κείμενο προς εμφάνιση στο σημείο"
-
-#: src/tpControlDialogDef.cpp:599
-msgid "Text position relative to point"
-msgstr "Θέση κειμένου σε σχέση με το σημείο"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Bottom"
-msgstr "Κάτω"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Bottom Centre"
-msgstr "Κάτω κέντρο"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Centre"
-msgstr "Κέντρο"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Left"
-msgstr "Αριστερά"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Right"
-msgstr "Δεξιά"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Top"
-msgstr "Πάνω"
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Top Centre"
-msgstr "Επάνω κέντρο"
-
-#: src/tpControlDialogDef.cpp:609
-msgid "Text Colour"
-msgstr "Χρώμα κειμένου"
-
-#: src/tpControlDialogDef.cpp:616
-msgid "Background Colour"
-msgstr "Χρώμα φόντου"
-
-#: src/tpControlDialogDef.cpp:623
-msgid "Background Transparancy"
-msgstr "Διαφάνεια φόντου"
-
-#: src/tpControlDialogDef.cpp:636
-msgid "Text Font"
-msgstr "Γραμματοσειρά κειμένου"
-
-#: src/tpControlDialogDef.cpp:640
-msgid "Example"
-msgstr "Παράδειγμα"
-
-#: src/tpControlDialogDef.cpp:647
-msgid "Fonts"
-msgstr "Γραμματοσειρές"
-
-#: src/tpControlDialogDef.cpp:650
-msgid "Always"
-msgstr "Πάντοτε"
-
-#: src/tpControlDialogDef.cpp:650
-msgid "Never"
-msgstr "Ποτέ"
-
-#: src/tpControlDialogDef.cpp:650
-msgid "On Rollover Only"
-msgstr "Στο Rollover μόνο"
-
-#: src/tpControlDialogDef.cpp:652
-msgid "Show Display Text"
-msgstr "Εμφάνιση κειμένου"
-
-#: src/tpControlDialogDef.cpp:679
-msgid "Create Text Point"
-msgstr "Δημιουργία σημείου κειμένου"
-
-#: src/tpControlDialogDef.cpp:704
-msgid "Delete Text Point"
-msgstr "Διαγραφή σημείου κειμένου"
-
-#: src/tpControlDialogDef.cpp:717
-msgid "Delete"
-msgstr "Διαγραφή"
-
-#: src/tpControlDialogDef.cpp:717
-msgid "add"
-msgstr "προσθήκη"
-
-#: src/tpControlDialogDef.cpp:733
-msgid "ODAPI"
-msgstr "ODAPI"
-
-#: src/tpControlDialogDef.cpp:736
-msgid "JSON"
-msgstr "JSON"
-
-#: src/tpControlDialogDef.cpp:746
-msgid "Point Icon"
-msgstr "Εικονίδιο σημείου"
-
-#: src/tpControlDialogDef.cpp:754
-msgid "User Input"
-msgstr "Εισαγωγή από χρήστη"
-
-#: src/tpControlDialogDef.cpp:766
-msgid "&Close"
-msgstr "&Κλείσιμο"
-
-#: src/tpControlDialogImpl.cpp:441 src/tpControlDialogImpl.cpp:858
-msgid "Blue Anchor"
-msgstr "Μπλε άγκυρα"
-
-#: src/tpControlDialogImpl.cpp:506
-msgid "Test Link"
-msgstr "Δοκ. σύνδεσμος"
-
-#: src/tpControlDialogImpl.cpp:817
-msgid "Test Link 1"
-msgstr "Δοκ. σύνδεσμος 1"
-
-#: src/tpControlDialogImpl.cpp:820
-msgid "Test Link 2"
-msgstr "Δοκ. σύνδεσμος 2"
-
-#: src/tpControlDialogImpl.cpp:907
-msgid "No file specified for output"
-msgstr "Δεν καθορίστηκε αρχείο εξόδου"
-
-#: src/tpControlDialogImpl.cpp:916
-msgid "No file specified for input"
-msgstr "Δεν καθορίστηκε αρχείο εισόδου"
-
-#: src/tpicons.cpp:81
-msgid "signalk_notes_opencpn_pi data location"
-msgstr "θέση δεδομένων για το signalk_notes_opencpn_pi"
-
-#: src/tpicons.cpp:101
-msgid "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
-msgstr "Αποτυχία φόρτωσης όλων των εικόνων του signalk_notes_opencpn_pi, κοιτάξτε το OCPN log για λεπτομέρειες"
-
-#: src/tpicons.cpp:101
+msgid "Failed to connect to: %s"
+msgstr "Failed to connect to: %s"
+
+#: src/tpicons.cpp:83
+msgid ""
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
+msgstr ""
+"Αποτυχία φόρτωσης όλων των εικόνων του signalk_notes_opencpn_pi, κοιτάξτε το "
+"OCPN log για λεπτομέρειες"
+
+#: src/tpSignalKNotes.cpp:409
+msgid "Failed to parse note details JSON"
+msgstr "Failed to parse note details JSON"
+
+#: src/tpSignalKNotes.cpp:343
+msgid "Failed to parse notes list JSON"
+msgstr "Failed to parse notes list JSON"
+
+#: src/tpConfigDialog.cpp:440
+msgid "Fehler"
+msgstr "Error"
+
+#: src/tpConfigDialog.cpp:440
+msgid "Fehler beim Anfordern der Authentifizierung"
+msgstr "Error requesting authentication"
+
+#: src/tpConfigDialog.cpp:761
+msgid "Font-Größe:"
+msgstr "Font size"
+
+#: src/tpConfigDialog.cpp:307
+msgid ""
+"Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
+"Provider zu entdecken."
+msgstr ""
+"Note: No providers configured yet. Move the map to Providers to discover."
+
+#: src/tpConfigDialog.cpp:49
+msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
+msgstr "Note: Providers are discovered as you move the map."
+
+#: src/tpConfigDialog.cpp:702
+msgid "Icon Einstellungen"
+msgstr "Icon settings"
+
+#: src/tpConfigDialog.cpp:708
+msgid "Icon-Größe (px):"
+msgstr "Icon size (px):"
+
+#: src/tpConfigDialog.cpp:104
+msgid "Icon-Zuordnung"
+msgstr "Icon mapping"
+
+#: src/tpConfigDialog.cpp:42
+msgid "Icons im Kartenausschnitt: 0"
+msgstr "Icons in the map section: 0"
+
+#: src/tpSignalKNotes.cpp:318
+#, c-format
+msgid "Invalid URL: %s"
+msgstr "Invalid URL: %s"
+
+#: src/tpConfigDialog.cpp:749
+msgid "Kreis-Farbe:"
+msgstr "Circle color:"
+
+#: src/tpSignalKNotes.cpp:261 src/tpConfigDialog.cpp:128
+msgid "OK"
+msgstr "OK"
+
+#: src/tpicons.cpp:85
 msgid "OpenCPN Alert"
 msgstr "OpenCPN: Συναγερμός"
 
+#: src/tpConfigDialog.cpp:89
+msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
+msgstr "Map SignalK icons to plugin icons:"
+
+#: src/tpConfigDialog.cpp:81
+msgid "Provider"
+msgstr "Provider"
+
+#: src/tpSignalKNotes.cpp:48
+msgid "Server host not configured"
+msgstr "Server host not configured"
+
+#. Auth-Button aktiv
+#: src/tpConfigDialog.cpp:115 src/tpConfigDialog.cpp:438
+#: src/tpConfigDialog.cpp:608
+msgid "SignalK Authentifizierung"
+msgstr "SignalK authentication"
+
+#: src/tpSignalKNotes.cpp:186
+msgid "SignalK Note Details"
+msgstr "SignalK Note Details"
+
+#: src/signalk_notes_opencpn_pi.cpp:266 src/signalk_notes_opencpn_pi.cpp:269
+#: src/signalk_notes_opencpn_pi.cpp:272 src/signalk_notes_opencpn_pi.cpp:274
+msgid "SignalK Notes"
+msgstr "SignalK Notes"
+
+#: src/tpConfigDialog.cpp:26
+msgid "SignalK Notes Konfiguration"
+msgstr "SignalK Notes Configuration"
+
+#: src/tpConfigDialog.cpp:74
+msgid "SignalK Verbindung"
+msgstr "SignalK Connection"
+
+#: src/tpSignalKNotes.cpp:315
+#, c-format
+msgid "SignalKNotes: fetching data with URL: %s"
+msgstr "SignalKNotes: fetching data with URL: %s"
+
+#: src/tpConfigDialog.cpp:755
+msgid "Text-Farbe:"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
+msgid "Vorschau:"
+msgstr "Preview:"
+
+#: src/tpConfigDialog.cpp:62
+msgid "Wählen Sie die anzuzeigenden Provider:"
+msgstr "Select the providers to display:"
+
+#: src/tpConfigDialog.cpp:755
+msgid "Text color:"
+msgstr ""
+
+#, fuzzy
+#~ msgid "Circle Color:"
+#~ msgstr "Χρώμα γραμμής"
+
+#, fuzzy
+#~ msgid "Text Color:"
+#~ msgstr "Χρώμα κειμένου"
+
+#~ msgid "Test Plugin Control Dialog"
+#~ msgstr "Διάλογος ελέγχου του πρόσθετου Test"
+
+#~ msgid "Test Plugin"
+#~ msgstr "Πρόσθετο Test"
+
+#~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
+#~ msgstr "πρόσθετο Test για το OCPN"
+
+#~ msgid ""
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
+#~ msgstr ""
+#~ "πρόσθετο Test για το OCPN\n"
+#~ "επιδεικνύει την επεξεργασία μηνυμάτων NMEA"
+
+#, c-format
+#~ msgid ""
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
+#~ "Minor: %i\n"
+#~ msgstr ""
+#~ "Έκδοση OD: Μείζον: %i,  Έλασσον: %i, Διόρθωση: %i, Έκδοση ODAPI: : "
+#~ "Μείζον: %i,  Έλασσον: %i\n"
+
+#~ msgid "OD_FindPointInAnyBoundary\n"
+#~ msgstr "OD_FindPointInAnyBoundary\n"
+
+#~ msgid "OD_FindClosestBoundaryLineCrossing\n"
+#~ msgstr "OD_FindClosestBoundaryLineCrossing\n"
+
+#~ msgid "OD_FindFirstBoundaryLineCrossing\n"
+#~ msgstr "OD_FindFirstBoundaryLineCrossing\n"
+
+#~ msgid "OD_CreateBoundary\n"
+#~ msgstr "OD_CreateBoundary\n"
+
+#~ msgid "OD_CreateBoundaryPoint\n"
+#~ msgstr "OD_CreateBoundaryPoint\n"
+
+#~ msgid "OD_CreateTextPoint\n"
+#~ msgstr "OD_CreateTextPoint\n"
+
+#~ msgid "OD_AddPointIcon\n"
+#~ msgstr "OD_AddPointIcon\n"
+
+#~ msgid "OD_DeletePointIcon\n"
+#~ msgstr "OD_DeletePointIcon\n"
+
+#~ msgid "The following ODAPI's are available: \n"
+#~ msgstr "Τα ακόλουθα ODAPI είναι διαθέσιμα:\n"
+
+#~ msgid "The following ODAPI's are not available:\n"
+#~ msgstr "Τα ακόλουθα ODAPI δεν είναι διαθέσιμα:\n"
+
+#~ msgid "SIGNALK_NOTES_OPENCPN"
+#~ msgstr "SIGNALK_NOTES_OPENCPN"
+
+#~ msgid "File not found"
+#~ msgstr "Το αρχείο δεν βρέθηκε"
+
+#~ msgid "Save JSON on startup"
+#~ msgstr "Αποθήκευση του JSON στην εκκίνηση"
+
+#~ msgid ""
+#~ "Delete config from conf\n"
+#~ "on shutdown"
+#~ msgstr "Διαγραφή του config κατά το κλείσιμο"
+
+#~ msgid "General"
+#~ msgstr "Γενικά"
+
+#~ msgid "Select JSON file to import"
+#~ msgstr "Επιλέξτε αρχείο JSON για εισαγωγή"
+
+#~ msgid "*.*"
+#~ msgstr "*.*"
+
+#~ msgid "Select a JSON file"
+#~ msgstr "Επιλέξτε ένα αρχείο JSON"
+
+#~ msgid ""
+#~ "Save incoming JSON\n"
+#~ "messages"
+#~ msgstr "Αποθήκευση εισερχομένων μηνυμάτων JSON"
+
+#~ msgid "Select a file"
+#~ msgstr "Επιλέξτε αρχείο"
+
+#~ msgid ""
+#~ "Close save file after\n"
+#~ "each write"
+#~ msgstr "Κλείσιμο του αρχείου μετά από κάθε εγγραφή"
+
+#~ msgid "Append to file"
+#~ msgstr "Προσάρτηση στο αρχείο"
+
+#~ msgid "Import JSON"
+#~ msgstr "Εισαγωγή JSON"
+
+#~ msgid "File Input"
+#~ msgstr "Είσοδος αρχείου"
+
+#~ msgid "Name"
+#~ msgstr "Όνομα"
+
+#~ msgid "Type"
+#~ msgstr "Είδος"
+
+#~ msgid "Exclusion"
+#~ msgstr "Αποκλεισμός"
+
+#~ msgid "Inclusion"
+#~ msgstr "Περίλαμβάνεται"
+
+#~ msgid "Neither"
+#~ msgstr "Κανένα"
+
+#~ msgid "Active"
+#~ msgstr "Ενεργό"
+
+#~ msgid "Visible"
+#~ msgstr "Ορατό"
+
+#~ msgid "Fill Colour"
+#~ msgstr "Εσωτερικό χρώμα"
+
+#~ msgid "Boundary Points"
+#~ msgstr "Σημεία ορίου"
+
+#~ msgid "Corner Lat"
+#~ msgstr "Πλάτος γωνίας"
+
+#~ msgid "Corner Lon"
+#~ msgstr "Μήκος γωνίας"
+
+#~ msgid "Number of Points"
+#~ msgstr "Αριθμός σημείων"
+
+#~ msgid "2"
+#~ msgstr "2"
+
+#~ msgid "3"
+#~ msgstr "3"
+
+#~ msgid "4"
+#~ msgstr "4"
+
+#~ msgid "5"
+#~ msgstr "5"
+
+#~ msgid "6"
+#~ msgstr "6"
+
+#~ msgid "Boundary Point Visible"
+#~ msgstr "Ορατό σημείο ορίου"
+
+#~ msgid ""
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
+#~ msgstr "Ορατοί δακτύλιοι σημείου ορίου"
+
+#~ msgid "Number of Rings"
+#~ msgstr "Αριθμός δακτυλίων"
+
+#~ msgid "0"
+#~ msgstr "0"
+
+#~ msgid "1"
+#~ msgstr "1"
+
+#~ msgid "10"
+#~ msgstr "10"
+
+#~ msgid "7"
+#~ msgstr "7"
+
+#~ msgid "8"
+#~ msgstr "8"
+
+#~ msgid "9"
+#~ msgstr "9"
+
+#~ msgid "Rings Step"
+#~ msgstr "Απόσταση δακτυλίων"
+
+#~ msgid "0.5"
+#~ msgstr "0.5"
+
+#~ msgid "Ring Colour"
+#~ msgstr "Χρώμα δακτυλίων"
+
+#~ msgid "Kilometers"
+#~ msgstr "Χιλιόμετρα"
+
+#~ msgid "Nautical Miles"
+#~ msgstr "Ναυτικά μίλια"
+
+#~ msgid "Create ODAPI"
+#~ msgstr "Δημιουργία ODAPI"
+
+#~ msgid "Create JSON"
+#~ msgstr "Δημιουργία JSON"
+
+#~ msgid "Create Boundary"
+#~ msgstr "Δημιουργία ορίου"
+
+#~ msgid "GUID"
+#~ msgstr "GUID"
+
+#~ msgid "Delete ODAPI"
+#~ msgstr "Διαγραφή ODAPI"
+
+#~ msgid "Delete JSON"
+#~ msgstr "Διαγραφή JSON"
+
+#~ msgid "Delete Boundary"
+#~ msgstr "Διαγραφή ορίου"
+
+#~ msgid "Icon Name"
+#~ msgstr "Όνομα εικονιδίου"
+
+#~ msgid "Lat"
+#~ msgstr "πλάτος"
+
+#~ msgid "Lon"
+#~ msgstr "μήκος"
+
+#~ msgid "Rings Visible"
+#~ msgstr "Ορατοί δακτύλιοι"
+
+#~ msgid "Step Units"
+#~ msgstr "Μονάδες"
+
+#~ msgid "Create Boundary Point"
+#~ msgstr "Δημιουργία σημείου ορίου"
+
+#~ msgid "Delete Boundary Point"
+#~ msgstr "Διαγραφή σημείου ορίου"
+
+#~ msgid "Text to Display with Point"
+#~ msgstr "Κείμενο προς εμφάνιση στο σημείο"
+
+#~ msgid "Text position relative to point"
+#~ msgstr "Θέση κειμένου σε σχέση με το σημείο"
+
+#~ msgid "Bottom"
+#~ msgstr "Κάτω"
+
+#~ msgid "Bottom Centre"
+#~ msgstr "Κάτω κέντρο"
+
+#~ msgid "Centre"
+#~ msgstr "Κέντρο"
+
+#~ msgid "Left"
+#~ msgstr "Αριστερά"
+
+#~ msgid "Right"
+#~ msgstr "Δεξιά"
+
+#~ msgid "Top"
+#~ msgstr "Πάνω"
+
+#~ msgid "Top Centre"
+#~ msgstr "Επάνω κέντρο"
+
+#~ msgid "Background Colour"
+#~ msgstr "Χρώμα φόντου"
+
+#~ msgid "Background Transparancy"
+#~ msgstr "Διαφάνεια φόντου"
+
+#~ msgid "Text Font"
+#~ msgstr "Γραμματοσειρά κειμένου"
+
+#~ msgid "Example"
+#~ msgstr "Παράδειγμα"
+
+#~ msgid "Fonts"
+#~ msgstr "Γραμματοσειρές"
+
+#~ msgid "Always"
+#~ msgstr "Πάντοτε"
+
+#~ msgid "Never"
+#~ msgstr "Ποτέ"
+
+#~ msgid "On Rollover Only"
+#~ msgstr "Στο Rollover μόνο"
+
+#~ msgid "Show Display Text"
+#~ msgstr "Εμφάνιση κειμένου"
+
+#~ msgid "Create Text Point"
+#~ msgstr "Δημιουργία σημείου κειμένου"
+
+#~ msgid "Delete Text Point"
+#~ msgstr "Διαγραφή σημείου κειμένου"
+
+#~ msgid "Delete"
+#~ msgstr "Διαγραφή"
+
+#~ msgid "add"
+#~ msgstr "προσθήκη"
+
+#~ msgid "ODAPI"
+#~ msgstr "ODAPI"
+
+#~ msgid "JSON"
+#~ msgstr "JSON"
+
+#~ msgid "Point Icon"
+#~ msgstr "Εικονίδιο σημείου"
+
+#~ msgid "User Input"
+#~ msgstr "Εισαγωγή από χρήστη"
+
+#~ msgid "&Close"
+#~ msgstr "&Κλείσιμο"
+
+#~ msgid "Blue Anchor"
+#~ msgstr "Μπλε άγκυρα"
+
+#~ msgid "Test Link"
+#~ msgstr "Δοκ. σύνδεσμος"
+
+#~ msgid "Test Link 1"
+#~ msgstr "Δοκ. σύνδεσμος 1"
+
+#~ msgid "Test Link 2"
+#~ msgstr "Δοκ. σύνδεσμος 2"
+
+#~ msgid "No file specified for output"
+#~ msgstr "Δεν καθορίστηκε αρχείο εξόδου"
+
+#~ msgid "No file specified for input"
+#~ msgstr "Δεν καθορίστηκε αρχείο εισόδου"
+
+#~ msgid "signalk_notes_opencpn_pi data location"
+#~ msgstr "θέση δεδομένων για το signalk_notes_opencpn_pi"

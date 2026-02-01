@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-02 22:04+1000\n"
+"POT-Creation-Date: 2026-02-01 00:55+0100\n"
 "PO-Revision-Date: 2023-10-04 18:34\n"
 "Last-Translator: \n"
 "Language-Team: Vietnamese\n"
@@ -14,475 +14,544 @@ msgstr ""
 "X-Crowdin-Project: opencpn\n"
 "X-Crowdin-Project-ID: 49843\n"
 "X-Crowdin-Language: vi\n"
-"X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/signalk_notes_opencpn_pi.pot\n"
+"X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/"
+"signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
 
-#: include/tpControlDialogDef.h:196
-msgid "Test Plugin Control Dialog"
-msgstr ""
+#: src/tpConfigDialog.cpp:129
+msgid "Abbrechen"
+msgstr "Cancel"
 
-#: src/signalk_notes_opencpn_pi.cpp:251 src/signalk_notes_opencpn_pi.cpp:252 src/signalk_notes_opencpn_pi.cpp:254
-#: src/signalk_notes_opencpn_pi.cpp:255
-msgid "Test Plugin"
-msgstr ""
+#. Zentrieren-Button
+#: src/tpSignalKNotes.cpp:228
+msgid "Auf Karte zentrieren"
+msgstr "Center on map"
 
-#: src/signalk_notes_opencpn_pi.cpp:345
-msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-msgstr ""
+#: src/tpConfigDialog.cpp:120
+msgid "Authentifizierung abbrechen"
+msgstr "Cancel authentication"
 
-#: src/signalk_notes_opencpn_pi.cpp:350
-msgid "signalk_notes_opencpn PlugIn for OpenCPN\n"
-"demonstrates PlugIn processing of NMEA messages."
-msgstr ""
+#. Auth-Button deaktiviert mit neuem Text
+#: src/tpConfigDialog.cpp:590
+msgid "Authentifizierung läuft..."
+msgstr "Authentication in progress..."
 
-#: src/signalk_notes_opencpn_pi.cpp:625
+#: src/tpConfigDialog.cpp:435
+msgid ""
+"Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
+"Admin und 'Authentication Timeout' NEVER bestätigen."
+msgstr ""
+"In SignalK, please confirm the request in the menu item 'Access Requests' "
+"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+
+#: src/tpConfigDialog.cpp:727
+msgid "Cluster Einstellungen"
+msgstr "Cluster settings"
+
+#: src/tpConfigDialog.cpp:741
+msgid "Cluster Radius (px):"
+msgstr "Cluster radius (px):"
+
+#: src/tpConfigDialog.cpp:733
+msgid "Cluster-Größe (px):"
+msgstr "Cluster size (px):"
+
+#: src/tpConfigDialog.cpp:108
+msgid "Darstellung"
+msgstr "Deciption"
+
+#: src/tpSignalKNotes.cpp:179
+msgid "Details konnten nicht geladen werden."
+msgstr "Details could not be loaded."
+
+#: src/tpConfigDialog.cpp:782
+msgid "Erweitertes Debug-Logging in opencpn.log"
+msgstr "Advanced debug logging in opencpn.log"
+
+#: src/tpSignalKNotes.cpp:324
 #, c-format
-msgid "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, Minor: %i\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:626 src/signalk_notes_opencpn_pi.cpp:639
-msgid "OD_FindPointInAnyBoundary\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:627 src/signalk_notes_opencpn_pi.cpp:640
-msgid "OD_FindClosestBoundaryLineCrossing\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:628 src/signalk_notes_opencpn_pi.cpp:641
-msgid "OD_FindFirstBoundaryLineCrossing\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:629 src/signalk_notes_opencpn_pi.cpp:642
-msgid "OD_CreateBoundary\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:630 src/signalk_notes_opencpn_pi.cpp:643
-msgid "OD_CreateBoundaryPoint\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:631 src/signalk_notes_opencpn_pi.cpp:644
-msgid "OD_CreateTextPoint\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:632 src/signalk_notes_opencpn_pi.cpp:645
-msgid "OD_AddPointIcon\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:633 src/signalk_notes_opencpn_pi.cpp:646
-msgid "OD_DeletePointIcon\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:635
-msgid "The following ODAPI's are available: \n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:648
-msgid "The following ODAPI's are not available:\n"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:652
-msgid "SIGNALK_NOTES_OPENCPN"
-msgstr ""
-
-#: src/signalk_notes_opencpn_pi.cpp:731 src/tpControlDialogImpl.cpp:907
-#: src/tpControlDialogImpl.cpp:916 src/tpJSON.cpp:133
-msgid "File not found"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:32
-msgid "Save JSON on startup"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:35
-msgid "Delete config from conf\n"
-"on shutdown"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:42
-msgid "General"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:49
-msgid "Select JSON file to import"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:53 src/tpControlDialogDef.cpp:59
-msgid "*.*"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:53
-msgid "Select a JSON file"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:56
-msgid "Save incoming JSON\n"
-"messages"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:59
-msgid "Select a file"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:62
-msgid "Close save file after\n"
-"each write"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:66
-msgid "Append to file"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:70
-msgid "Import JSON"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:77
-msgid "File Input"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:93 src/tpControlDialogDef.cpp:326
-#: src/tpControlDialogDef.cpp:533
-msgid "Name"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:100 src/tpControlDialogDef.cpp:338
-msgid "Type"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Exclusion"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Inclusion"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:104 src/tpControlDialogDef.cpp:342
-msgid "Neither"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:110
-msgid "Active"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:114 src/tpControlDialogDef.cpp:398
-#: src/tpControlDialogDef.cpp:579
-msgid "Visible"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:123
-msgid "Line Colour"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:138
-msgid "Fill Colour"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:148
-msgid "Boundary Points"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:160
-msgid "Corner Lat"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:175
-msgid "Corner Lon"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:185
-msgid "Number of Points"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "2"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "3"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "4"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "5"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:189 src/tpControlDialogDef.cpp:211
-#: src/tpControlDialogDef.cpp:415
-msgid "6"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:195
-msgid "Boundary Point Visible"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:199
-msgid "Boundary Point\n"
-"Range Rings Visible"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:207 src/tpControlDialogDef.cpp:411
-msgid "Number of Rings"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "0"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "1"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "10"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "7"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "8"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:211 src/tpControlDialogDef.cpp:415
-msgid "9"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:225 src/tpControlDialogDef.cpp:429
-msgid "Rings Step"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:229 src/tpControlDialogDef.cpp:433
-msgid "0.5"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:248 src/tpControlDialogDef.cpp:266
-#: src/tpControlDialogDef.cpp:470
-msgid "Ring Colour"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:252 src/tpControlDialogDef.cpp:456
-msgid "Kilometers"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:252 src/tpControlDialogDef.cpp:456
-msgid "Nautical Miles"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:276 src/tpControlDialogDef.cpp:480
-#: src/tpControlDialogDef.cpp:666
-msgid "Create ODAPI"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:279 src/tpControlDialogDef.cpp:483
-#: src/tpControlDialogDef.cpp:669
-msgid "Create JSON"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:286
-msgid "Create Boundary"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:294 src/tpControlDialogDef.cpp:501
-#: src/tpControlDialogDef.cpp:687
-msgid "GUID"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:301 src/tpControlDialogDef.cpp:508
-#: src/tpControlDialogDef.cpp:694
-msgid "Delete ODAPI"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:304 src/tpControlDialogDef.cpp:511
-#: src/tpControlDialogDef.cpp:697
-msgid "Delete JSON"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:311
-msgid "Delete Boundary"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:356 src/tpControlDialogDef.cpp:540
-msgid "Icon Name"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:372 src/tpControlDialogDef.cpp:553
-msgid "Lat"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:388 src/tpControlDialogDef.cpp:569
-msgid "Lon"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:402
-msgid "Rings Visible"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:452
-msgid "Step Units"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:493
-msgid "Create Boundary Point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:518
-msgid "Delete Boundary Point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:586
-msgid "Text to Display with Point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:599
-msgid "Text position relative to point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Bottom"
-msgstr ""
+msgid "Failed to connect to: %s"
+msgstr "Failed to connect to: %s"
 
-#: src/tpControlDialogDef.cpp:603
-msgid "Bottom Centre"
+#: src/tpicons.cpp:83
+msgid ""
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 
-#: src/tpControlDialogDef.cpp:603
-msgid "Centre"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Left"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Right"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Top"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:603
-msgid "Top Centre"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:609
-msgid "Text Colour"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:616
-msgid "Background Colour"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:623
-msgid "Background Transparancy"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:636
-msgid "Text Font"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:640
-msgid "Example"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:647
-msgid "Fonts"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:650
-msgid "Always"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:650
-msgid "Never"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:650
-msgid "On Rollover Only"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:652
-msgid "Show Display Text"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:679
-msgid "Create Text Point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:704
-msgid "Delete Text Point"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:717
-msgid "Delete"
-msgstr ""
-
-#: src/tpControlDialogDef.cpp:717
-msgid "add"
-msgstr ""
+#: src/tpSignalKNotes.cpp:409
+msgid "Failed to parse note details JSON"
+msgstr "Failed to parse note details JSON"
 
-#: src/tpControlDialogDef.cpp:733
-msgid "ODAPI"
-msgstr ""
+#: src/tpSignalKNotes.cpp:343
+msgid "Failed to parse notes list JSON"
+msgstr "Failed to parse notes list JSON"
 
-#: src/tpControlDialogDef.cpp:736
-msgid "JSON"
-msgstr ""
+#: src/tpConfigDialog.cpp:440
+msgid "Fehler"
+msgstr "Error"
 
-#: src/tpControlDialogDef.cpp:746
-msgid "Point Icon"
-msgstr ""
+#: src/tpConfigDialog.cpp:440
+msgid "Fehler beim Anfordern der Authentifizierung"
+msgstr "Error requesting authentication"
 
-#: src/tpControlDialogDef.cpp:754
-msgid "User Input"
-msgstr ""
+#: src/tpConfigDialog.cpp:761
+msgid "Font-Größe:"
+msgstr "Font size"
 
-#: src/tpControlDialogDef.cpp:766
-msgid "&Close"
+#: src/tpConfigDialog.cpp:307
+msgid ""
+"Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
+"Provider zu entdecken."
 msgstr ""
+"Note: No providers configured yet. Move the map to Providers to discover."
 
-#: src/tpControlDialogImpl.cpp:441 src/tpControlDialogImpl.cpp:858
-msgid "Blue Anchor"
-msgstr ""
+#: src/tpConfigDialog.cpp:49
+msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
+msgstr "Note: Providers are discovered as you move the map."
 
-#: src/tpControlDialogImpl.cpp:506
-msgid "Test Link"
-msgstr ""
+#: src/tpConfigDialog.cpp:702
+msgid "Icon Einstellungen"
+msgstr "Icon settings"
 
-#: src/tpControlDialogImpl.cpp:817
-msgid "Test Link 1"
-msgstr ""
+#: src/tpConfigDialog.cpp:708
+msgid "Icon-Größe (px):"
+msgstr "Icon size (px):"
 
-#: src/tpControlDialogImpl.cpp:820
-msgid "Test Link 2"
-msgstr ""
+#: src/tpConfigDialog.cpp:104
+msgid "Icon-Zuordnung"
+msgstr "Icon mapping"
 
-#: src/tpControlDialogImpl.cpp:907
-msgid "No file specified for output"
-msgstr ""
+#: src/tpConfigDialog.cpp:42
+msgid "Icons im Kartenausschnitt: 0"
+msgstr "Icons in the map section: 0"
 
-#: src/tpControlDialogImpl.cpp:916
-msgid "No file specified for input"
-msgstr ""
+#: src/tpSignalKNotes.cpp:318
+#, c-format
+msgid "Invalid URL: %s"
+msgstr "Invalid URL: %s"
 
-#: src/tpicons.cpp:81
-msgid "signalk_notes_opencpn_pi data location"
-msgstr ""
+#: src/tpConfigDialog.cpp:749
+msgid "Kreis-Farbe:"
+msgstr "Circle color:"
 
-#: src/tpicons.cpp:101
-msgid "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
-msgstr ""
+#: src/tpSignalKNotes.cpp:261 src/tpConfigDialog.cpp:128
+msgid "OK"
+msgstr "OK"
 
-#: src/tpicons.cpp:101
+#: src/tpicons.cpp:85
 msgid "OpenCPN Alert"
+msgstr "OpenCPN Alert"
+
+#: src/tpConfigDialog.cpp:89
+msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
+msgstr "Map SignalK icons to plugin icons:"
+
+#: src/tpConfigDialog.cpp:81
+msgid "Provider"
+msgstr "Provider"
+
+#: src/tpSignalKNotes.cpp:48
+msgid "Server host not configured"
+msgstr "Server host not configured"
+
+#. Auth-Button aktiv
+#: src/tpConfigDialog.cpp:115 src/tpConfigDialog.cpp:438
+#: src/tpConfigDialog.cpp:608
+msgid "SignalK Authentifizierung"
+msgstr "SignalK authentication"
+
+#: src/tpSignalKNotes.cpp:186
+msgid "SignalK Note Details"
+msgstr "SignalK Note Details"
+
+#: src/signalk_notes_opencpn_pi.cpp:266 src/signalk_notes_opencpn_pi.cpp:269
+#: src/signalk_notes_opencpn_pi.cpp:272 src/signalk_notes_opencpn_pi.cpp:274
+msgid "SignalK Notes"
+msgstr "SignalK Notes"
+
+#: src/tpConfigDialog.cpp:26
+msgid "SignalK Notes Konfiguration"
+msgstr "SignalK Notes Configuration"
+
+#: src/tpConfigDialog.cpp:74
+msgid "SignalK Verbindung"
+msgstr "SignalK Connection"
+
+#: src/tpSignalKNotes.cpp:315
+#, c-format
+msgid "SignalKNotes: fetching data with URL: %s"
+msgstr "SignalKNotes: fetching data with URL: %s"
+
+#: src/tpConfigDialog.cpp:755
+msgid "Text-Farbe:"
 msgstr ""
 
+#: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
+msgid "Vorschau:"
+msgstr "Preview:"
+
+#: src/tpConfigDialog.cpp:62
+msgid "Wählen Sie die anzuzeigenden Provider:"
+msgstr "Select the providers to display:"
+
+#: src/tpConfigDialog.cpp:755
+msgid "Text color:"
+msgstr ""
+
+#, fuzzy
+#~ msgid "Circle Color:"
+#~ msgstr "Line Colour"
+
+#, fuzzy
+#~ msgid "Text Color:"
+#~ msgstr "Text Colour"
+
+#~ msgid "Test Plugin Control Dialog"
+#~ msgstr "Test Plugin Control Dialogue"
+
+#~ msgid "Test Plugin"
+#~ msgstr "Test Plugin"
+
+#~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
+#~ msgstr "signalk_notes_opencpn PlugIn for OpenCPN"
+
+#~ msgid ""
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
+#~ msgstr ""
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
+
+#, c-format
+#~ msgid ""
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
+#~ "Minor: %i\n"
+#~ msgstr ""
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
+#~ "Minor: %i\n"
+
+#~ msgid "OD_FindPointInAnyBoundary\n"
+#~ msgstr "OD_FindPointInAnyBoundary\n"
+
+#~ msgid "OD_FindClosestBoundaryLineCrossing\n"
+#~ msgstr "OD_FindClosestBoundaryLineCrossing\n"
+
+#~ msgid "OD_FindFirstBoundaryLineCrossing\n"
+#~ msgstr "OD_FindFirstBoundaryLineCrossing\n"
+
+#~ msgid "OD_CreateBoundary\n"
+#~ msgstr "OD_CreateBoundary\n"
+
+#~ msgid "OD_CreateBoundaryPoint\n"
+#~ msgstr "OD_CreateBoundaryPoint\n"
+
+#~ msgid "OD_CreateTextPoint\n"
+#~ msgstr "OD_CreateTextPoint\n"
+
+#~ msgid "OD_AddPointIcon\n"
+#~ msgstr "OD_AddPointIcon\n"
+
+#~ msgid "OD_DeletePointIcon\n"
+#~ msgstr "OD_DeletePointIcon\n"
+
+#~ msgid "The following ODAPI's are available: \n"
+#~ msgstr "The following ODAPI's are available: \n"
+
+#~ msgid "The following ODAPI's are not available:\n"
+#~ msgstr "The following ODAPI's are not available:\n"
+
+#~ msgid "SIGNALK_NOTES_OPENCPN"
+#~ msgstr "SIGNALK_NOTES_OPENCPN"
+
+#~ msgid "File not found"
+#~ msgstr "File not found"
+
+#~ msgid "Save JSON on startup"
+#~ msgstr "Save JSON on startup"
+
+#~ msgid ""
+#~ "Delete config from conf\n"
+#~ "on shutdown"
+#~ msgstr ""
+#~ "Delete config from conf\n"
+#~ "on shutdown"
+
+#~ msgid "General"
+#~ msgstr "General"
+
+#~ msgid "Select JSON file to import"
+#~ msgstr "Select JSON file to import"
+
+#~ msgid "*.*"
+#~ msgstr "*.*"
+
+#~ msgid "Select a JSON file"
+#~ msgstr "Select a JSON file"
+
+#~ msgid ""
+#~ "Save incoming JSON\n"
+#~ "messages"
+#~ msgstr ""
+#~ "Save incoming JSON\n"
+#~ "messages"
+
+#~ msgid "Select a file"
+#~ msgstr "Select a file"
+
+#~ msgid ""
+#~ "Close save file after\n"
+#~ "each write"
+#~ msgstr ""
+#~ "Close save file after\n"
+#~ "each write"
+
+#~ msgid "Append to file"
+#~ msgstr "Append to file"
+
+#~ msgid "Import JSON"
+#~ msgstr "Import JSON"
+
+#~ msgid "File Input"
+#~ msgstr "File Input"
+
+#~ msgid "Name"
+#~ msgstr "Name"
+
+#~ msgid "Type"
+#~ msgstr "Type"
+
+#~ msgid "Exclusion"
+#~ msgstr "Exclusion"
+
+#~ msgid "Inclusion"
+#~ msgstr "Inclusion"
+
+#~ msgid "Neither"
+#~ msgstr "Neither"
+
+#~ msgid "Active"
+#~ msgstr "Active"
+
+#~ msgid "Visible"
+#~ msgstr "Visible"
+
+#~ msgid "Fill Colour"
+#~ msgstr "Fill Colour"
+
+#~ msgid "Boundary Points"
+#~ msgstr "Boundary Points"
+
+#~ msgid "Corner Lat"
+#~ msgstr "Corner Lat"
+
+#~ msgid "Corner Lon"
+#~ msgstr "Corner Lon"
+
+#~ msgid "Number of Points"
+#~ msgstr "Number of Points"
+
+#~ msgid "2"
+#~ msgstr "2"
+
+#~ msgid "3"
+#~ msgstr "3"
+
+#~ msgid "4"
+#~ msgstr "4"
+
+#~ msgid "5"
+#~ msgstr "5"
+
+#~ msgid "6"
+#~ msgstr "6"
+
+#~ msgid "Boundary Point Visible"
+#~ msgstr "Boundary Point Visible"
+
+#~ msgid ""
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
+#~ msgstr ""
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
+
+#~ msgid "Number of Rings"
+#~ msgstr "Number of Rings"
+
+#~ msgid "0"
+#~ msgstr "0"
+
+#~ msgid "1"
+#~ msgstr "1"
+
+#~ msgid "10"
+#~ msgstr "10"
+
+#~ msgid "7"
+#~ msgstr "7"
+
+#~ msgid "8"
+#~ msgstr "8"
+
+#~ msgid "9"
+#~ msgstr "9"
+
+#~ msgid "Rings Step"
+#~ msgstr "Rings Step"
+
+#~ msgid "0.5"
+#~ msgstr "0.5"
+
+#~ msgid "Ring Colour"
+#~ msgstr "Ring Colour"
+
+#~ msgid "Kilometers"
+#~ msgstr "Kilometres"
+
+#~ msgid "Nautical Miles"
+#~ msgstr "Nautical Miles"
+
+#~ msgid "Create ODAPI"
+#~ msgstr "Create ODAPI"
+
+#~ msgid "Create JSON"
+#~ msgstr "Create JSON"
+
+#~ msgid "Create Boundary"
+#~ msgstr "Create Boundary"
+
+#~ msgid "GUID"
+#~ msgstr "GUID"
+
+#~ msgid "Delete ODAPI"
+#~ msgstr "Delete ODAPI"
+
+#~ msgid "Delete JSON"
+#~ msgstr "Delete JSON"
+
+#~ msgid "Delete Boundary"
+#~ msgstr "Delete Boundary"
+
+#~ msgid "Icon Name"
+#~ msgstr "Icon Name"
+
+#~ msgid "Lat"
+#~ msgstr "Lat"
+
+#~ msgid "Lon"
+#~ msgstr "Lon"
+
+#~ msgid "Rings Visible"
+#~ msgstr "Rings Visible"
+
+#~ msgid "Step Units"
+#~ msgstr "Step Units"
+
+#~ msgid "Create Boundary Point"
+#~ msgstr "Create Boundary Point"
+
+#~ msgid "Delete Boundary Point"
+#~ msgstr "Delete Boundary Point"
+
+#~ msgid "Text to Display with Point"
+#~ msgstr "Text to Display with Point"
+
+#~ msgid "Text position relative to point"
+#~ msgstr "Text position relative to point"
+
+#~ msgid "Bottom"
+#~ msgstr "Bottom"
+
+#~ msgid "Bottom Centre"
+#~ msgstr "Bottom Centre"
+
+#~ msgid "Centre"
+#~ msgstr "Centre"
+
+#~ msgid "Left"
+#~ msgstr "Left"
+
+#~ msgid "Right"
+#~ msgstr "Right"
+
+#~ msgid "Top"
+#~ msgstr "Top"
+
+#~ msgid "Top Centre"
+#~ msgstr "Top Centre"
+
+#~ msgid "Background Colour"
+#~ msgstr "Background Colour"
+
+#~ msgid "Background Transparancy"
+#~ msgstr "Background Transparancy"
+
+#~ msgid "Text Font"
+#~ msgstr "Text Font"
+
+#~ msgid "Example"
+#~ msgstr "Example"
+
+#~ msgid "Fonts"
+#~ msgstr "Fonts"
+
+#~ msgid "Always"
+#~ msgstr "Always"
+
+#~ msgid "Never"
+#~ msgstr "Never"
+
+#~ msgid "On Rollover Only"
+#~ msgstr "On Rollover Only"
+
+#~ msgid "Show Display Text"
+#~ msgstr "Show Display Text"
+
+#~ msgid "Create Text Point"
+#~ msgstr "Create Text Point"
+
+#~ msgid "Delete Text Point"
+#~ msgstr "Delete Text Point"
+
+#~ msgid "Delete"
+#~ msgstr "Delete"
+
+#~ msgid "add"
+#~ msgstr "add"
+
+#~ msgid "ODAPI"
+#~ msgstr "ODAPI"
+
+#~ msgid "JSON"
+#~ msgstr "JSON"
+
+#~ msgid "Point Icon"
+#~ msgstr "Point Icon"
+
+#~ msgid "User Input"
+#~ msgstr "User Input"
+
+#~ msgid "&Close"
+#~ msgstr "&Close"
+
+#~ msgid "Blue Anchor"
+#~ msgstr "Blue Anchor"
+
+#~ msgid "Test Link"
+#~ msgstr "Test Link"
+
+#~ msgid "Test Link 1"
+#~ msgstr "Test Link 1"
+
+#~ msgid "Test Link 2"
+#~ msgstr "Test Link 2"
+
+#~ msgid "No file specified for output"
+#~ msgstr "No file specified for output"
+
+#~ msgid "No file specified for input"
+#~ msgstr "No file specified for input"
+
+#~ msgid "signalk_notes_opencpn_pi data location"
+#~ msgstr "signalk_notes_opencpn_pi data location"

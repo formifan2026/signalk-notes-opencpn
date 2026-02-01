@@ -1,59 +1,91 @@
-# signalk_notes_opencpn_pi
-Plugin to test JSON and ODAPI and develop a templated build system
+# SignalK Notes Plugin for OpenCPN
 
-The idea is really to debug the process to see what happens.
-The signalk_notes_opencpn should 'do' what a plugin would do to create stuff,
+The **SignalK Notes Plugin** enhances OpenCPN by displaying **notes stored on a SignalK server directly on the nautical chart**. It is especially useful in setups where SignalK already acts as the central data hub — such as OpenPlotter systems or Raspberry Pi installations.
 
-Only ODAPI is working at the moment. JSON is being developed now.
-1. With the ODAPI select the type of object you want to create,
-2. click on the chart to pick the click location for its creation or provide the lat/lon,
-3. then click create.
-4. The object 'should' be created.
+The plugin shows notes as icons on the chart and updates them automatically whenever data on the SignalK server changes.
 
-For more details see: https://opencpn-manuals.github.io/main/opencpn-dev/odraw-messaging.html
+Several SignalK plugins (like ['Garmin Active Captain Resources'](https://activecaptain.garmin.com/en-US/map) or ['EuRIS (European River Information Services)'](https://www.eurisportal.eu/)) create notes and with this enhanced information for the skipper.
 
-The templated build process is known and FrontEnd 2 (FE2), which simplifies the information needed to build a plugin to the
-CMakeLists.txt file for most builds. All the other files needed for a plugin are supplied to allow automated building
-of the current environments supported by OpenCPN. The templated system allows for extensions per plugin to be addede by the
-developer.
+## Features
 
-NOTE this is currently a work in progress and should be considered 'Alpha/Beta'. It may have issues at times as new functionality is added. It is a test tool not a production plugin.
+### • Display SignalK Notes on the Chart
+The plugin reads notes from the SignalK data tree and displays them as icons at their respective positions on the map.
 
-The build process can be used in a few ways:
-  1. A standard cmake/make process on the command line
-  2. Run a batch file to create a 'Plugin Manager' installable. An example is `build-local-package-example.sh` which basically runs a script that is used on circleci locally and creates the installable files in the build directory
-  3. Run 'circleci local' which will run what circleci does in the cloud locally for non-ORB based environment, and example being shown in `run-circleci-local.txt`
-  4. Run a build process on pushing/merging a change on github, and when creating a new tag/version
+### • Automatic Updates
+New or modified notes are detected automatically and refreshed on the chart.
 
-# Examples
-## Local build
+### • Selectable SignalK Providers
+If multiple SignalK data sources (providers) are available, you can choose which ones the plugin should use.
 
-The simplest way to produce a package that can be imported with the "Import plugin..." button in the OpenCPN plugin manager is to run the following
+### • Customizable Icons
+Each note type can be assigned its own icon. Icon mappings can be configured in the settings dialog.
 
-```
-rm build -rf; mkdir build; cd build; bash ../build-local-package-example.sh
-```
+### • Display Options
+- Toggle visibility of notes  
+- Adjust icon size  
+- Show or hide labels  
+- Control zoom behavior  
 
-Notice: You can of course also run the steps inside that script manually. However, in that case be aware that `make package` does not actually
-generate a file that can be used in the plugin manager. The generated `.tar.gz` gets modified (in place) to generate such a package by
-the next step, `./cloudsmith-upload.sh` (this is the case even if no account info is provided and the upload thus fails).
+### • SignalK Authentication Support
+The plugin supports authentication for SignalK servers that require login credentials. The current authentication status is shown in the settings dialog.
 
-## IDE setup & debugging
+## Configuration
 
-This is totally dependant on the IDE that is being used. Basically the IDE needs to have both OpenCPN and the Plugin open in the IDE so that the IDE can do debugging.
-OpenCPN will/should be built with DEBUG as should the Plugin. The simplest way to continue is to use Plugin Manger once to setup your plugin correctly, i.e. all the directories and files. This can be done once you have a working plugin, signalk_notes_opencpn_pi does work so if you base your plugin on this code, to start with, you should have an installable plugin if it compiles successfully. Then you can use the 'Local build' process to create the installable package.
+Open the settings dialog via:
 
-The IDE needs to be setup to run OpenCPN with the "-p" option so that all data and programs exist in the location the opencpn executable is or sub-directories of this location. Now you can use Plugin Manager to install your plugin. You will need to have set 'CatalogExpert=1' in the [Plugins] section of the opencpn.conf/ini file so that you get full access to the facilities in Plugin Manager.
+**OpenCPN → Options → Plugins → SignalK Notes → Preferences**
 
-Once you have installed the plugin and checked that it works you can continue to build the new functionality. When doing this you then just need to copy the plugin library to the '(opencpn build directory)/plugins/lib' directory with OpenCPN stopped, then start OpenCPN and it will load the new version of your plugin. If both OpenCPN and your Plugin are known to the IDE you should be able to single step (or other debugging processes) through both sets of code if needed.
+The dialog includes the following sections:
 
-## Renaming
+### 1. Connection & Authentication
+- Select the SignalK server  
+- Log in with username/password (if required)  
+- View authentication status  
 
-To start a new plugin, clone this repo, then run
+### 2. Provider Selection
+- List of discovered SignalK providers  
+- Enable or disable individual sources  
 
-```
-git remote rm origin
-git remote add origin url-to-new-repo
-bash make-new-plugin.sh newname
-git commit -a -m "Start of new plugin newname"
-```
+### 3. Icon Mapping
+- Assign icons to specific note types  
+- Choose from the included icon set  
+
+### 4. Display Settings
+- Toggle note visibility  
+- Adjust icon size  
+- Show or hide labels  
+- Configure zoom behavior  
+
+## Installation
+
+The plugin can be installed like any other OpenCPN plugin:
+
+1. Through the OpenCPN plugin manager  
+2. Or by compiling from source  
+3. After installation, a new toolbar button will appear  
+
+## License
+
+This plugin is released under the **GNU General Public License, Version 2 (GPLv2)**.  
+You may use, modify, and redistribute the plugin under the terms of this license.
+
+### Included Icon Licenses
+
+The plugin contains icons from two external sources. Their licenses require attribution:
+
+#### freeboard-sk Icons (Apache License 2.0)
+
+Some icons included in this plugin originate from the [*freeboard-sk*](https://github.com/SignalK/freeboard-sk) project.  
+They are licensed under the **Apache License 2.0**, which permits use, modification, and redistribution as long as attribution is preserved.
+
+
+#### OpenCPN Standard Icons (GPLv2)
+
+Some icons are based on or derived from OpenCPN’s standard icon set, which is licensed under **GPLv2**.
+
+
+### License Compatibility
+
+Because GPLv2 is the stricter license, it governs the overall plugin.  
+All included assets are compatible with GPLv2, and the plugin complies with the redistribution requirements of both licenses.
+

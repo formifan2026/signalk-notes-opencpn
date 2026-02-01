@@ -1,12 +1,14 @@
 /******************************************************************************
- * Project:  OpenCPN
- * Purpose:  SignalK Notes Plugin
- * Author:   Dirk (bereinigt)
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   Main plugin implementation and OpenCPN integration
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
  *
- ***************************************************************************
- *   GPL License
- ***************************************************************************
- */
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #if defined(__WXGTK__)
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -134,10 +136,12 @@ signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi() {
 void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
   const double zoomFactor = 2.0;  // ein Zoomschritt
 
-  SKN_LOG(this,"MoveViewportTowardsCluster: ENTER scale=%.3f",vp.view_scale_ppm);
+  SKN_LOG(this, "MoveViewportTowardsCluster: ENTER scale=%.3f",
+          vp.view_scale_ppm);
 
   bool allVisible = AreAllNotesVisibleAfterNextZoom(vp, zoomFactor);
-  SKN_LOG(this,"MoveViewportTowardsCluster: allVisibleAfterZoom=%d",allVisible);
+  SKN_LOG(this, "MoveViewportTowardsCluster: allVisibleAfterZoom=%d",
+          allVisible);
 
   if (!allVisible) {
     // PAN wie bisher
@@ -160,7 +164,9 @@ void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
     vp.lon_min = newCenterLon - lonSpan / 2.0;
     vp.lon_max = newCenterLon + lonSpan / 2.0;
 
-    SKN_LOG(this,"MoveViewportTowardsCluster: PAN -> center=%.6f/%.6fscale=%.3f",newCenterLat, newCenterLon, vp.view_scale_ppm);
+    SKN_LOG(this,
+            "MoveViewportTowardsCluster: PAN -> center=%.6f/%.6fscale=%.3f",
+            newCenterLat, newCenterLon, vp.view_scale_ppm);
 
     JumpToPosition(newCenterLat, newCenterLon, vp.view_scale_ppm);
     return;
@@ -168,7 +174,10 @@ void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
 
   double newScale = vp.view_scale_ppm * zoomFactor;
 
-  SKN_LOG(this,"MoveViewportTowardsCluster: ZOOM -> targetLat=%.6f targetLon=%.6f newScale=%.3f (deactivating)",m_clusterZoom.targetLat,m_clusterZoom.targetLon, newScale);
+  SKN_LOG(this,
+          "MoveViewportTowardsCluster: ZOOM -> targetLat=%.6f targetLon=%.6f "
+          "newScale=%.3f (deactivating)",
+          m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
 
   JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
 
@@ -181,19 +190,27 @@ void signalk_notes_opencpn_pi::ProcessClusterPanStep() {
     return;
   }
 
-  SKN_LOG(this,"ProcessClusterPanStep: ENTER active=%d notes=%zu",m_clusterZoom.active, m_clusterZoom.notes.size());
+  SKN_LOG(this, "ProcessClusterPanStep: ENTER active=%d notes=%zu",
+          m_clusterZoom.active, m_clusterZoom.notes.size());
 
   PlugIn_ViewPort vp = m_lastViewPort;
 
-  SKN_LOG(this,"ProcessClusterPanStep: BEFORE MoveViewportTowardsCluster scale=%.3f",vp.view_scale_ppm);
+  SKN_LOG(this,
+          "ProcessClusterPanStep: BEFORE MoveViewportTowardsCluster scale=%.3f",
+          vp.view_scale_ppm);
 
   MoveViewportTowardsCluster(vp);
 
-  SKN_LOG(this,"ProcessClusterPanStep: AFTER MoveViewportTowardsCluster (local vp) scale=%.3f active=%d",vp.view_scale_ppm, m_clusterZoom.active);
+  SKN_LOG(this,
+          "ProcessClusterPanStep: AFTER MoveViewportTowardsCluster (local vp) "
+          "scale=%.3f active=%d",
+          vp.view_scale_ppm, m_clusterZoom.active);
 
   // Optionaler Fallback, falls aus irgendeinem Grund nichts passiert:
   if (m_clusterZoom.notes.size() <= 1) {
-    SKN_LOG(this,"ProcessClusterPanStep: cluster resolved by notes.size -> deactivating");
+    SKN_LOG(this,
+            "ProcessClusterPanStep: cluster resolved by notes.size -> "
+            "deactivating");
     m_clusterZoom.active = false;
   }
 }
@@ -268,7 +285,7 @@ int signalk_notes_opencpn_pi::Init(void) {
           INSTALLS_TOOLBOX_PAGE | INSTALLS_CONTEXTMENU_ITEMS |
           WANTS_OVERLAY_CALLBACK | WANTS_OPENGL_OVERLAY_CALLBACK |
           WANTS_PLUGIN_MESSAGING | WANTS_LATE_INIT | WANTS_MOUSE_EVENTS |
-          WANTS_KEYBOARD_EVENTS | WANTS_ONPAINT_VIEWPORT);
+          WANTS_KEYBOARD_EVENTS | WANTS_ONPAINT_VIEWPORT | WANTS_PREFERENCES);
 }
 
 void signalk_notes_opencpn_pi::LateInit(void) {
@@ -294,7 +311,7 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
   // Token validieren BEVOR Dialog geöffnet wird
   if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
     if (!m_pSignalKNotesManager->ValidateToken()) {
-      SKN_LOG(this,"Token invalid - clearing");
+      SKN_LOG(this, "Token invalid - clearing");
       m_pSignalKNotesManager->SetAuthToken("");
       m_pSignalKNotesManager->ClearAuthRequest();
       SaveConfig();
@@ -314,14 +331,6 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
 
   // Dialog erzeugen
   m_pConfigDialog = new tpConfigDialog(this, GetOCPNCanvasWindow());
-
-  // WICHTIG:
-  // KEIN UpdateProviders() hier!
-  // KEIN UpdateIconMappings() hier!
-  // KEIN LoadSettings() hier!
-  //
-  // Das macht jetzt alles ShowAuthenticatedState() im Dialog.
-
   // Dialog anzeigen
   m_pConfigDialog->ShowModal();
 
@@ -546,7 +555,8 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   double clickLat, clickLon;
   GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
 
-  SKN_LOG(this,"Mouse clicked at lat=%.6f lon=%.6f, screenpos(%d, %d)",clickLat, clickLon, mousePos.x, mousePos.y);
+  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f, screenpos(%d, %d)",
+          clickLat, clickLon, mousePos.x, mousePos.y);
 
   auto pxToMeters = [&](int px) { return px * m_lastViewPort.view_scale_ppm; };
 
@@ -614,8 +624,8 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
     }
   }
 
-  SKN_LOG(this,"No icon or cluster hit");
-  return false; 
+  SKN_LOG(this, "No icon or cluster hit");
+  return false;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -757,7 +767,7 @@ void signalk_notes_opencpn_pi::LoadConfig() {
     m_clientUUID = wxString(uuid_str);
     pConf->Write("ClientUUID", m_clientUUID);
 
-    SKN_LOG(this,"Generated new client UUID: %s",m_clientUUID);
+    SKN_LOG(this, "Generated new client UUID: %s", m_clientUUID);
   }
   // Display-Einstellungen laden
   m_iconSize = m_pTPConfig->Read("DisplaySettings/IconSize",
@@ -845,8 +855,7 @@ std::vector<signalk_notes_opencpn_pi::NoteCluster>
 signalk_notes_opencpn_pi::BuildClusters(
     const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
     int clusterRadius) {
-
-      std::vector<NoteCluster> clusters;
+  std::vector<NoteCluster> clusters;
   std::vector<bool> clustered(notes.size(), false);
 
   // Nicht-const Kopie für GetCanvasPixLL
@@ -894,14 +903,14 @@ signalk_notes_opencpn_pi::BuildClusters(
     clusters.push_back(cluster);
   }
 
-  SKN_LOG(this,"BuildClusters created %zu clusters total",clusters.size());
+  SKN_LOG(this, "BuildClusters created %zu clusters total", clusters.size());
 
   return clusters;
 }
 
 void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
-  SKN_LOG(this,"===== ClusterClick START =====");
-  SKN_LOG(this,"Cluster with %zu notes", cluster.notes.size());
+  SKN_LOG(this, "===== ClusterClick START =====");
+  SKN_LOG(this, "Cluster with %zu notes", cluster.notes.size());
 
   // Notes übernehmen
   m_clusterZoom.notes = cluster.notes;
@@ -914,7 +923,7 @@ void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
   m_clusterZoom.active = true;
   m_clusterZoom.justStarted = true;
 
-   SKN_LOG(this,"===== ClusterClick END =====");
+  SKN_LOG(this, "===== ClusterClick END =====");
 
   RequestRefresh(m_parent_window);
 }
@@ -1130,10 +1139,11 @@ static FutureViewPort MakeFutureViewportForCluster(const PlugIn_ViewPort& vp,
 
 bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
     const PlugIn_ViewPort& vp, double zoomFactor) const {
-  SKN_LOG(this,"AreAllNotesVisibleAfterNextZoom: ENTER zoomFactor=%.2f",zoomFactor);
+  SKN_LOG(this, "AreAllNotesVisibleAfterNextZoom: ENTER zoomFactor=%.2f",
+          zoomFactor);
 
   if (m_clusterZoom.notes.empty()) {
-    SKN_LOG(this,"  no notes -> false");
+    SKN_LOG(this, "  no notes -> false");
     return false;
   }
 
@@ -1157,7 +1167,21 @@ bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
     if (!inside) allInside = false;
   }
 
-  SKN_LOG(this,"AreAllNotesVisibleAfterNextZoom: result=%s",allInside ? "true" : "false");
+  SKN_LOG(this, "AreAllNotesVisibleAfterNextZoom: result=%s",
+          allInside ? "true" : "false");
 
   return allInside;
+}
+
+bool signalk_notes_opencpn_pi::HasOptions() {
+    return true;
+}
+
+void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
+    tpConfigDialog dlg(this, parent);
+    dlg.ShowModal();
+}
+
+wxWindow* signalk_notes_opencpn_pi::GetParentWindow() {
+  return GetOCPNCanvasWindow() ? GetOCPNCanvasWindow() : m_parent_window;
 }

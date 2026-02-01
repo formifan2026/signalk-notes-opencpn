@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        jsonreader.h
-// Purpose:     the parser of JSON text
+// Purpose:      the parser of JSON text
 // Author:      Luciano Cattani
 // Created:     2007/09/15
 // RCS-ID:      $Id: jsonreader.h,v 1.3 2008/03/03 19:05:45 luccat Exp $

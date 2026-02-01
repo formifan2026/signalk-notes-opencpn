@@ -40,10 +40,10 @@ set(PACKAGE_CONTACT "Jon Gough")
 set(PACKAGE "signalk_notes_opencpn")
 
 set(SHORT_DESCRIPTION
-    "Plugin to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' on the map"
+    "Plugin to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' or 'EuRIS (European River Information Services)* on the map"
 )
 set(LONG_DESCRIPTION
-    "signalk_notes_opencpn Plugin is used to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' on the map"
+    "signalk_notes_opencpn Plugin is used to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' or 'EuRIS (European River Information Services)' on the map"
 )
 
 set(VERSION_MAJOR "1")

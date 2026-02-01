@@ -1,3 +1,14 @@
+/******************************************************************************
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   Plugin class declarations and API interface definitions
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
+ *
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #ifndef _SIGNALK_NOTES_OPENCPN_PI_H_
 #define _SIGNALK_NOTES_OPENCPN_PI_H_
 
@@ -117,6 +128,10 @@ public:
   bool IsDebugMode() const { return m_debugMode; }
   void SetDebugMode(bool v) { m_debugMode = v; }
 
+  bool HasOptions();
+  void ShowPreferencesDialog(wxWindow* parent);
+  wxWindow* GetParentWindow();
+
 private:
   // Config + UI
   wxFileConfig* m_pTPConfig = nullptr;
@@ -156,13 +171,11 @@ private:
 };
 
 // LOGGING-MAKRO
-#define SKN_LOG(plugin, fmt, ...)                                      \
-  do {                                                                 \
-    if ((plugin)->IsDebugMode())                                       \
-      wxLogMessage(wxString::Format("SignalK Notes: %s",               \
+#define SKN_LOG(plugin, fmt, ...)                                           \
+  do {                                                                      \
+    if ((plugin)->IsDebugMode())                                            \
+      wxLogMessage(wxString::Format("SignalK Notes: %s",                    \
                                     wxString::Format(fmt, ##__VA_ARGS__))); \
   } while (0)
-
-
 
 #endif

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 // Name:        json_defs.h
-// Purpose:     shared build defines
+// Purpose:      shared build defines
 // Author:      Luciano Cattani
 // Created:     2007/10/20
 // RCS-ID:      $Id: json_defs.h,v 1.6 2008/03/12 10:48:19 luccat Exp $

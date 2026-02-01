@@ -1,3 +1,14 @@
+/******************************************************************************
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   SignalK note object definitions and data structures
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
+ *
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #ifndef _TPSIGNALKNOTES_H_
 #define _TPSIGNALKNOTES_H_
 

@@ -1,3 +1,14 @@
+/******************************************************************************
+ * Project:   SignalK Notes Plugin for OpenCPN
+ * Purpose:   Configuration dialog and user interface settings
+ * Author:    Dirk Behrendt
+ * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Licence:   GPLv2
+ *
+ * Icon Licensing:
+ *   - Some icons are derived from freeboard-sk (Apache License 2.0)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ ******************************************************************************/
 #include "signalk_notes_opencpn_pi.h"
 #include "tpConfigDialog.h"
 #include "tpSignalKNotes.h"
@@ -137,13 +148,10 @@ void tpConfigDialog::CreateControls() {
 
   SetSizer(mainSizer);
 
-  // ========================================================================
-  // SETTINGS LADEN (NICHT Auth!)
-  // ========================================================================
-
+  // --- Settings laden ---
   auto* mgr = m_parent->m_pSignalKNotesManager;
 
-  // Provider-Settings laden
+  // --- Provider-Settings laden ---
   std::map<wxString, bool> savedProviders = mgr->GetProviderSettings();
   for (const auto& pair : savedProviders) {
     int index = m_providerList->Append(pair.first);
@@ -151,7 +159,7 @@ void tpConfigDialog::CreateControls() {
     m_providerList->SetClientData(index, new wxString(pair.first));
   }
 
-  // Icon-Mappings laden
+  // --- Icon-Mappings laden ---
   m_currentIconMappings = mgr->GetIconMappings();
 
   std::set<wxString> skIconNames;
@@ -161,16 +169,14 @@ void tpConfigDialog::CreateControls() {
   UpdateIconMappings(skIconNames);
   UpdateIconMappings(mgr->GetDiscoveredIcons());
 
-  // Display Settings laden
+  // --- Display Settings laden ---
   LoadDisplaySettings(m_parent->GetIconSize(), m_parent->GetClusterSize(),
                       m_parent->GetClusterRadius(), m_parent->GetClusterColor(),
                       m_parent->GetClusterTextColor(),
                       m_parent->GetClusterFontSize());
 
-  // ========================================================================
-  // 🔥 EINZIGE STELLE, DIE DEN AUTH-STATUS SETZT
-  // ========================================================================
-  InitializeAuthUI();
+  //  ---Auth status setzen ---
+    InitializeAuthUI();
   if (!m_authCheckTimer->IsRunning()) {
     m_authCheckTimer->Start(2000);
   }
@@ -704,13 +710,13 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Icon-Einstellungen
   wxStaticBoxSizer* iconBox =
-      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Icon Settings"));
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Icon Einstellungen"));
 
   wxFlexGridSizer* iconGrid = new wxFlexGridSizer(2, 5, 5);
   iconGrid->AddGrowableCol(1);
 
   iconGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Icon Size (px):")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Icon-Größe (px):")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_iconSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_iconSizeCtrl->SetRange(12, 64);
@@ -721,7 +727,7 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Icon-Vorschau
   m_iconPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
-  iconBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
+  iconBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Vorschau:")), 0,
                wxALL, 5);
   iconBox->Add(m_iconPreview, 0, wxALL | wxALIGN_CENTER, 5);
 
@@ -729,13 +735,13 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Cluster-Einstellungen
   wxStaticBoxSizer* clusterBox =
-      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster Settings"));
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
 
   wxFlexGridSizer* clusterGrid = new wxFlexGridSizer(2, 5, 5);
   clusterGrid->AddGrowableCol(1);
 
   clusterGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster Size (px):")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster-Größe (px):")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_clusterSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_clusterSizeCtrl->SetRange(16, 64);
@@ -751,19 +757,19 @@ void tpConfigDialog::CreateDisplayTab() {
   clusterGrid->Add(m_clusterRadiusCtrl, 1, wxEXPAND);
 
   clusterGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Circle Color:")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Kreis-Farbe:")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_clusterColorCtrl =
       new wxColourPickerCtrl(m_displayPanel, wxID_ANY, DEFAULT_CLUSTER_COLOR);
   clusterGrid->Add(m_clusterColorCtrl, 1, wxEXPAND);
 
-  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Text Color:")),
+  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Text-Farbe:")),
                    0, wxALIGN_CENTER_VERTICAL);
   m_clusterTextColorCtrl = new wxColourPickerCtrl(m_displayPanel, wxID_ANY,
                                                   DEFAULT_CLUSTER_TEXT_COLOR);
   clusterGrid->Add(m_clusterTextColorCtrl, 1, wxEXPAND);
 
-  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Font Size:")),
+  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Font-Größe:")),
                    0, wxALIGN_CENTER_VERTICAL);
   m_clusterFontSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_clusterFontSizeCtrl->SetRange(6, 16);
@@ -774,7 +780,7 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Cluster-Vorschau
   m_clusterPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
-  clusterBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
+  clusterBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Vorschau:")), 0,
                   wxALL, 5);
   clusterBox->Add(m_clusterPreview, 0, wxALL | wxALIGN_CENTER, 5);
 
@@ -784,7 +790,7 @@ void tpConfigDialog::CreateDisplayTab() {
   // Debug-Checkbox ("Erweitertes Logging")
   // ---------------------------------------------------------
   m_debugCheckbox =
-      new wxCheckBox(m_displayPanel, wxID_ANY, _("Erweitertes Logging"));
+      new wxCheckBox(m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
   m_debugCheckbox->SetValue(m_parent->IsDebugMode());
   mainSizer->Add(m_debugCheckbox, 0, wxALL, 10);
 
