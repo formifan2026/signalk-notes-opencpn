@@ -69,6 +69,43 @@ set(ALPHA "alpha")
 set(CLOUDSMITH_BASE_REPOSITORY "signalk_notes_opencpn")
 set(CLOUDSMITH_USER "opencpn")
 
+# ---------------------------------------------------------
+# Cloudsmith Repo Selection based on Git Tag
+# ---------------------------------------------------------
+
+# Default: prod
+set(CLOUDSMITH_TARGET_REPO "${CLOUDSMITH_BASE_REPOSITORY}-${PROD}")
+
+# Detect tag from environment (GitHub Actions sets GITHUB_REF)
+if(DEFINED ENV{GITHUB_REF})
+    set(GIT_REF $ENV{GITHUB_REF})
+
+    message(STATUS "Detected Git ref: ${GIT_REF}")
+
+    if(GIT_REF MATCHES "refs/tags/.*alpha.*")
+        message(STATUS "Cloudsmith: alpha release detected")
+        set(CLOUDSMITH_TARGET_REPO "${CLOUDSMITH_BASE_REPOSITORY}-${ALPHA}")
+
+    elseif(GIT_REF MATCHES "refs/tags/.*beta.*")
+        message(STATUS "Cloudsmith: beta release detected")
+        set(CLOUDSMITH_TARGET_REPO "${CLOUDSMITH_BASE_REPOSITORY}-${BETA}")
+
+    elseif(GIT_REF MATCHES "refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+")
+        message(STATUS "Cloudsmith: production release detected")
+        set(CLOUDSMITH_TARGET_REPO "${CLOUDSMITH_BASE_REPOSITORY}-${PROD}")
+
+    else()
+        message(STATUS "Cloudsmith: no matching tag, using default (prod)")
+    endif()
+endif()
+
+# Final repo string used by PluginPackage.cmake
+set(PLUGIN_CLOUDSMITH_REPO "${CLOUDSMITH_USER}/${CLOUDSMITH_TARGET_REPO}")
+
+message(STATUS "Cloudsmith target repo resolved to: ${PLUGIN_CLOUDSMITH_REPO}")
+
+# ---------------------------------------------------------
+
 set(XML_INFO_URL
     "https://github.com/formifan2002/signalk-notes-opencpn"
 )
@@ -119,7 +156,7 @@ set(HDRS
 add_definitions(-DPLUGIN_USE_SVG)
 
 # ---------------------------------------------------------------------------
-# JSON Schema Validator (kept as requested)
+# JSON Schema Validator
 # ---------------------------------------------------------------------------
 
 if (APPLE)
@@ -150,7 +187,7 @@ include_directories(BEFORE ${PROJECT_SOURCE_DIR}/ocpninclude)
 target_sources(${PACKAGE_NAME} PUBLIC ${SRC})
 
 # ---------------------------------------------------------------------------
-# Link libraries (ODAPI wieder aktiv)
+# Link libraries
 # ---------------------------------------------------------------------------
 
 if (NOT OCPN_FLATPAK_CONFIG)
