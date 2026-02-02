@@ -1,15 +1,17 @@
 # SignalK Notes Plugin for OpenCPN
 
-The **SignalK Notes Plugin** enhances OpenCPN by displaying **notes stored on a SignalK server directly on the nautical chart**. It is especially useful in setups where SignalK already acts as the central data hub — such as OpenPlotter systems or Raspberry Pi installations.
+The **SignalK Notes Plugin** enhances OpenCPN by displaying **notes stored on a SignalK server directly on the nautical chart**. It is especially useful in setups where SignalK already acts as the central data hub.
 
 The plugin shows notes as icons on the chart and updates them automatically whenever data on the SignalK server changes.
+
+If there are too many notes in one place, they will be clustered (shown as a circle with the number of notes) and will only become visible at a smaller scale.
 
 Several SignalK plugins (like ['Garmin Active Captain Resources'](https://activecaptain.garmin.com/en-US/map) or ['EuRIS (European River Information Services)'](https://www.eurisportal.eu/)) create notes and with this enhanced information for the skipper.
 
 ## Features
 
 ### • Display SignalK Notes on the Chart
-The plugin reads notes from the SignalK data tree and displays them as icons at their respective positions on the map.
+The plugin reads notes from the SignalK and displays them as icons at their respective positions on the map.
 
 ### • Automatic Updates
 New or modified notes are detected automatically and refreshed on the chart.
@@ -31,30 +33,35 @@ The plugin supports authentication for SignalK servers that require login creden
 
 ## Configuration
 
-Open the settings dialog via:
+Open the settings dialog via the toolbar or via
 
 **OpenCPN → Options → Plugins → SignalK Notes → Preferences**
 
+
 The dialog includes the following sections:
 
-### 1. Connection & Authentication
-- Select the SignalK server  
-- Log in with username/password (if required)  
-- View authentication status  
+### 1. SignalK Authentication
+
+Authentication in SignalK is not mandatory. If it is present: 1. Provider will be automatically deleted if the plugin has been deleted in SignalK or is no longer active 2. The name of the plugin and the description will be displayed instead of the plugin ID.
+
+The request for authentication is made via the “SignalK authentication” button on the “Provider” tab.
+
+The request should be approved in SignalK in the menu Security → Access requests with 'Permission' Admin and 'Authentication Timeout' NEVER
+
+As soon as the request has been approved the valid connection is displayed in SignalK in the menu Security → Devices (with description 'OpenCPN SignalK Notes Plugin') and in the plugin on the tab "Provider".
 
 ### 2. Provider Selection
 - List of discovered SignalK providers  
-- Enable or disable individual sources  
+- Enable or disable individual sources / provider
 
 ### 3. Icon Mapping
 - Assign icons to specific note types  
 - Choose from the included icon set  
 
-### 4. Display Settings
-- Toggle note visibility  
-- Adjust icon size  
-- Show or hide labels  
-- Configure zoom behavior  
+### 4. Display Settings and debug log
+- Adjust icon size for single notes  
+- Adjust icon size, colour, font for cluster symbol
+- Detailed debug logging for the plugin in the opencpn.log file is possible via the checkbox. However, this should only be activated temporarily if there are real problems with the plugin.
 
 ## Installation
 
@@ -88,4 +95,3 @@ Some icons are based on or derived from OpenCPN’s standard icon set, which is 
 
 Because GPLv2 is the stricter license, it governs the overall plugin.  
 All included assets are compatible with GPLv2, and the plugin complies with the redistribution requirements of both licenses.
-

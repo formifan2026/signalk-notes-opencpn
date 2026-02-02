@@ -1,0 +1,214 @@
+---
+name: Build SignalK Notes Plugin
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - master
+      - main
+
+env:
+  CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+  CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+  CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+  CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+
+jobs:
+  build-ubuntu-docker:
+    runs-on: ubuntu-20.04
+    env:
+      OCPN_TARGET: ubuntu-gtk3
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Ubuntu
+        run: bash ci/circleci-build-ubuntu-docker.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-debian:
+    runs-on: ubuntu-20.04
+    env:
+      OCPN_TARGET: debian-x86_64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Debian
+        run: bash ci/circleci-build-debian.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-jammy:
+    runs-on: ubuntu-22.04
+    env:
+      OCPN_TARGET: jammy
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Jammy
+        run: bash ci/circleci-build-jammy.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-flatpak:
+    runs-on: ubuntu-20.04
+    env:
+      OCPN_TARGET: flatpak-x86_64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Flatpak
+        run: bash ci/circleci-build-flatpak.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-macos:
+    runs-on: macos-11
+    env:
+      OCPN_TARGET: macos
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build macOS
+        run: bash ci/circleci-build-macos.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-macos-universal:
+    runs-on: macos-11
+    env:
+      OCPN_TARGET: macos-universal
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build macOS Universal
+        run: bash ci/circleci-build-macos-universal.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-msvc:
+    runs-on: windows-2019
+    env:
+      OCPN_TARGET: msvc-wx32
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build Windows MSVC
+        shell: cmd
+        run: ci\circleci-build-msvc.bat
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-android-arm64:
+    runs-on: ubuntu-20.04
+    env:
+      OCPN_TARGET: android-arm64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Android ARM64
+        run: bash ci/circleci-build-android-arm64.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
+
+  build-android-armhf:
+    runs-on: ubuntu-20.04
+    env:
+      OCPN_TARGET: android-armhf
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+
+      - name: Build Android ARMHF
+        run: bash ci/circleci-build-android-armhf.sh
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/upload.sh ]; then
+            cd build && bash upload.sh
+          fi
