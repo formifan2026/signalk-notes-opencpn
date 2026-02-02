@@ -118,7 +118,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(USE_LOCAL_GLU FALSE)
 set(OpenGL_GL_PREFERENCE "LEGACY")
 
-option(USE_GL "Enable OpenGL support" ON)
+option(USE_GL "Enable OpenGL support" OFF)
 message(STATUS "${CMLOC}USE_GL: ${USE_GL}")
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
