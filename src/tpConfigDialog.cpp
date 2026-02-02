@@ -20,7 +20,10 @@
 #include <wx/notebook.h>
 #include <wx/filename.h>
 #include <wx/dir.h>
-#include <wx/bmpbndl.h>
+#if wxCHECK_VERSION(3,1,6)
+    // <wx/bmpbndl.h> is not available in current Windows build "OpenCPN_buildwin-4.99a.7z"
+    #include <wx/bmpbndl.h>
+#endif
 #include <wx/timer.h>
 #include <wx/artprov.h>
 
@@ -176,7 +179,7 @@ void tpConfigDialog::CreateControls() {
                       m_parent->GetClusterFontSize());
 
   //  ---Auth status setzen ---
-    InitializeAuthUI();
+  InitializeAuthUI();
   if (!m_authCheckTimer->IsRunning()) {
     m_authCheckTimer->Start(2000);
   }
@@ -219,10 +222,27 @@ void tpConfigDialog::LoadPluginIcons() {
 }
 
 wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
-  wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
-  if (bundle.IsOk()) return bundle.GetBitmap(wxSize(size, size));
 
-  return wxBitmap(size, size);  // Fallback: leeres Bitmap
+#if wxCHECK_VERSION(3,1,6)
+    // Moderne wxWidgets-Version (Linux, macOS, neue Windows-Builds)
+    wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
+    if (bundle.IsOk())
+        return bundle.GetBitmap(wxSize(size, size));
+
+    // Fallback: leeres Bitmap
+    return wxBitmap(size, size);
+
+#else
+    // Windows-Buildwin (wxWidgets 3.1.5) → kein SVG-Support
+    wxString pngPath = path;
+    pngPath.Replace(".svg", ".png");
+
+    if (wxFileExists(pngPath))
+        return wxBitmap(pngPath, wxBITMAP_TYPE_PNG);
+
+    // Fallback: leeres Bitmap
+    return wxBitmap(size, size);
+#endif
 }
 
 void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
@@ -734,8 +754,8 @@ void tpConfigDialog::CreateDisplayTab() {
   mainSizer->Add(iconBox, 0, wxEXPAND | wxALL, 10);
 
   // Cluster-Einstellungen
-  wxStaticBoxSizer* clusterBox =
-      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
+  wxStaticBoxSizer* clusterBox = new wxStaticBoxSizer(
+      wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
 
   wxFlexGridSizer* clusterGrid = new wxFlexGridSizer(2, 5, 5);
   clusterGrid->AddGrowableCol(1);
@@ -789,8 +809,8 @@ void tpConfigDialog::CreateDisplayTab() {
   // ---------------------------------------------------------
   // Debug-Checkbox ("Erweitertes Logging")
   // ---------------------------------------------------------
-  m_debugCheckbox =
-      new wxCheckBox(m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
+  m_debugCheckbox = new wxCheckBox(
+      m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
   m_debugCheckbox->SetValue(m_parent->IsDebugMode());
   mainSizer->Add(m_debugCheckbox, 0, wxALL, 10);
 
