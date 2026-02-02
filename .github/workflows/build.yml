@@ -62,26 +62,26 @@ jobs:
             cd build && bash upload.sh
           fi
 
-  build-jammy:
-    runs-on: ubuntu-22.04
-    env:
-      OCPN_TARGET: jammy
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-
-      - name: Build Jammy
-        run: bash ci/circleci-build-jammy.sh
-
-      - name: Upload artifacts
-        if: github.event_name == 'push'
-        run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
-          fi
+#  build-jammy:
+#    runs-on: ubuntu-22.04
+#    env:
+#      OCPN_TARGET: jammy
+#      CMAKE_BUILD_PARALLEL_LEVEL: 2
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          submodules: 'recursive'
+#
+#      - name: Build Jammy
+#        run: bash ci/circleci-build-jammy.sh
+#
+#      - name: Upload artifacts
+#        if: github.event_name == 'push'
+#        run: |
+#          if [ -f build/upload.sh ]; then
+#            cd build && bash upload.sh
+#          fi
 
   build-flatpak:
     runs-on: ubuntu-20.04
@@ -147,7 +147,7 @@ jobs:
           fi
 
   build-msvc:
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       OCPN_TARGET: msvc-wx32
     steps:
@@ -155,14 +155,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: 'recursive'
-
+  
       - name: Setup MSVC
         uses: microsoft/setup-msbuild@v1.1
-
+  
       - name: Build Windows MSVC
         shell: cmd
         run: ci\circleci-build-msvc.bat
-
+  
       - name: Upload artifacts
         if: github.event_name == 'push'
         shell: bash
@@ -170,6 +170,7 @@ jobs:
           if [ -f build/upload.sh ]; then
             cd build && bash upload.sh
           fi
+  
 
   build-android-arm64:
     runs-on: ubuntu-20.04
