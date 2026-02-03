@@ -151,7 +151,7 @@ jobs:
       - name: Download and Install Missing wxWidgets GL Libs
         shell: pwsh
         run: |
-          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxMSW-3.2.2.1_vc14x_Dev.7z"
+          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.9/wxWidgets-3.2.9.7z"
           Write-Host "Starte Download von: $url"
           curl.exe -L -o wx_dev.7z $url
 
