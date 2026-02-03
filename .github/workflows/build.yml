@@ -185,9 +185,17 @@ jobs:
         run: |
           choco install -y python --version=3.11.0
           choco install -y gettext
-          refreshenv
+      
+          # PATH neu laden (Machine + User)
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
+                      [System.Environment]::GetEnvironmentVariable("Path","User")
+      
           python -m pip install --upgrade pip
           python -m pip install cloudsmith-cli cryptography
+      
+          Write-Host "Checking Gettext installation..."
+          where.exe msgfmt
+          where.exe msgmerge
 
       - name: Download OpenCPN Dependencies
         shell: pwsh
@@ -199,20 +207,34 @@ jobs:
       - name: Configure CMake
         shell: pwsh
         run: |
+          # PATH erneut laden
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
+                      [System.Environment]::GetEnvironmentVariable("Path","User")
+      
+          # Gettext-Pfad explizit hinzufügen
+          $gettextPath = "C:\Program Files\gettext-iconv\bin"
+          if (Test-Path $gettextPath) {
+            $env:Path = "$gettextPath;$env:Path"
+          }
+      
+          Write-Host "PATH: $env:Path"
+          Write-Host "Looking for msgfmt..."
+          where.exe msgfmt
+      
           New-Item -Path "build" -ItemType Directory -Force
           cd build
-
+      
           $wxRoot   = "C:\wxWidgets-3.2.2"
           $wxLibDir = "$wxRoot\lib\vc14x_dll"
-
-           cmake -A Win32 -G "Visual Studio 17 2022" `
-             "-DCMAKE_BUILD_TYPE=Release" `
-             "-DwxWidgets_ROOT_DIR=$wxRoot" `
-             "-DwxWidgets_LIB_DIR=$wxLibDir" `
-             "-DwxWidgets_CONFIGURATION=mswu" `
-             "-DwxWidgets_USING_DLL=ON" `
-             "-DwxWidgets_SELECT_LIBRARIES=base;core;net;xml;html;adv;aui;gl" `
-             ..
+      
+          cmake -A Win32 -G "Visual Studio 17 2022" `
+            "-DCMAKE_BUILD_TYPE=Release" `
+            "-DwxWidgets_ROOT_DIR=$wxRoot" `
+            "-DwxWidgets_LIB_DIR=$wxLibDir" `
+            "-DwxWidgets_CONFIGURATION=mswu" `
+            "-DwxWidgets_USING_DLL=ON" `
+            "-DwxWidgets_SELECT_LIBRARIES=base;core;net;xml;html;adv;aui;gl" `
+            ..
            
       - name: Build Plugin
         working-directory: build
