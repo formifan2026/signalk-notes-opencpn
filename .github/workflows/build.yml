@@ -195,15 +195,15 @@ jobs:
           $wxRoot   = "C:\wxWidgets-3.2.2"
           $wxLibDir = "$wxRoot\lib\vc14x_dll"
 
-          cmake -A Win32 -G "Visual Studio 17 2022" `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DwxWidgets_ROOT_DIR="$wxRoot" `
-            -DwxWidgets_LIB_DIR="$wxLibDir" `
-            -DwxWidgets_CONFIGURATION=mswu `
-            -DwxWidgets_USING_DLL=ON `
-            -DwxWidgets_SELECT_LIBRARIES=base;core;net;xml;html;adv;aui;gl `
-            ..
-
+           cmake -A Win32 -G "Visual Studio 17 2022" `
+             "-DCMAKE_BUILD_TYPE=Release" `
+             "-DwxWidgets_ROOT_DIR=$wxRoot" `
+             "-DwxWidgets_LIB_DIR=$wxLibDir" `
+             "-DwxWidgets_CONFIGURATION=mswu" `
+             "-DwxWidgets_USING_DLL=ON" `
+             "-DwxWidgets_SELECT_LIBRARIES=base;core;net;xml;html;adv;aui;gl" `
+             ..
+           
       - name: Build Plugin
         working-directory: build
         run: cmake --build . --config Release --target package
