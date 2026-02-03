@@ -2,6 +2,11 @@
 # Author: Dirk 
 # ---------------------------------------------------------------------------
 
+#D.B.: start
+add_library(windows_headers INTERFACE) 
+add_library(windows::headers ALIAS windows_headers)
+#D.B.: end
+
 set(CMLOC "CMakeLists: ")
 
 cmake_minimum_required(VERSION 3.15)
@@ -136,17 +141,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 option(Plugin_CXX11 "Use c++11" OFF)
 
 include("PluginConfigure")
-
-# D.B.: Windows OpenGL Header Fix - System GL headers müssen zuerst kommen
-if(WIN32 AND USE_GL)
-  # Entferne opencpn-libs GL headers aus dem Include-Path
-  get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-  list(FILTER dirs EXCLUDE REGEX "opencpn-libs/WindowsHeaders")
-  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES ${dirs})
-  
-  # Füge System OpenGL zuerst hinzu
-  include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
-endif()
 
 add_definitions(-DUSE_S57)
 
