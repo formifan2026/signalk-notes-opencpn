@@ -194,10 +194,10 @@ if (NOT OCPN_FLATPAK_CONFIG)
 
   message(STATUS "${CMLOC}Adding target link libraries to ${PACKAGE_NAME}")
 
-  if (WIN32)
-    add_subdirectory(opencpn-libs/WindowsHeaders)
-    target_link_libraries(${PACKAGE_NAME} windows::headers)
-  endif ()
+  #if (WIN32)
+  #  add_subdirectory(opencpn-libs/WindowsHeaders)
+  #  target_link_libraries(${PACKAGE_NAME} windows::headers)
+  #endif ()
 
   add_subdirectory(opencpn-libs/api-${OCPN_API_VERSION_MINOR})
   target_link_libraries(${PACKAGE_NAME} ocpn::api)
