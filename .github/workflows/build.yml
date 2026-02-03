@@ -126,61 +126,119 @@ jobs:
           fi
 
   build-msvc:
-    runs-on: windows-2022
-    env:
-      OCPN_TARGET: msvc-wx32
-    steps:
-      - name: Checkout Plugin
-        uses: actions/checkout@v4
-
-      - name: Checkout OpenCPN Core (Dependencies)
-        uses: actions/checkout@v4
-        with:
-          repository: OpenCPN/OpenCPN
-          path: opencpn-core
-          ref: master
-
-      - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Install Dependencies
-        working-directory: opencpn-core
-        run: |
-          .\buildwin\win_deps.bat
-
-      - name: Download and Install Missing wxWidgets GL Libs
-        shell: pwsh
-        run: |
-          $url = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.9/wxWidgets-3.2.9.7z"
-          Write-Host "Starte Download von: $url"
-          curl.exe -L -o wx_dev.7z $url
-
-          $item = Get-Item wx_dev.7z
-          Write-Host "Dateigröße: $($item.Length) Bytes"
-
-          if ($item.Length -lt 20000000) {
-            Write-Error "Download fehlgeschlagen! Datei zu klein."
-            exit 1
-          }
-
-          7z x wx_dev.7z -o"${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1" -y
-
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake -A Win32 `
-            "-DwxWidgets_ROOT_DIR=${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1" `
-            "-DwxWidgets_LIB_DIR=${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1\lib\vc14x_dll" `
-            "-DwxWidgets_CONFIGURATION=mswu" `
-            "-DwxWidgets_USING_DLL=ON" `
-            "-DwxWidgets_SELECT_LIBRARIES=base;core;net;xml;html;adv;aui;gl" `
-            ..
-
-      - name: Build Plugin
-        working-directory: build
-        run: cmake --build . --config Release
-
+      runs-on: windows-2022
+      env:
+        OCPN_TARGET: msvc-wx32
+        CMAKE_BUILD_PARALLEL_LEVEL: 2
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+          with:
+            submodules: 'recursive'
+  
+        - name: Setup MSVC
+          uses: microsoft/setup-msbuild@v1.1
+          
+        - name: Setup MSVC Environment
+          uses: ilammy/msvc-dev-cmd@v1
+          with:
+            arch: x86
+  
+        - name: Cache wxWidgets
+          id: cache-wx
+          uses: actions/cache@v3
+          with:
+            path: C:\wxWidgets-3.2.2.1
+            key: wxWidgets-3.2.2.1-msvc-gl
+  
+        - name: Install Dependencies (Python, Cloudsmith, etc.)
+          shell: pwsh
+          run: |
+            choco install -y python --version=3.11.0
+            refreshenv
+            python -m pip install --upgrade pip
+            python -m pip install cloudsmith-cli
+            python -m pip install cryptography
+  
+        - name: Download and Install wxWidgets with GL
+          if: steps.cache-wx.outputs.cache-hit != 'true'
+          shell: pwsh
+          run: |
+            # wxWidgets 3.2.2.1 mit OpenGL Support
+            $wx_version = "3.2.2.1"
+            $wx_dev_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxMSW-$wx_version`_vc14x_Dev.7z"
+            $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
+            
+            Write-Host "Downloading wxWidgets Dev libraries..."
+            curl.exe -L -o wxMSW-dev.7z $wx_dev_url
+            
+            Write-Host "Downloading wxWidgets Headers..."
+            curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
+            
+            # Prüfe Dateigröße
+            $devSize = (Get-Item wxMSW-dev.7z).Length
+            $headerSize = (Get-Item wxWidgets-headers.7z).Length
+            
+            Write-Host "Dev-Bibliotheken: $devSize Bytes"
+            Write-Host "Headers: $headerSize Bytes"
+            
+            if ($devSize -lt 10000000 -or $headerSize -lt 1000000) {
+              Write-Error "Download fehlgeschlagen! Dateien zu klein."
+              exit 1
+            }
+            
+            # Entpacken
+            New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
+            7z x wxMSW-dev.7z -o"C:\wxWidgets-3.2.2.1" -y
+            7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
+            
+            Write-Host "wxWidgets erfolgreich installiert!"
+            dir "C:\wxWidgets-3.2.2.1"
+            dir "C:\wxWidgets-3.2.2.1\lib"
+  
+        - name: Download OpenCPN Dependencies
+          shell: pwsh
+          run: |
+            # OpenCPN lib für Linking
+            curl.exe -L -o opencpn.lib https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib/download
+            
+            # NSIS für Package-Erstellung
+            curl.exe -L -o nsis-setup.exe https://download.opencpn.org/s/54HsBDLNzRZLL6i/download/nsis-3.04-setup.exe
+            Start-Process -FilePath "nsis-setup.exe" -ArgumentList "/S" -Wait
+            
+            Write-Host "Dependencies heruntergeladen"
+  
+        - name: Configure CMake
+          shell: pwsh
+          run: |
+            New-Item -Path "build" -ItemType Directory -Force
+            cd build
+            
+            cmake -A Win32 -G "Visual Studio 17 2022" `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
+              -DwxWidgets_LIB_DIR="C:\wxWidgets-3.2.2.1\lib\vc14x_dll" `
+              ..
+            
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "CMake-Konfiguration fehlgeschlagen!"
+              exit 1
+            }
+  
+        - name: Build
+          working-directory: build
+          run: |
+            cmake --build . --config Release --target package
+  
+        - name: Upload to Cloudsmith
+          if: github.event_name == 'push'
+          shell: bash
+          run: |
+            if [ -f build/upload.sh ]; then
+              cd build
+              bash upload.sh
+            fi
+            
   build-android-arm64:
     runs-on: ubuntu-20.04
     env:
