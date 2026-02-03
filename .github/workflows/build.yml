@@ -175,9 +175,11 @@ jobs:
           mkdir build
           cd build
           cmake -A Win32 `
-            -DOCPN_CI_BUILD=ON `
-            -DwxWidgets_ROOT_DIR="${{ github.workspace }}\opencpn-core\cache\wxWidgets-3.2.2" `
-            -DwxWidgets_LIB_DIR="${{ github.workspace }}\opencpn-core\cache\wxWidgets-3.2.2\lib\vc14x_dll" `
+            -DwxWidgets_ROOT_DIR="${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1" `
+            -DwxWidgets_LIB_DIR="${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1\lib\vc14x_dll" `
+            -DwxWidgets_CONFIGURATION=mswunivd `
+            -DwxWidgets_USING_DLL=ON `
+            -DwxWidgets_SELECT_LIBRARIES=core,base,net,xml,html,adv,aui,gl `
             ..
 
       - name: Build Plugin
