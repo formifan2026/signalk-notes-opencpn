@@ -171,12 +171,24 @@ jobs:
           .\buildwin\win_deps.bat
           
       - name: Download and Install Missing wxWidgets GL Libs
+        shell: pwsh
         run: |
-          # 1. Download der offiziellen MSVC-Entwickler-Dateien (passend zu OpenCPN x86/Win32)
-          curl -L -o wx_dev.7z https://github.com
+          # 1. Download der offiziellen MSVC-Entwickler-Dateien (Win32 für OpenCPN Standard)
+          $url = "https://github.com"
+          Write-Host "Downloading from $url..."
           
-          # 2. Entpacken direkt in das von win_deps.bat erstellte Verzeichnis
-          # Dies überschreibt vorhandene Header und fügt die fehlende gl.lib hinzu
+          # Nutzen Sie -L um Redirects zu folgen und setzen Sie einen User-Agent
+          curl.exe -L -o wx_dev.7z $url
+          
+          # Prüfen Sie die Dateigröße (sollte > 30MB sein)
+          $item = Get-Item wx_dev.7z
+          if ($item.Length -lt 1000000) { 
+            Write-Error "Download fehlgeschlagen oder Datei zu klein! Größe: $($item.Length) Bytes"
+            exit 1 
+          }
+
+          # 2. Entpacken in das Verzeichnis
+          # Wir nutzen Anführungszeichen um Leerzeichen in Pfaden abzufangen
           7z x wx_dev.7z -o"${{ github.workspace }}\opencpn-core\cache\buildwin\wxWidgets-3.2.2.1" -y
 
       - name: Configure CMake
