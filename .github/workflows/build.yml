@@ -125,7 +125,7 @@ jobs:
             cd build && bash upload.sh
           fi
 
-    build-msvc:
+  build-msvc:
       runs-on: windows-2022
       env:
         OCPN_TARGET: msvc-wx32
@@ -288,7 +288,7 @@ jobs:
               cd build
               bash upload.sh
             fi
-                    
+                             
   build-android-arm64:
     runs-on: ubuntu-20.04
     env:
