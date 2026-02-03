@@ -125,7 +125,7 @@ jobs:
             cd build && bash upload.sh
           fi
 
-  build-msvc:
+    build-msvc:
       runs-on: windows-2022
       env:
         OCPN_TARGET: msvc-wx32
@@ -149,7 +149,7 @@ jobs:
           uses: actions/cache@v3
           with:
             path: C:\wxWidgets-3.2.2.1
-            key: wxWidgets-3.2.2.1-msvc-gl
+            key: wxWidgets-3.2.2.1-msvc-x86-v2
   
         - name: Install Dependencies (Python, Cloudsmith, etc.)
           shell: pwsh
@@ -186,16 +186,37 @@ jobs:
             }
             
             New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
-            7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
+            7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1-temp" -y
+            
+            Move-Item "C:\wxWidgets-3.2.2.1-temp\wxWidgets-3.2.2.1\*" "C:\wxWidgets-3.2.2.1\" -Force
+            Remove-Item "C:\wxWidgets-3.2.2.1-temp" -Recurse -Force
+            
             7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
             
             Write-Host "Building wxWidgets libraries..."
             cd "C:\wxWidgets-3.2.2.1\build\msw"
             
-            nmake /f makefile.vc BUILD=release SHARED=1 COMPILER_VERSION=143 TARGET_CPU=X86
+            Write-Host "Checking available compilers..."
+            where cl.exe
             
-            Write-Host "wxWidgets erfolgreich gebaut!"
-            dir "C:\wxWidgets-3.2.2.1\lib\vc14x_dll"
+            nmake /f makefile.vc BUILD=release SHARED=1 RUNTIME_LIBS=dynamic COMPILER_VERSION=143 VENDOR=custom
+            
+            Write-Host "Build abgeschlossen. Prüfe Verzeichnisstruktur..."
+            dir "C:\wxWidgets-3.2.2.1\lib" -Recurse -Depth 1
+            
+            $libDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
+            Write-Host "Gefundenes Lib-Verzeichnis: $($libDir.FullName)"
+            
+            if (Test-Path "C:\wxWidgets-3.2.2.1\lib\vc_dll") {
+              Write-Host "Verwende vc_dll Verzeichnis"
+            } elseif (Test-Path "C:\wxWidgets-3.2.2.1\lib\vc143_dll") {
+              Write-Host "Verwende vc143_dll Verzeichnis"
+            } else {
+              Write-Host "Erstelle Symlink vc14x_dll"
+              if ($libDir) {
+                New-Item -ItemType SymbolicLink -Path "C:\wxWidgets-3.2.2.1\lib\vc14x_dll" -Target $libDir.FullName
+              }
+            }
   
         - name: Download OpenCPN Dependencies
           shell: pwsh
@@ -207,16 +228,46 @@ jobs:
             
             Write-Host "Dependencies heruntergeladen"
   
+        - name: Determine wxWidgets Lib Directory
+          id: wx-lib-dir
+          shell: pwsh
+          run: |
+            $possibleDirs = @(
+              "C:\wxWidgets-3.2.2.1\lib\vc14x_dll",
+              "C:\wxWidgets-3.2.2.1\lib\vc143_dll",
+              "C:\wxWidgets-3.2.2.1\lib\vc_dll"
+            )
+            
+            foreach ($dir in $possibleDirs) {
+              if (Test-Path $dir) {
+                Write-Host "Verwende: $dir"
+                echo "WX_LIB_DIR=$dir" >> $env:GITHUB_OUTPUT
+                exit 0
+              }
+            }
+            
+            $foundDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
+            if ($foundDir) {
+              Write-Host "Verwende gefundenes Verzeichnis: $($foundDir.FullName)"
+              echo "WX_LIB_DIR=$($foundDir.FullName)" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Error "Kein wxWidgets Lib-Verzeichnis gefunden!"
+              exit 1
+            }
+  
         - name: Configure CMake
           shell: pwsh
           run: |
             New-Item -Path "build" -ItemType Directory -Force
             cd build
             
+            $wxLibDir = "${{ steps.wx-lib-dir.outputs.WX_LIB_DIR }}"
+            Write-Host "Verwende wxWidgets Lib Dir: $wxLibDir"
+            
             cmake -A Win32 -G "Visual Studio 17 2022" `
               -DCMAKE_BUILD_TYPE=Release `
               -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
-              -DwxWidgets_LIB_DIR="C:\wxWidgets-3.2.2.1\lib\vc14x_dll" `
+              -DwxWidgets_LIB_DIR="$wxLibDir" `
               ..
             
             if ($LASTEXITCODE -ne 0) {
@@ -237,7 +288,7 @@ jobs:
               cd build
               bash upload.sh
             fi
-                        
+                    
   build-android-arm64:
     runs-on: ubuntu-20.04
     env:
