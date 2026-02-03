@@ -164,45 +164,44 @@ jobs:
           if: steps.cache-wx.outputs.cache-hit != 'true'
           shell: pwsh
           run: |
-            # wxWidgets 3.2.2.1 mit OpenGL Support
             $wx_version = "3.2.2.1"
-            $wx_dev_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxMSW-$wx_version`_vc14x_Dev.7z"
+            $wx_source_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version.7z"
             $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
             
-            Write-Host "Downloading wxWidgets Dev libraries..."
-            curl.exe -L -o wxMSW-dev.7z $wx_dev_url
+            Write-Host "Downloading wxWidgets Source Archive..."
+            curl.exe -L -o wxWidgets-source.7z $wx_source_url
             
             Write-Host "Downloading wxWidgets Headers..."
             curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
             
-            # Prüfe Dateigröße
-            $devSize = (Get-Item wxMSW-dev.7z).Length
+            $sourceSize = (Get-Item wxWidgets-source.7z).Length
             $headerSize = (Get-Item wxWidgets-headers.7z).Length
             
-            Write-Host "Dev-Bibliotheken: $devSize Bytes"
+            Write-Host "Source: $sourceSize Bytes"
             Write-Host "Headers: $headerSize Bytes"
             
-            if ($devSize -lt 10000000 -or $headerSize -lt 1000000) {
+            if ($sourceSize -lt 10000000 -or $headerSize -lt 1000000) {
               Write-Error "Download fehlgeschlagen! Dateien zu klein."
               exit 1
             }
             
-            # Entpacken
             New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
-            7z x wxMSW-dev.7z -o"C:\wxWidgets-3.2.2.1" -y
+            7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
             7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
             
-            Write-Host "wxWidgets erfolgreich installiert!"
-            dir "C:\wxWidgets-3.2.2.1"
-            dir "C:\wxWidgets-3.2.2.1\lib"
+            Write-Host "Building wxWidgets libraries..."
+            cd "C:\wxWidgets-3.2.2.1\build\msw"
+            
+            nmake /f makefile.vc BUILD=release SHARED=1 COMPILER_VERSION=143 TARGET_CPU=X86
+            
+            Write-Host "wxWidgets erfolgreich gebaut!"
+            dir "C:\wxWidgets-3.2.2.1\lib\vc14x_dll"
   
         - name: Download OpenCPN Dependencies
           shell: pwsh
           run: |
-            # OpenCPN lib für Linking
             curl.exe -L -o opencpn.lib https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib/download
             
-            # NSIS für Package-Erstellung
             curl.exe -L -o nsis-setup.exe https://download.opencpn.org/s/54HsBDLNzRZLL6i/download/nsis-3.04-setup.exe
             Start-Process -FilePath "nsis-setup.exe" -ArgumentList "/S" -Wait
             
@@ -238,7 +237,7 @@ jobs:
               cd build
               bash upload.sh
             fi
-            
+                        
   build-android-arm64:
     runs-on: ubuntu-20.04
     env:
