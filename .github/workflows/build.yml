@@ -158,17 +158,27 @@ jobs:
         run: |
           $headers = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2/wxWidgets-3.2.2_Headers.7z"
           $dev     = "https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2/wxMSW-3.2.2_vc14x_Dev.7z"
-
+      
           Write-Host "Downloading wxWidgets headers..."
           curl.exe -L -o wxHeaders.7z $headers
-
+      
           Write-Host "Downloading wxWidgets MSVC Dev package..."
           curl.exe -L -o wxDev.7z $dev
-
+      
+          # Zielordner neu anlegen
+          Remove-Item -Recurse -Force "C:\wxWidgets-3.2.2" -ErrorAction SilentlyContinue
           New-Item -Path "C:\wxWidgets-3.2.2" -ItemType Directory -Force
-
+      
+          # Beide Archive in denselben Ordner extrahieren
           7z x wxHeaders.7z -o"C:\wxWidgets-3.2.2" -y
           7z x wxDev.7z     -o"C:\wxWidgets-3.2.2" -y
+      
+          # Debug-Ausgabe
+          Write-Host "wxWidgets include dir:"
+          Get-ChildItem "C:\wxWidgets-3.2.2\include\wx" | Select-Object -First 10
+      
+          Write-Host "wxWidgets lib dir:"
+          Get-ChildItem "C:\wxWidgets-3.2.2\lib\vc14x_dll" | Select-Object -First 10
 
       - name: Install Dependencies (Python, Cloudsmith, Gettext)
         shell: pwsh
