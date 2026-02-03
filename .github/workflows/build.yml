@@ -1,5 +1,5 @@
 ---
-name: Build SignalK Notes Plugin
+name: Build SignalK Notes Plugiin
 
 on:
   push:
