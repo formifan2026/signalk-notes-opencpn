@@ -437,39 +437,56 @@ bool tpSignalKNotesManager::ParseNoteDetailsJSON(const wxString& json,
 }
 
 bool tpSignalKNotesManager::DownloadIcon(const wxString& iconName,
-                                         wxBitmap& bitmap)
-{
-    // 1. Cache prüfen
-    auto cacheIt = m_iconCache.find(iconName);
-    if (cacheIt != m_iconCache.end() && cacheIt->second.IsOk()) {
-        bitmap = cacheIt->second;
-        return true;
+                                         wxBitmap& bitmap) {
+  // 1. Cache prüfen
+  auto cacheIt = m_iconCache.find(iconName);
+  if (cacheIt != m_iconCache.end()) {
+    if (cacheIt->second.IsOk()) {
+      bitmap = cacheIt->second;
+      return true;
     }
+  }
 
-    wxString iconPath;
+  wxString iconPath;
 
-    // 2. Mapping prüfen
-    auto mapIt = m_iconMappings.find(iconName);
-    if (mapIt != m_iconMappings.end() && !mapIt->second.IsEmpty()) {
-        iconPath = mapIt->second;
-    } else {
-        iconPath = ResolveIconPath(iconName);
-        m_iconMappings[iconName] = iconPath;
+  // 2. Prüfen ob bereits Mapping existiert (aus Config geladen)
+  auto mapIt = m_iconMappings.find(iconName);
+  if (mapIt != m_iconMappings.end() && !mapIt->second.IsEmpty()) {
+    // Mapping existiert - verwende es
+    iconPath = mapIt->second;
+  } else {
+    // Kein Mapping - automatisch auflösen
+    iconPath = ResolveIconPath(iconName);
+
+    // Mapping speichern für zukünftige Verwendung
+    m_iconMappings[iconName] = iconPath;
+  }
+
+  // 3. Icon laden
+  wxBitmap bmp;
+
+  if (iconPath.EndsWith(wxT(".svg"))) {
+    // SVG laden (32x32 für Karte)
+    wxBitmapBundle bundle =
+        wxBitmapBundle::FromSVGFile(iconPath, wxSize(32, 32));
+    if (bundle.IsOk()) {
+      bmp = bundle.GetBitmap(wxSize(32, 32));
     }
+  } else {
+    // PNG/andere Formate
+    bmp.LoadFile(iconPath, wxBITMAP_TYPE_ANY);
+  }
 
-    // 3. Icon laden (SVG oder PNG)
-    wxBitmap bmp = LoadSvgOrPng(iconPath, 32);
+  if (!bmp.IsOk()) {
+    SKN_LOG(m_parent, "Failed to load icon from: %s", iconPath);
+    return false;
+  }
 
-    if (!bmp.IsOk()) {
-        SKN_LOG(m_parent, "Failed to load icon from: %s", iconPath);
-        return false;
-    }
+  // 4. In Cache speichern
+  m_iconCache[iconName] = bmp;
+  bitmap = bmp;
 
-    // 4. Cache aktualisieren
-    m_iconCache[iconName] = bmp;
-    bitmap = bmp;
-
-    return true;
+  return true;
 }
 
 // ----------------------------------------------------------
@@ -517,45 +534,54 @@ void tpSignalKNotesManager::GetVisibleNotes(
 
 // Icon-Bitmap mit Konfiguration holen
 bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
-                                                 wxBitmap& bmp)
-{
-    wxString skIcon = note.iconName;
+                                                 wxBitmap& bmp) {
+  wxString skIcon = note.iconName;
 
-    // 1. Prüfen: Gibt es ein Mapping?
-    auto it = m_iconMappings.find(skIcon);
-    if (it != m_iconMappings.end()) {
-        wxString mappedPath = it->second;
+  // 1. Prüfen: Gibt es ein Mapping?
+  auto it = m_iconMappings.find(skIcon);
+  if (it != m_iconMappings.end()) {
+    wxString mappedPath = it->second;
 
-        if (wxFileExists(mappedPath)) {
-            wxBitmap raw = LoadSvgOrPng(mappedPath, 24);
-            if (raw.IsOk()) {
-                bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-                return true;
-            }
-        }
+    if (wxFileExists(mappedPath)) {
+      wxBitmapBundle bundle =
+          wxBitmapBundle::FromSVGFile(mappedPath, wxSize(24, 24));
+      if (bundle.IsOk()) {
+        wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
+        bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
+        return true;
+      }
     }
+  }
 
-    // 2. Fallback: Plugin-Icon-Verzeichnis
-    wxString pluginIcon = m_parent->GetPluginIconDir() + skIcon + ".svg";
-    if (wxFileExists(pluginIcon)) {
-        wxBitmap raw = LoadSvgOrPng(pluginIcon, 24);
-        if (raw.IsOk()) {
-            bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-            return true;
-        }
+  // 2. Fallback: Plugin-Icon-Verzeichnis
+  wxString pluginIcon = m_parent->GetPluginIconDir() + skIcon + ".svg";
+  if (wxFileExists(pluginIcon)) {
+    wxBitmapBundle bundle =
+        wxBitmapBundle::FromSVGFile(pluginIcon, wxSize(24, 24));
+    if (bundle.IsOk()) {
+      wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
+
+      // <<< WICHTIG
+      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
+      return true;
     }
+  }
 
-    // 3. Letzter Fallback: notice-to-mariners.svg
-    wxString fallback = m_parent->GetPluginIconDir() + "notice-to-mariners.svg";
-    if (wxFileExists(fallback)) {
-        wxBitmap raw = LoadSvgOrPng(fallback, 24);
-        if (raw.IsOk()) {
-            bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-            return true;
-        }
+  // 3. Letzter Fallback: notice-to-mariners.svg
+  wxString fallback = m_parent->GetPluginIconDir() + "notice-to-mariners.svg";
+  if (wxFileExists(fallback)) {
+    wxBitmapBundle bundle =
+        wxBitmapBundle::FromSVGFile(fallback, wxSize(24, 24));
+    if (bundle.IsOk()) {
+      wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
+
+      // <<< WICHTIG
+      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
+      return true;
     }
+  }
 
-    return false;
+  return false;
 }
 
 int tpSignalKNotesManager::GetVisibleIconCount(const PlugIn_ViewPort& vp) {
@@ -1008,31 +1034,4 @@ void tpSignalKNotesManager::ClearAuthRequest() {
     if (m_parent) {
         m_parent->SaveConfig();
     }
-}
-
-wxBitmap tpSignalKNotesManager::LoadSvgOrPng(const wxString& path, int size)
-{
-#if wxCHECK_VERSION(3,1,6)
-    // Moderne wxWidgets-Version (Linux/macOS)
-    if (path.EndsWith(".svg")) {
-        wxBitmapBundle bundle =
-            wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
-        if (bundle.IsOk())
-            return bundle.GetBitmap(wxSize(size, size));
-    }
-#else
-    // Windows Buildwin (wxWidgets 3.1.5) → PNG-Fallback
-    if (path.EndsWith(".svg")) {
-        wxString pngPath = path;
-        pngPath.Replace(".svg", ".png");
-
-        if (wxFileExists(pngPath))
-            return wxBitmap(pngPath, wxBITMAP_TYPE_PNG);
-    }
-#endif
-
-    // PNG oder andere Formate
-    wxBitmap bmp;
-    bmp.LoadFile(path, wxBITMAP_TYPE_ANY);
-    return bmp;
 }

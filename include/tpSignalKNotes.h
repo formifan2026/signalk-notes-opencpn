@@ -166,7 +166,6 @@ private:
     bool enabled;
   };
   std::map<wxString, ProviderDetails> m_providerDetails;
-  wxBitmap LoadSvgOrPng(const wxString& path, int size);
 };
 
 #endif  // _TPSIGNALKNOTES_H_

@@ -151,25 +151,38 @@ jobs:
     env:
       OCPN_TARGET: msvc-wx32
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout Plugin
+        uses: actions/checkout@v4
+
+      - name: Checkout OpenCPN Core (Dependencies)
+        uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
-  
+          repository: OpenCPN/OpenCPN
+          path: opencpn-core
+          ref: master # Oder ein spezifischer Release-Tag wie v5.10.0
+
       - name: Setup MSVC
-        uses: microsoft/setup-msbuild@v1.1
-  
-      - name: Build Windows MSVC
-        shell: cmd
-        run: ci\circleci-build-msvc.bat
-  
-      - name: Upload artifacts
-        if: github.event_name == 'push'
-        shell: bash
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Dependencies
+        working-directory: opencpn-core
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
-          fi
+          # Nutzt das moderne Skript statt des alten 4.99a Archivs
+          .\buildwin\win_deps.bat
+          
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake -A Win32 `
+            -DOCPN_CI_BUILD=ON `
+            -DwxWidgets_ROOT_DIR="${{ github.workspace }}\opencpn-core\cache\wxWidgets-3.2.2" `
+            -DwxWidgets_LIB_DIR="${{ github.workspace }}\opencpn-core\cache\wxWidgets-3.2.2\lib\vc14x_dll" `
+            ..
+
+      - name: Build Plugin
+        working-directory: build
+        run: cmake --build . --config Release
   
 
   build-android-arm64:
