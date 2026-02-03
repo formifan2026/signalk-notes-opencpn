@@ -20,7 +20,6 @@ env:
   CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
 
 jobs:
-
   build-ubuntu-docker:
     runs-on: ubuntu-20.04
     env:
@@ -152,7 +151,7 @@ jobs:
           path: C:\wxWidgets-3.2.2.1
           key: wxWidgets-3.2.2.1-msvc-x86-v3
 
-      - name: Install Dependencies (Python, Cloudsmith, Gettext)
+      - name: Install Dependencies
         shell: pwsh
         run: |
           choco install -y python --version=3.11.0
@@ -162,33 +161,30 @@ jobs:
           python -m pip install cloudsmith-cli
           python -m pip install cryptography
 
-      - name: Download and Install wxWidgets with GL
+      - name: Download and Install wxWidgets
         if: steps.cache-wx.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $wx_version = "3.2.2.1"
           $wx_source_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version.7z"
           $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
-
-          Write-Host "Downloading wxWidgets Source Archive..."
+          
+          Write-Host "Downloading wxWidgets..."
           curl.exe -L -o wxWidgets-source.7z $wx_source_url
-
-          Write-Host "Downloading wxWidgets Headers..."
           curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
-
+          
           $sourceSize = (Get-Item wxWidgets-source.7z).Length
           $headerSize = (Get-Item wxWidgets-headers.7z).Length
-
+          
           if ($sourceSize -lt 10000000 -or $headerSize -lt 1000000) {
-            Write-Error "Download fehlgeschlagen! Dateien zu klein."
+            Write-Error "Download failed"
             exit 1
           }
-
+          
           New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
-
           7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
           7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
-
+          
           cd "C:\wxWidgets-3.2.2.1\build\msw"
           nmake /f makefile.vc BUILD=release SHARED=1 RUNTIME_LIBS=dynamic COMPILER_VERSION=143 VENDOR=custom
 
@@ -208,19 +204,19 @@ jobs:
             "C:\wxWidgets-3.2.2.1\lib\vc143_dll",
             "C:\wxWidgets-3.2.2.1\lib\vc_dll"
           )
-
+          
           foreach ($dir in $possibleDirs) {
             if (Test-Path $dir) {
               echo "WX_LIB_DIR=$dir" >> $env:GITHUB_OUTPUT
               exit 0
             }
           }
-
+          
           $foundDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
           if ($foundDir) {
             echo "WX_LIB_DIR=$($foundDir.FullName)" >> $env:GITHUB_OUTPUT
           } else {
-            Write-Error "Kein wxWidgets Lib-Verzeichnis gefunden!"
+            Write-Error "No wxWidgets lib directory found"
             exit 1
           }
 
@@ -229,9 +225,9 @@ jobs:
         run: |
           New-Item -Path "build" -ItemType Directory -Force
           cd build
-
+          
           $wxLibDir = "${{ steps.wx-lib-dir.outputs.WX_LIB_DIR }}"
-
+          
           cmake -A Win32 -G "Visual Studio 17 2022" `
             -DCMAKE_BUILD_TYPE=Release `
             -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
