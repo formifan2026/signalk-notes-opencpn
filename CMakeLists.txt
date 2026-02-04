@@ -2,11 +2,6 @@
 # Author: Dirk 
 # ---------------------------------------------------------------------------
 
-#D.B.: start
-add_library(windows_headers INTERFACE) 
-add_library(windows::headers ALIAS windows_headers)
-#D.B.: end
-
 set(CMLOC "CMakeLists: ")
 
 cmake_minimum_required(VERSION 3.15)
@@ -200,8 +195,13 @@ if (NOT OCPN_FLATPAK_CONFIG)
   message(STATUS "${CMLOC}Adding target link libraries to ${PACKAGE_NAME}")
 
   if (WIN32)
-    add_subdirectory(opencpn-libs/WindowsHeaders)
-    target_link_libraries(${PACKAGE_NAME} windows::headers)
+    # D.B.: NICHT WindowsHeaders verwenden - die enthalten veraltete GL-Header
+    # add_subdirectory(opencpn-libs/WindowsHeaders)
+    # target_link_libraries(${PACKAGE_NAME} windows::headers)
+    
+    # Stattdessen: Nur die notwendigen Windows-Defines setzen
+    add_definitions(-DWIN32)
+    add_definitions(-D_WINDOWS)
   endif ()
 
   add_subdirectory(opencpn-libs/api-${OCPN_API_VERSION_MINOR})
