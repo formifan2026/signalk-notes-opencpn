@@ -143,17 +143,27 @@ include("PluginConfigure")
 
 # Windows: Entferne WindowsHeaders GL-Pfade KOMPLETT aus allen Include-Directories
 if(WIN32)
-  message(STATUS "D.B.: RENOVING WINDOWS HEADERS !!!!!!!!!!!!!")
+  message(STATUS "D.B.: REMOVING WINDOWS HEADERS !!!!!!!!!!!!!")
+
+  # 1. WindowsHeaders aus den Include-Pfaden entfernen
   get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
   list(FILTER inc_dirs EXCLUDE REGEX ".*WindowsHeaders.*")
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES "${inc_dirs}")
-  
-  # Stelle sicher, dass System OpenGL zuerst kommt
+
+  # 2. Dummy-Target bereitstellen, damit plugin_dc nicht abstürzt
+  add_library(windows_headers INTERFACE)
+  add_library(windows::headers ALIAS windows_headers)
+
+  # 3. System-OpenGL finden
+  find_package(OpenGL REQUIRED)
+
+  # 4. System-OpenGL-Header vor alle anderen setzen
   if(OPENGL_INCLUDE_DIR)
     message(STATUS "D.B.: include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})")
     include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
   endif()
 endif()
+
 
 add_definitions(-DUSE_S57)
 
@@ -218,7 +228,7 @@ if (NOT OCPN_FLATPAK_CONFIG)
     # target_link_libraries(${PACKAGE_NAME} windows::headers)
     
     # WindowsHeaders VOR OpenGL-Suche hinzufügen, aber mit SYSTEM flag
-    add_subdirectory(opencpn-libs/WindowsHeaders)
+    # add_subdirectory(opencpn-libs/WindowsHeaders)
     # Nicht direkt linken - wird von plugin_dc benötigt
     # target_link_libraries(${PACKAGE_NAME} windows::headers)
   endif ()
@@ -237,6 +247,12 @@ if (NOT OCPN_FLATPAK_CONFIG)
 
   add_subdirectory(opencpn-libs/wxJSON)
   target_link_libraries(${PACKAGE_NAME} ocpn::wxjson)
+
+
+  # D.B. start: Dummy-Target, damit plugin_dc nicht abstürzt
+  add_library(windows_headers INTERFACE)
+  add_library(windows::headers ALIAS windows_headers)
+  # D.B. end: Dummy-Target, damit plugin_dc nicht abstürzt
 
   add_subdirectory(opencpn-libs/plugin_dc)
   target_link_libraries(${PACKAGE_NAME} ocpn::plugin-dc)
