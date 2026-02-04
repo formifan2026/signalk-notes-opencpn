@@ -137,15 +137,18 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 option(Plugin_CXX11 "Use c++11" OFF)
 
 include("PluginConfigure")
-# Windows: System OpenGL-Header haben Vorrang vor WindowsHeaders/GL
-if (WIN32)
-    # WindowsHeaders NICHT verwenden - enthält veraltete GL-Header
-    # Die modernen System-GL-Headers werden automatisch von find_package(OpenGL) gefunden
-    
-    # Nur notwendige Windows-Defines setzen
-    add_definitions(-DWIN32)
-    add_definitions(-D_WINDOWS)
-  endif ()
+
+# Windows: Entferne WindowsHeaders GL-Pfade KOMPLETT aus allen Include-Directories
+if(WIN32)
+  get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+  list(FILTER inc_dirs EXCLUDE REGEX ".*WindowsHeaders.*")
+  set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES "${inc_dirs}")
+  
+  # Stelle sicher, dass System OpenGL zuerst kommt
+  if(OPENGL_INCLUDE_DIR)
+    include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
+  endif()
+endif()
 
 add_definitions(-DUSE_S57)
 
