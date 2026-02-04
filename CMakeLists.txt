@@ -128,6 +128,7 @@ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "" "Debug" "Release" "RelWi
 message(STATUS "${CMLOC}Build type: ${CMAKE_BUILD_TYPE}")
 
 project(${PACKAGE})
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include("PluginSetup")
@@ -136,6 +137,17 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 option(Plugin_CXX11 "Use c++11" OFF)
 
 include("PluginConfigure")
+# Windows: System OpenGL-Header haben Vorrang vor WindowsHeaders/GL
+if(WIN32 AND OPENGL_FOUND)
+  get_target_property(WH_INCLUDES windows::headers INTERFACE_INCLUDE_DIRECTORIES)
+  if(WH_INCLUDES)
+    # Entferne GL-Header aus WindowsHeaders
+    list(FILTER WH_INCLUDES EXCLUDE REGEX ".*/GL$")
+    set_target_properties(windows::headers PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${WH_INCLUDES}")
+  endif()
+  # System OpenGL zuerst
+  include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
+endif()
 
 add_definitions(-DUSE_S57)
 
@@ -199,9 +211,10 @@ if (NOT OCPN_FLATPAK_CONFIG)
     # add_subdirectory(opencpn-libs/WindowsHeaders)
     # target_link_libraries(${PACKAGE_NAME} windows::headers)
     
-    # Stattdessen: Nur die notwendigen Windows-Defines setzen
-    add_definitions(-DWIN32)
-    add_definitions(-D_WINDOWS)
+    # WindowsHeaders VOR OpenGL-Suche hinzufügen, aber mit SYSTEM flag
+    add_subdirectory(opencpn-libs/WindowsHeaders)
+    # Nicht direkt linken - wird von plugin_dc benötigt
+    # target_link_libraries(${PACKAGE_NAME} windows::headers)
   endif ()
 
   add_subdirectory(opencpn-libs/api-${OCPN_API_VERSION_MINOR})
