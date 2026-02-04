@@ -3,8 +3,11 @@
 # ---------------------------------------------------------------------------
 
 set(CMLOC "CMakeLists: ")
+message(STATUS "D.B.: CMakeLists started")
 
-cmake_minimum_required(VERSION 3.15)
+# D.B. changged minimum required version to 3.15 from 3.5
+cmake_minimum_required(VERSION 3.5)
+
 if(COMMAND cmake_policy)
   if (POLICY CMP0043)
     cmake_policy(SET CMP0043 NEW)
@@ -140,12 +143,14 @@ include("PluginConfigure")
 
 # Windows: Entferne WindowsHeaders GL-Pfade KOMPLETT aus allen Include-Directories
 if(WIN32)
+  message(STATUS "D.B.: RENOVING WINDOWS HEADERS !!!!!!!!!!!!!")
   get_property(inc_dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
   list(FILTER inc_dirs EXCLUDE REGEX ".*WindowsHeaders.*")
   set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES "${inc_dirs}")
   
   # Stelle sicher, dass System OpenGL zuerst kommt
   if(OPENGL_INCLUDE_DIR)
+    message(STATUS "D.B.: include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})")
     include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
   endif()
 endif()
@@ -266,7 +271,7 @@ include("PluginInstall")
 include("PluginLocalization")
 include("PluginPackage")
 
-message(STATUS "${CMLOC}include directories: ")
+message(STATUS "${CMLOC}include dmessage(irectories: ")
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach (dir ${dirs})
   message(STATUS "${CMLOC}dir='${dir}'")
