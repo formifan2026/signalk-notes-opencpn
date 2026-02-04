@@ -248,12 +248,6 @@ if (NOT OCPN_FLATPAK_CONFIG)
   add_subdirectory(opencpn-libs/wxJSON)
   target_link_libraries(${PACKAGE_NAME} ocpn::wxjson)
 
-
-  # D.B. start: Dummy-Target, damit plugin_dc nicht abstürzt
-  add_library(windows_headers INTERFACE)
-  add_library(windows::headers ALIAS windows_headers)
-  # D.B. end: Dummy-Target, damit plugin_dc nicht abstürzt
-
   add_subdirectory(opencpn-libs/plugin_dc)
   target_link_libraries(${PACKAGE_NAME} ocpn::plugin-dc)
 
