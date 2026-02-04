@@ -138,16 +138,14 @@ option(Plugin_CXX11 "Use c++11" OFF)
 
 include("PluginConfigure")
 # Windows: System OpenGL-Header haben Vorrang vor WindowsHeaders/GL
-if(WIN32 AND OPENGL_FOUND)
-  get_target_property(WH_INCLUDES windows::headers INTERFACE_INCLUDE_DIRECTORIES)
-  if(WH_INCLUDES)
-    # Entferne GL-Header aus WindowsHeaders
-    list(FILTER WH_INCLUDES EXCLUDE REGEX ".*/GL$")
-    set_target_properties(windows::headers PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${WH_INCLUDES}")
-  endif()
-  # System OpenGL zuerst
-  include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_DIR})
-endif()
+if (WIN32)
+    # WindowsHeaders NICHT verwenden - enthält veraltete GL-Header
+    # Die modernen System-GL-Headers werden automatisch von find_package(OpenGL) gefunden
+    
+    # Nur notwendige Windows-Defines setzen
+    add_definitions(-DWIN32)
+    add_definitions(-D_WINDOWS)
+  endif ()
 
 add_definitions(-DUSE_S57)
 
