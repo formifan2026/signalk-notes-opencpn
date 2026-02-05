@@ -1062,75 +1062,81 @@ wxBitmap signalk_notes_opencpn_pi::PrepareIconBitmapForGL(const wxBitmap& src,
   return finalBmp;
 }
 
-#if !defined(__OCPN__ANDROID__)
+#if defined(ocpnUSE_GL)
+
+// --- Desktop OpenGL (Windows, Linux, macOS) ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
-  wxImage img = bmp.ConvertToImage();  // bereits Y-gefliipt aus
-                                       // CreateClusterBitmap / Icons
-  img.InitAlpha();
+    wxImage img = bmp.ConvertToImage();
+    img.InitAlpha();
 
-  int w = img.GetWidth();
-  int h = img.GetHeight();
+    int w = img.GetWidth();
+    int h = img.GetHeight();
 
-  unsigned char* rgb = img.GetData();
-  unsigned char* alpha = img.GetAlpha();
+    unsigned char* rgb = img.GetData();
+    unsigned char* alpha = img.GetAlpha();
 
-  if (!rgb) return;
+    if (!rgb) return;
 
-  std::vector<unsigned char> buffer(w * h * 4);
-  for (int i = 0; i < w * h; i++) {
-    buffer[i * 4 + 0] = rgb[i * 3 + 0];
-    buffer[i * 4 + 1] = rgb[i * 3 + 1];
-    buffer[i * 4 + 2] = rgb[i * 3 + 2];
-    buffer[i * 4 + 3] = alpha ? alpha[i] : 255;
-  }
+    std::vector<unsigned char> buffer(w * h * 4);
+    for (int i = 0; i < w * h; i++) {
+        buffer[i * 4 + 0] = rgb[i * 3 + 0];
+        buffer[i * 4 + 1] = rgb[i * 3 + 1];
+        buffer[i * 4 + 2] = rgb[i * 3 + 2];
+        buffer[i * 4 + 3] = alpha ? alpha[i] : 255;
+    }
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glRasterPos2i(x, y);
-  glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
+    glRasterPos2i(x, y);
+    glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
 }
-#endif
 
-#if defined(__OCPN__ANDROID__)
+#elif defined(__OCPN__ANDROID__)
+
+// --- GLES (Android) ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
-  wxImage img = bmp.ConvertToImage();  // bereits Y-gefliipt
-  img.InitAlpha();
+    wxImage img = bmp.ConvertToImage();
+    img.InitAlpha();
 
-  int w = img.GetWidth();
-  int h = img.GetHeight();
+    int w = img.GetWidth();
+    int h = img.GetHeight();
 
-  if (!img.GetData()) return;
+    if (!img.GetData()) return;
 
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  GLuint texId;
-  glGenTextures(1, &texId);
-  glBindTexture(GL_TEXTURE_2D, texId);
+    GLuint texId;
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-               img.GetData());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, img.GetData());
 
-  glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
 
-  glBegin(GL_QUADS);
-  glTexCoord2f(0, 0);
-  glVertex2f(x, y);
-  glTexCoord2f(1, 0);
-  glVertex2f(x + w, y);
-  glTexCoord2f(1, 1);
-  glVertex2f(x + w, y + h);
-  glTexCoord2f(0, 1);
-  glVertex2f(x, y + h);
-  glEnd();
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex2f(x, y);
+    glTexCoord2f(1, 0); glVertex2f(x + w, y);
+    glTexCoord2f(1, 1); glVertex2f(x + w, y + h);
+    glTexCoord2f(0, 1); glVertex2f(x, y + h);
+    glEnd();
 
-  glDisable(GL_TEXTURE_2D);
-  glDeleteTextures(1, &texId);
+    glDisable(GL_TEXTURE_2D);
+    glDeleteTextures(1, &texId);
 }
+
+#else
+
+// --- Kein GL verfügbar (Windows ohne GL, Linux ohne GL) ---
+void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap&, int, int) {
+    // nichts tun - RenderOverlay wird aufgerufen
+}
+
 #endif
 
 struct FutureViewPort {
