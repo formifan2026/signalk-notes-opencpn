@@ -39,7 +39,7 @@ jobs:
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            ubuntu:24.04 \
+            ubuntu:22.04 \
             bash -c "
               set -xe
 
@@ -47,7 +47,7 @@ jobs:
               apt-get install -y \
                 git cmake build-essential gettext devscripts equivs \
                 software-properties-common \
-                wx-common libwxbase3.2-dev libwxgtk3.2-dev \
+                wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev \
                 libbz2-dev libcurl4-openssl-dev libexpat1-dev \
                 libcairo2-dev libarchive-dev liblzma-dev \
                 libexif-dev lsb-release &&
@@ -164,8 +164,8 @@ jobs:
         shell: bash
         working-directory: .
         run: |
-          chmod +x ../ci/gha-cloudsmith-upload.sh
-          ../ci/gha-cloudsmith-upload.sh
+          chmod +x ci/gha-cloudsmith-upload.sh
+          ci/gha-cloudsmith-upload.sh
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
           CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
