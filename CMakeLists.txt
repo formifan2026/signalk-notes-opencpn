@@ -132,6 +132,32 @@ message(STATUS "${CMLOC}Build type: ${CMAKE_BUILD_TYPE}")
 
 project(${PACKAGE})
 
+# ---------------------------------------------------------
+# Git metadata for packaging (Flatpak, Cloudsmith, etc.)
+# ---------------------------------------------------------
+
+execute_process(
+    COMMAND git -C ${CMAKE_SOURCE_DIR} config --get remote.origin.url
+    OUTPUT_VARIABLE GIT_REPOSITORY
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --abbrev-ref HEAD
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+execute_process(
+    COMMAND git -C ${CMAKE_SOURCE_DIR} describe --tags --always
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+message(STATUS "GIT_REPOSITORY = ${GIT_REPOSITORY}")
+message(STATUS "GIT_BRANCH     = ${GIT_BRANCH}")
+message(STATUS "GIT_TAG        = ${GIT_TAG}")
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 include("PluginSetup")
