@@ -60,18 +60,15 @@ jobs:
                 xargs -a ci/extras/ubuntu-docker_extra_libs.txt apt-get install -y
               fi
 
-              # OpenCPN installieren
+              # OpenCPN installieren (ohne opencpn-dev)
               add-apt-repository ppa:opencpn/opencpn -y &&
               apt-get update &&
-              apt-get install -y opencpn opencpn-dev &&
+              apt-get install -y opencpn &&
 
-              # Build dependencies aus control-Datei
-              if [ -f ci/control ]; then
-                mk-build-deps --install ci/control
-              fi
+              # Git Safe Directory setzen
+              git config --global --add safe.directory /workspace
 
               # opencpn-libs aktualisieren
-              git config --global protocol.file.allow always
               git submodule update --init opencpn-libs
 
               # Plugin bauen
@@ -180,25 +177,30 @@ jobs:
       SDK_VER: 22.08
       FLATPAK_BRANCH: stable
       CMAKE_BUILD_PARALLEL_LEVEL: 2
-  
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-  
+
+      - name: Restore Git remote URL
+        run: |
+          git remote set-url origin https://github.com/${{ github.repository }}.git
+          git fetch --all
+
       - name: Install base dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             git ca-certificates wget \
             flatpak flatpak-builder python3-pip
-  
+
       - name: Install Cloudsmith CLI
         run: |
           pip3 install --upgrade pip
           pip3 install cloudsmith-cli
-  
+
       - name: Install extra libs
         run: |
           if [ -f ci/extras/extra_libs.txt ]; then
@@ -207,18 +209,18 @@ jobs:
           if [ -f ci/extras/flatpak_extra_libs.txt ]; then
             sudo xargs -a ci/extras/flatpak_extra_libs.txt apt-get install -y
           fi
-  
+
       - name: Update opencpn-libs
         run: |
           git config --global protocol.file.allow always
           git submodule update --init opencpn-libs
-  
+
       - name: Setup Flatpak environment
         run: |
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
           flatpak install --user -y flathub org.freedesktop.Sdk//$SDK_VER
           flatpak install --user -y flathub org.opencpn.OpenCPN
-  
+
       - name: Configure CMake
         run: |
           rm -rf build
@@ -230,13 +232,13 @@ jobs:
             -DOCPN_FLATPAK_CONFIG=ON \
             -DSDK_VER=$SDK_VER \
             -DFLATPAK_BRANCH=$FLATPAK_BRANCH
-  
+
       - name: Build Flatpak
         run: |
           cd build
           make flatpak-build
           make flatpak-pkg
-  
+
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
@@ -249,7 +251,7 @@ jobs:
           CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
           CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
           CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
-  
+
   build-macos:
     runs-on: macos-12
     env:
@@ -626,7 +628,13 @@ jobs:
           wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
           unzip master.zip
           mv OCPNAndroidCommon-master OCPNAndroidCommon
-  
+
+      - name: Build Qt for Android (arm64)
+        run: |
+          cd OCPNAndroidCommon
+          chmod +x build-qt.sh
+          ./build-qt.sh arm64
+
       - name: Install latest CMake via pip
         run: |
           python3 -m pip install --upgrade pip setuptools
@@ -736,6 +744,12 @@ jobs:
           wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
           unzip master.zip
           mv OCPNAndroidCommon-master OCPNAndroidCommon
+
+      - name: Build Qt for Android (arm64)
+        run: |
+          cd OCPNAndroidCommon
+          chmod +x build-qt.sh
+          ./build-qt.sh arm64
 
       - name: Install latest CMake via pip
         run: |
