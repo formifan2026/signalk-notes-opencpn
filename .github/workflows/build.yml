@@ -47,10 +47,25 @@ jobs:
               apt-get install -y \
                 git cmake build-essential gettext devscripts equivs \
                 software-properties-common \
-                wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev \
                 libbz2-dev libcurl4-openssl-dev libexpat1-dev \
                 libcairo2-dev libarchive-dev liblzma-dev \
-                libexif-dev lsb-release &&
+                libexif-dev lsb-release pkg-config libgtk-3-dev \
+                libtiff-dev libjpeg-dev libpng-dev libsecret-1-dev \
+                libnotify-dev libsm-dev libx11-dev libxtst-dev &&
+
+              # Entferne alte wxWidgets 3.0 Pakete
+              apt-get remove -y wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev || true
+
+              # wxWidgets 3.2.2.1 bauen
+              git clone --depth 1 --branch v3.2.2.1 https://github.com/wxWidgets/wxWidgets.git &&
+              cd wxWidgets &&
+              mkdir buildgtk &&
+              cd buildgtk &&
+              ../configure --with-gtk=3 --enable-unicode --enable-graphics_ctx --enable-shared &&
+              make -j\$(nproc) &&
+              make install &&
+              ldconfig &&
+              cd /workspace &&
 
               # Extra libs
               if [ -f ci/extras/extra_libs.txt ]; then
@@ -96,79 +111,79 @@ jobs:
           CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
           CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
 
-  build-debian:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: debian-x86_64
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
-  
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-  
-      - name: Install base tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            devscripts equivs git cmake build-essential gettext
-  
-      - name: Install extra libs
-        run: |
-          if [ -f ci/extras/extra_libs.txt ]; then
-            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
-          fi
-          if [ -f ci/extras/debian_extra_libs.txt ]; then
-            sudo xargs -a ci/extras/debian_extra_libs.txt apt-get install -y
-          fi
-  
-      - name: Install build-deps from control file
-        run: |
-          sudo mk-build-deps --install ./ci/control
-  
-      - name: Update opencpn-libs
-        run: |
-          git submodule update --init opencpn-libs
-  
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/usr/local
-  
-      - name: Build
-        run: |
-          cd build
-          make -j$(nproc)
-  
-      - name: Package
-        run: |
-          cd build
-          make package
-          ls -l
-
-      - name: Install Cloudsmith CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install --upgrade pip
-          pip3 install cloudsmith-cli
-
-      - name: Upload to Cloudsmith
-        if: github.event_name == 'push'
-        shell: bash
-        working-directory: .
-        run: |
-          chmod +x ci/gha-cloudsmith-upload.sh
-          ci/gha-cloudsmith-upload.sh
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
-          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
-          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+#  build-debian:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: debian-x86_64
+#      CMAKE_BUILD_PARALLEL_LEVEL: 2
+#  
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#  
+#      - name: Install base tools
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y \
+#            devscripts equivs git cmake build-essential gettext
+#  
+#      - name: Install extra libs
+#        run: |
+#          if [ -f ci/extras/extra_libs.txt ]; then
+#            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
+#          fi
+#          if [ -f ci/extras/debian_extra_libs.txt ]; then
+#            sudo xargs -a ci/extras/debian_extra_libs.txt apt-get install -y
+#          fi
+#  
+#      - name: Install build-deps from control file
+#        run: |
+#          sudo mk-build-deps --install ./ci/control
+#  
+#      - name: Update opencpn-libs
+#        run: |
+#          git submodule update --init opencpn-libs
+#  
+#      - name: Configure
+#        run: |
+#          mkdir build
+#          cd build
+#          cmake .. \
+#            -DCMAKE_BUILD_TYPE=Release \
+#            -DCMAKE_INSTALL_PREFIX=/usr/local
+#  
+#      - name: Build
+#        run: |
+#          cd build
+#          make -j$(nproc)
+#  
+#      - name: Package
+#        run: |
+#          cd build
+#          make package
+#          ls -l
+#
+#      - name: Install Cloudsmith CLI
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip
+#          pip3 install --upgrade pip
+#          pip3 install cloudsmith-cli
+#
+#      - name: Upload to Cloudsmith
+#        if: github.event_name == 'push'
+#        shell: bash
+#        working-directory: .
+#        run: |
+#          chmod +x ci/gha-cloudsmith-upload.sh
+#          ci/gha-cloudsmith-upload.sh
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+#          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+#          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
       
   build-flatpak:
     runs-on: ubuntu-latest
@@ -184,7 +199,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-
+          fetch-depth: 0
       - name: Restore Git remote URL
         run: |
           git remote set-url origin https://github.com/${{ github.repository }}.git
@@ -634,21 +649,6 @@ jobs:
         run: |
           git clone https://github.com/OpenCPN/android-qt-sdk.git
 
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-
-          cmake .. \
-            -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=cmake/android-aarch64-toolchain.cmake \
-            -DANDROID_NDK=$ANDROID_NDK_HOME \
-            -DOCPN_Android_Common=../OCPNAndroidCommon \
-            -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/arm64 \
-            -DQt_Build=../android-qt-sdk/qt5/arm64/qtbase \
-            -D_wx_selected_config=androideabi-qt-arm64 \
-            -DCMAKE_BUILD_TYPE=Release
-
       - name: Install latest CMake via pip
         run: |
           python3 -m pip install --upgrade pip setuptools
@@ -711,7 +711,7 @@ jobs:
        uses: actions/checkout@v3
        with:
          submodules: recursive
-
+         fetch-depth: 0
      - name: Install base tools
        run: |
          sudo apt-get update
