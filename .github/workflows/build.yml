@@ -21,7 +21,7 @@ env:
 
 jobs:
   build-ubuntu-docker:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       OCPN_TARGET: ubuntu-gtk3
       CMAKE_BUILD_PARALLEL_LEVEL: 2
@@ -37,12 +37,12 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
 
   build-debian:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       OCPN_TARGET: debian-x86_64
       CMAKE_BUILD_PARALLEL_LEVEL: 2
@@ -58,12 +58,12 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
 
   build-flatpak:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak-x86_64
       CMAKE_BUILD_PARALLEL_LEVEL: 2
@@ -79,8 +79,8 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
 
   build-macos:
@@ -100,8 +100,8 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
 
   build-macos-universal:
@@ -121,8 +121,8 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
 
   build-msvc:
@@ -264,13 +264,13 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
-          if [ -f build/upload.sh ]; then
+          if [ -f build/cloudsmith-upload.sh ]; then
             cd build
-            bash upload.sh
+            bash cloudsmith-upload.sh
           fi
 
   build-android-armhf:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       OCPN_TARGET: android-armhf
       CMAKE_BUILD_PARALLEL_LEVEL: 2
@@ -286,6 +286,6 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/upload.sh ]; then
-            cd build && bash upload.sh
+          if [ -f build/cloudsmith-upload.sh ]; then
+            cd build && bash cloudsmith-upload.sh
           fi
