@@ -383,12 +383,16 @@ jobs:
 
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
+        shell: bash
+        working-directory: build
         run: |
-          cp ci/gha-cloudsmith-upload.sh build/
-          cd build
-          chmod +x gha-cloudsmith-upload.sh
-          ./gha-cloudsmith-upload.sh
-      
+          chmod +x ../ci/gha-cloudsmith-upload.sh
+          ../ci/gha-cloudsmith-upload.sh
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
 
   build-android-armhf:
     runs-on: ubuntu-latest

@@ -70,7 +70,7 @@ set(BETA "beta")
 set(ALPHA "alpha")
 
 set(CLOUDSMITH_BASE_REPOSITORY "signalk_notes_opencpn")
-set(CLOUDSMITH_USER "opencpn")
+set(CLOUDSMITH_USER "formifan2002")
 
 # ---------------------------------------------------------
 # Cloudsmith Repo Selection based on Git Tag
