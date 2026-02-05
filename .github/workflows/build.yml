@@ -698,95 +698,95 @@ jobs:
           CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
           CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
   
-   build-android-armhf:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
-      OCPN_TARGET: android-armhf
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
+  build-android-armhf:
+   runs-on: ubuntu-latest
+   env:
+     ANDROID_HOME: ${{ github.workspace }}/android-sdk
+     ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
+     OCPN_TARGET: android-armhf
+     CMAKE_BUILD_PARALLEL_LEVEL: 2
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+   steps:
+     - name: Checkout
+       uses: actions/checkout@v3
+       with:
+         submodules: recursive
 
-      - name: Install base tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip git ninja-build gettext python3-pip
+     - name: Install base tools
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y wget unzip git ninja-build gettext python3-pip
 
-      - name: Install Cloudsmith CLI
-        run: |
-          pip3 install --upgrade pip
-          pip3 install cloudsmith-cli
+     - name: Install Cloudsmith CLI
+       run: |
+         pip3 install --upgrade pip
+         pip3 install cloudsmith-cli
 
-      - name: Install Android SDK + NDK
-        run: |
-          mkdir -p $ANDROID_HOME
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+     - name: Install Android SDK + NDK
+       run: |
+         mkdir -p $ANDROID_HOME
+         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+         unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
 
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
-            "platform-tools" \
-            "platforms;android-19" \
-            "build-tools;33.0.2" \
-            "ndk;25.2.9519653"
+         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+           "platform-tools" \
+           "platforms;android-19" \
+           "build-tools;33.0.2" \
+           "ndk;25.2.9519653"
 
-          sudo mkdir -p /opt/android
-          sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
+         sudo mkdir -p /opt/android
+         sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
 
-      - name: Update opencpn-libs
-        run: |
-          git config --global protocol.file.allow always
-          git submodule update --init opencpn-libs
+     - name: Update opencpn-libs
+       run: |
+         git config --global protocol.file.allow always
+         git submodule update --init opencpn-libs
 
-      - name: Download OCPNAndroidCommon
-        run: |
-          wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
-          unzip master.zip
-          mv OCPNAndroidCommon-master OCPNAndroidCommon
+     - name: Download OCPNAndroidCommon
+       run: |
+         wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+         unzip master.zip
+         mv OCPNAndroidCommon-master OCPNAndroidCommon
 
-      - name: Download Android Qt SDK
-        run: |
-          git clone https://github.com/OpenCPN/android-qt-sdk.git
+     - name: Download Android Qt SDK
+       run: |
+         git clone https://github.com/OpenCPN/android-qt-sdk.git
 
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
+     - name: Configure CMake
+       run: |
+         mkdir build
+         cd build
 
-          cmake .. \
-            -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
-            -DANDROID_NDK=$ANDROID_NDK_HOME \
-            -DOCPN_Android_Common=../OCPNAndroidCommon \
-            -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/armhf \
-            -DQt_Build=../android-qt-sdk/qt5/armhf/qtbase \
-            -D_wx_selected_config=androideabi-qt-armhf \
-            -DCMAKE_BUILD_TYPE=Release
+         cmake .. \
+           -G Ninja \
+           -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
+           -DANDROID_NDK=$ANDROID_NDK_HOME \
+           -DOCPN_Android_Common=../OCPNAndroidCommon \
+           -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/armhf \
+           -DQt_Build=../android-qt-sdk/qt5/armhf/qtbase \
+           -D_wx_selected_config=androideabi-qt-armhf \
+           -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: |
-          cd build
-          ninja
+     - name: Build
+       run: |
+         cd build
+         ninja
 
-      - name: Package
-        run: |
-          cd build
-          make package
+     - name: Package
+       run: |
+         cd build
+         make package
 
-      - name: Upload to Cloudsmith
-        if: github.event_name == 'push'
-        shell: bash
-        working-directory: build
-        run: |
-          chmod +x ../ci/gha-cloudsmith-upload.sh
-          ../ci/gha-cloudsmith-upload.sh
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
-          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
-          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+     - name: Upload to Cloudsmith
+       if: github.event_name == 'push'
+       shell: bash
+       working-directory: build
+       run: |
+         chmod +x ../ci/gha-cloudsmith-upload.sh
+         ../ci/gha-cloudsmith-upload.sh
+       env:
+         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+         CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+         CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+         CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
