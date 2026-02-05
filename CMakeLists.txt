@@ -130,8 +130,6 @@ endif ()
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "" "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
 message(STATUS "${CMLOC}Build type: ${CMAKE_BUILD_TYPE}")
 
-project(${PACKAGE})
-
 # ---------------------------------------------------------
 # Git metadata for packaging (Flatpak, Cloudsmith, etc.)
 # ---------------------------------------------------------
@@ -157,6 +155,8 @@ execute_process(
 message(STATUS "GIT_REPOSITORY = ${GIT_REPOSITORY}")
 message(STATUS "GIT_BRANCH     = ${GIT_BRANCH}")
 message(STATUS "GIT_TAG        = ${GIT_TAG}")
+
+project(${PACKAGE})
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 

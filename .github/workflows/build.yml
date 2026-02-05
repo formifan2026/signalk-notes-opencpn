@@ -625,11 +625,6 @@ jobs:
           sudo mkdir -p /opt/android
           sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
   
-      - name: Update opencpn-libs
-        run: |
-          git config --global protocol.file.allow always
-          git submodule update --init opencpn-libs
-  
       - name: Install extra libs
         run: |
           if [ -f ci/extras/extra_libs.txt ]; then
@@ -737,11 +732,6 @@ jobs:
 
          sudo mkdir -p /opt/android
          sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
-
-     - name: Update opencpn-libs
-       run: |
-         git config --global protocol.file.allow always
-         git submodule update --init opencpn-libs
 
      - name: Download OCPNAndroidCommon
        run: |
