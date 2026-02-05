@@ -122,7 +122,14 @@ jobs:
           cd build
           make package
           ls -l
-  
+
+      - name: Install Cloudsmith CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install --upgrade pip
+          pip3 install cloudsmith-cli
+
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
@@ -267,223 +274,223 @@ jobs:
           chmod +x gha-cloudsmith-upload.sh
           ./gha-cloudsmith-upload.sh
       
-  build-msvc:
-    runs-on: windows-2022
-    env:
-      OCPN_TARGET: msvc-wx32
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Setup MSVC
-        uses: microsoft/setup-msbuild@v1.1
-
-      - name: Setup MSVC Environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x86
-
-      - name: Cache wxWidgets
-        id: cache-wx
-        uses: actions/cache@v3
-        with:
-          path: C:\wxWidgets-3.2.2.1
-          key: wxWidgets-3.2.2.1-msvc-x86-v3
-
-      - name: Install Dependencies
-        shell: pwsh
-        run: |
-          choco install -y python --version=3.11.0
-          choco install -y gettext
-          
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          
-          python -m pip install --upgrade pip
-          python -m pip install cloudsmith-cli
-          python -m pip install cryptography
-          
-          Write-Host "Checking Gettext installation..."
-          where.exe msgfmt
-          where.exe msgmerge
-
-      - name: Download and Install wxWidgets
-        if: steps.cache-wx.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $wx_version = "3.2.2.1"
-          $wx_source_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version.7z"
-          $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
-          
-          Write-Host "Downloading wxWidgets..."
-          curl.exe -L -o wxWidgets-source.7z $wx_source_url
-          curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
-          
-          $sourceSize = (Get-Item wxWidgets-source.7z).Length
-          $headerSize = (Get-Item wxWidgets-headers.7z).Length
-          
-          if ($sourceSize -lt 10000000 -or $headerSize -lt 1000000) {
-            Write-Error "Download failed"
-            exit 1
-          }
-          
-          New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
-          7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
-          7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
-          
-          cd "C:\wxWidgets-3.2.2.1\build\msw"
-          nmake /f makefile.vc BUILD=release SHARED=1 RUNTIME_LIBS=dynamic COMPILER_VERSION=143 VENDOR=custom
-
-      - name: Download OpenCPN Dependencies
-        shell: pwsh
-        run: |
-          curl.exe -L -o opencpn.lib https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib/download
-          curl.exe -L -o nsis-setup.exe https://download.opencpn.org/s/54HsBDLNzRZLL6i/download/nsis-3.04-setup.exe
-          Start-Process -FilePath "nsis-setup.exe" -ArgumentList "/S" -Wait
-
-      - name: Determine wxWidgets Lib Directory
-        id: wx-lib-dir
-        shell: pwsh
-        run: |
-          $possibleDirs = @(
-            "C:\wxWidgets-3.2.2.1\lib\vc14x_dll",
-            "C:\wxWidgets-3.2.2.1\lib\vc143_dll",
-            "C:\wxWidgets-3.2.2.1\lib\vc_dll"
-          )
-          
-          foreach ($dir in $possibleDirs) {
-            if (Test-Path $dir) {
-              echo "WX_LIB_DIR=$dir" >> $env:GITHUB_OUTPUT
-              exit 0
-            }
-          }
-          
-          $foundDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
-          if ($foundDir) {
-            echo "WX_LIB_DIR=$($foundDir.FullName)" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Error "No wxWidgets lib directory found"
-            exit 1
-          }
-
-      - name: Configure CMake
-        shell: pwsh
-        run: |
-          New-Item -Path "build" -ItemType Directory -Force
-          cd build
-          
-          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          
-          $gettextPath = "C:\Program Files\gettext-iconv\bin"
-          if (Test-Path $gettextPath) {
-            $env:Path = "$gettextPath;$env:Path"
-          }
-          
-          Write-Host "PATH: $env:Path"
-          Write-Host "Looking for msgfmt..."
-          where.exe msgfmt
-          
-          $wxLibDir = "${{ steps.wx-lib-dir.outputs.WX_LIB_DIR }}"
-          
-          cmake -A Win32 -G "Visual Studio 17 2022" `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
-            -DwxWidgets_LIB_DIR="$wxLibDir" `
-            ..
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "CMake configuration failed"
-            exit 1
-          }
-
-      - name: Build
-        working-directory: build
-        run: cmake --build . --config Release --target package
-
-      - name: Upload to Cloudsmith
-        if: github.event_name == 'push'
-        shell: bash
-        working-directory: build
-        run: |
-          chmod +x ../ci/gha-cloudsmith-upload.sh
-          ../ci/gha-cloudsmith-upload.sh
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
-          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
-          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
-
-  build-android-armhf:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
-      OCPN_TARGET: android-armhf
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Install base tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip git cmake ninja-build gettext
-
-      - name: Install Android SDK
-        run: |
-          mkdir -p $ANDROID_HOME
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
-          unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
-            "platform-tools" \
-            "platforms;android-29" \
-            "build-tools;33.0.2" \
-            "ndk;25.2.9519653"
-
-      - name: Set NDK path
-        run: |
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
-
-      - name: Download OCPNAndroidCommon
-        run: |
-          wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
-          unzip master.zip
-          mv OCPNAndroidCommon-master OCPNAndroidCommon
-
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake .. \
-            -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
-            -DANDROID_NDK=$ANDROID_NDK_HOME \
-            -DOCPN_Android_Common=../OCPNAndroidCommon \
-            -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: |
-          cd build
-          make -j$(nproc)
-
-      - name: Package
-        run: |
-          cd build
-          make package
-      - name: Upload to Cloudsmith
-        if: github.event_name == 'push'
-        run: |
-          cp ci/gha-cloudsmith-upload.sh build/
-          cd build
-          chmod +x gha-cloudsmith-upload.sh
-          ./gha-cloudsmith-upload.sh
+# build-msvc:
+#   runs-on: windows-2022
+#   env:
+#     OCPN_TARGET: msvc-wx32
+#     CMAKE_BUILD_PARALLEL_LEVEL: 2
+#   steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
+#       with:
+#         submodules: recursive
+#
+#     - name: Setup MSVC
+#       uses: microsoft/setup-msbuild@v1.1
+#
+#     - name: Setup MSVC Environment
+#       uses: ilammy/msvc-dev-cmd@v1
+#       with:
+#         arch: x86
+#
+#     - name: Cache wxWidgets
+#       id: cache-wx
+#       uses: actions/cache@v3
+#       with:
+#         path: C:\wxWidgets-3.2.2.1
+#         key: wxWidgets-3.2.2.1-msvc-x86-v3
+#
+#     - name: Install Dependencies
+#       shell: pwsh
+#       run: |
+#         choco install -y python --version=3.11.0
+#         choco install -y gettext
+#         
+#         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+#         
+#         python -m pip install --upgrade pip
+#         python -m pip install cloudsmith-cli
+#         python -m pip install cryptography
+#         
+#         Write-Host "Checking Gettext installation..."
+#         where.exe msgfmt
+#         where.exe msgmerge
+#
+#     - name: Download and Install wxWidgets
+#       if: steps.cache-wx.outputs.cache-hit != 'true'
+#       shell: pwsh
+#       run: |
+#         $wx_version = "3.2.2.1"
+#         $wx_source_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version.7z"
+#         $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
+#         
+#         Write-Host "Downloading wxWidgets..."
+#         curl.exe -L -o wxWidgets-source.7z $wx_source_url
+#         curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
+#         
+#         $sourceSize = (Get-Item wxWidgets-source.7z).Length
+#         $headerSize = (Get-Item wxWidgets-headers.7z).Length
+#         
+#         if ($sourceSize -lt 10000000 -or $headerSize -lt 1000000) {
+#           Write-Error "Download failed"
+#           exit 1
+#         }
+#         
+#         New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
+#         7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
+#         7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
+#         
+#         cd "C:\wxWidgets-3.2.2.1\build\msw"
+#         nmake /f makefile.vc BUILD=release SHARED=1 RUNTIME_LIBS=dynamic COMPILER_VERSION=143 VENDOR=custom
+#
+#     - name: Download OpenCPN Dependencies
+#       shell: pwsh
+#       run: |
+#         curl.exe -L -o opencpn.lib https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib/download
+#         curl.exe -L -o nsis-setup.exe https://download.opencpn.org/s/54HsBDLNzRZLL6i/download/nsis-3.04-setup.exe
+#         Start-Process -FilePath "nsis-setup.exe" -ArgumentList "/S" -Wait
+#
+#     - name: Determine wxWidgets Lib Directory
+#       id: wx-lib-dir
+#       shell: pwsh
+#       run: |
+#         $possibleDirs = @(
+#           "C:\wxWidgets-3.2.2.1\lib\vc14x_dll",
+#           "C:\wxWidgets-3.2.2.1\lib\vc143_dll",
+#           "C:\wxWidgets-3.2.2.1\lib\vc_dll"
+#         )
+#         
+#         foreach ($dir in $possibleDirs) {
+#           if (Test-Path $dir) {
+#             echo "WX_LIB_DIR=$dir" >> $env:GITHUB_OUTPUT
+#             exit 0
+#           }
+#         }
+#         
+#         $foundDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
+#         if ($foundDir) {
+#           echo "WX_LIB_DIR=$($foundDir.FullName)" >> $env:GITHUB_OUTPUT
+#         } else {
+#           Write-Error "No wxWidgets lib directory found"
+#           exit 1
+#         }
+#
+#     - name: Configure CMake
+#       shell: pwsh
+#       run: |
+#         New-Item -Path "build" -ItemType Directory -Force
+#         cd build
+#         
+#         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+#         
+#         $gettextPath = "C:\Program Files\gettext-iconv\bin"
+#         if (Test-Path $gettextPath) {
+#           $env:Path = "$gettextPath;$env:Path"
+#         }
+#         
+#         Write-Host "PATH: $env:Path"
+#         Write-Host "Looking for msgfmt..."
+#         where.exe msgfmt
+#         
+#         $wxLibDir = "${{ steps.wx-lib-dir.outputs.WX_LIB_DIR }}"
+#         
+#         cmake -A Win32 -G "Visual Studio 17 2022" `
+#           -DCMAKE_BUILD_TYPE=Release `
+#           -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
+#           -DwxWidgets_LIB_DIR="$wxLibDir" `
+#           ..
+#         
+#         if ($LASTEXITCODE -ne 0) {
+#           Write-Error "CMake configuration failed"
+#           exit 1
+#         }
+#
+#     - name: Build
+#       working-directory: build
+#       run: cmake --build . --config Release --target package
+#
+#     - name: Upload to Cloudsmith
+#       if: github.event_name == 'push'
+#       shell: bash
+#       working-directory: build
+#       run: |
+#         chmod +x ../ci/gha-cloudsmith-upload.sh
+#         ../ci/gha-cloudsmith-upload.sh
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+#         CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+#         CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+#
+# build-android-armhf:
+#   runs-on: ubuntu-latest
+#   env:
+#     ANDROID_HOME: ${{ github.workspace }}/android-sdk
+#     ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
+#     OCPN_TARGET: android-armhf
+#     CMAKE_BUILD_PARALLEL_LEVEL: 2
+#
+#   steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
+#       with:
+#         submodules: recursive
+#
+#     - name: Install base tools
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y wget unzip git cmake ninja-build gettext
+#
+#     - name: Install Android SDK
+#       run: |
+#         mkdir -p $ANDROID_HOME
+#         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+#         unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+#         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+#
+#         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+#           "platform-tools" \
+#           "platforms;android-29" \
+#           "build-tools;33.0.2" \
+#           "ndk;25.2.9519653"
+#
+#     - name: Set NDK path
+#       run: |
+#         export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+#         echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+#
+#     - name: Download OCPNAndroidCommon
+#       run: |
+#         wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+#         unzip master.zip
+#         mv OCPNAndroidCommon-master OCPNAndroidCommon
+#
+#     - name: Configure CMake
+#       run: |
+#         mkdir build
+#         cd build
+#         cmake .. \
+#           -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
+#           -DANDROID_NDK=$ANDROID_NDK_HOME \
+#           -DOCPN_Android_Common=../OCPNAndroidCommon \
+#           -DCMAKE_BUILD_TYPE=Release
+#
+#     - name: Build
+#       run: |
+#         cd build
+#         make -j$(nproc)
+#
+#     - name: Package
+#       run: |
+#         cd build
+#         make package
+#     - name: Upload to Cloudsmith
+#       if: github.event_name == 'push'
+#       run: |
+#         cp ci/gha-cloudsmith-upload.sh build/
+#         cd build
+#         chmod +x gha-cloudsmith-upload.sh
+#         ./gha-cloudsmith-upload.sh
       
   build-android-arm64:
     runs-on: ubuntu-latest
