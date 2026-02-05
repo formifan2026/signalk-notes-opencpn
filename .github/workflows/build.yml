@@ -42,7 +42,7 @@ jobs:
               apt-get update &&
               apt-get install -y \
                 git cmake build-essential gettext \
-                wx-common libwxbase3.0-dev libwxgtk3.0-dev \
+                wx-common libwxbase3.2-dev libwxgtk3.2-dev \
                 libbz2-dev libcurl4-openssl-dev libexpat1-dev \
                 libcairo2-dev libarchive-dev liblzma-dev \
                 libexif-dev lsb-release \
@@ -64,10 +64,10 @@ jobs:
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/gha-cloudsmith-upload.sh ]; then
-            cd build
-            bash gha-cloudsmith-upload.sh
-          fi
+          cp ci/gha-cloudsmith-upload.sh build/
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
 
   build-debian:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             git cmake build-essential gettext \
-            wx-common libwxbase3.0-dev libwxgtk3.0-dev \
+            wx-common libwxbase3.2-dev libwxgtk3.2-dev \
             libbz2-dev libcurl4-openssl-dev libexpat1-dev \
             libcairo2-dev libarchive-dev liblzma-dev \
             libexif-dev lsb-release
@@ -110,42 +110,43 @@ jobs:
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/gha-cloudsmith-upload.sh ]; then
-            cd build
-            bash gha-cloudsmith-upload.sh
-          fi
+          cp ci/gha-cloudsmith-upload.sh build/
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
+      
 
-  build-flatpak:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak-x86_64
-      BUILD_ARCH: x86_64
-      SDK_VER: 22.08
-      FLATPAK_BRANCH: stable   # oder beta, wenn du willst
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
+build-flatpak:
+  runs-on: ubuntu-latest
+  env:
+    OCPN_TARGET: flatpak-x86_64
+    BUILD_ARCH: x86_64
+    SDK_VER: 22.08
+    FLATPAK_BRANCH: stable
+    CMAKE_BUILD_PARALLEL_LEVEL: 2
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
 
-      - name: Install base dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git ca-certificates wget \
-            flatpak flatpak-builder
+    - name: Install base dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          git ca-certificates wget \
+          flatpak flatpak-builder
 
-      - name: Build Flatpak
-        run: bash ci/circleci-build-flatpak.sh
+    - name: Build Flatpak
+      run: bash ci/circleci-build-flatpak.sh
 
-      - name: Upload artifacts
-        if: github.event_name == 'push'
-        run: |
-          if [ -f build/gha-cloudsmith-upload.sh ]; then
-            cd build && bash gha-cloudsmith-upload.sh
-          fi
+    - name: Upload artifacts
+      if: github.event_name == 'push'
+      run: |
+        cd build
+        chmod +x gha-cloudsmith-upload.sh
+        ./gha-cloudsmith-upload.sh
 
   build-macos:
     runs-on: macos-12
@@ -191,9 +192,11 @@ jobs:
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
+          cp ci/gha-cloudsmith-upload.sh build/
           cd build
           chmod +x gha-cloudsmith-upload.sh
           ./gha-cloudsmith-upload.sh
+      
 
   build-macos-universal:
     runs-on: macos-12
@@ -238,10 +241,11 @@ jobs:
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
+          cp ci/gha-cloudsmith-upload.sh build/
           cd build
           chmod +x gha-cloudsmith-upload.sh
           ./gha-cloudsmith-upload.sh
-
+      
   build-msvc:
     runs-on: windows-2022
     env:
@@ -379,12 +383,12 @@ jobs:
 
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
-        shell: bash
         run: |
-          if [ -f build/gha-cloudsmith-upload.sh ]; then
-            cd build
-            bash gha-cloudsmith-upload.sh
-          fi
+          cp ci/gha-cloudsmith-upload.sh build/
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
+      
 
   build-android-armhf:
     runs-on: ubuntu-latest
