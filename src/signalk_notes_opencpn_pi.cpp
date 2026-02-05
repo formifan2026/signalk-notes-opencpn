@@ -9,19 +9,19 @@
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
  *   - Some icons are based on OpenCPN standard icons (GPLv2)
  ******************************************************************************/
-#ifdef __WXMSW__   // Windows
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
-  #include <GL/gl.h>
-  #include <GL/glu.h>
+#ifdef __WXMSW__  // Windows
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 #elif defined(__WXGTK__) || defined(__WXOSX__)  // Linux/macOS
-  #include <GL/gl.h>
-  #include <GL/glu.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #endif
 
-#ifdef __OCPN__ANDROID__   // nur Android
-  #include <GLES2/gl2.h>
+#ifdef __OCPN__ANDROID__  // nur Android
+#include <GLES2/gl2.h>
 #endif
 
 #include "version.h"
@@ -48,8 +48,13 @@
 #include <wx/filename.h>
 #include <wx/graphics.h>
 #include <algorithm>
+#ifdef __WXMSW__
+// No uuid library on Windows. Use RPC-API instead
+#include <rpc.h>
+#pragma comment(lib, "Rpcrt4.lib")
+#else
 #include <uuid/uuid.h>
-
+#endif
 #include "signalk_notes_opencpn_pi.h"
 #include "wxWTranslateCatalog.h"
 
@@ -756,6 +761,21 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   // Client UUID
   pConf->Read("ClientUUID", &m_clientUUID, "");
   if (m_clientUUID.IsEmpty()) {
+#ifdef __WXMSW__
+    // Windows: RPC UUID API
+    UUID uuid;
+    UuidCreate(&uuid);
+
+    RPC_CSTR str = nullptr;
+    UuidToStringA(&uuid, &str);
+
+    if (str) {
+      m_clientUUID = wxString(reinterpret_cast<char*>(str));
+      RpcStringFreeA(&str);
+    }
+
+#else
+    // Linux, macOS, Android: libuuid
     uuid_t binuuid;
     uuid_generate_random(binuuid);
 
@@ -763,10 +783,12 @@ void signalk_notes_opencpn_pi::LoadConfig() {
     uuid_unparse_lower(binuuid, uuid_str);
 
     m_clientUUID = wxString(uuid_str);
-    pConf->Write("ClientUUID", m_clientUUID);
+#endif
 
+    pConf->Write("ClientUUID", m_clientUUID);
     SKN_LOG(this, "Generated new client UUID: %s", m_clientUUID);
   }
+
   // Display-Einstellungen laden
   m_iconSize = m_pTPConfig->Read("DisplaySettings/IconSize",
                                  (long)tpConfigDialog::DEFAULT_ICON_SIZE);
@@ -1171,13 +1193,11 @@ bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
   return allInside;
 }
 
-bool signalk_notes_opencpn_pi::HasOptions() {
-    return true;
-}
+bool signalk_notes_opencpn_pi::HasOptions() { return true; }
 
 void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
-    tpConfigDialog dlg(this, parent);
-    dlg.ShowModal();
+  tpConfigDialog dlg(this, parent);
+  dlg.ShowModal();
 }
 
 wxWindow* signalk_notes_opencpn_pi::GetParentWindow() {
