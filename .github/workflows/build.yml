@@ -115,38 +115,38 @@ jobs:
           chmod +x gha-cloudsmith-upload.sh
           ./gha-cloudsmith-upload.sh
       
-
-build-flatpak:
-  runs-on: ubuntu-latest
-  env:
-    OCPN_TARGET: flatpak-x86_64
-    BUILD_ARCH: x86_64
-    SDK_VER: 22.08
-    FLATPAK_BRANCH: stable
-    CMAKE_BUILD_PARALLEL_LEVEL: 2
-
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Install base dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          git ca-certificates wget \
-          flatpak flatpak-builder
-
-    - name: Build Flatpak
-      run: bash ci/circleci-build-flatpak.sh
-
-    - name: Upload artifacts
-      if: github.event_name == 'push'
-      run: |
-        cd build
-        chmod +x gha-cloudsmith-upload.sh
-        ./gha-cloudsmith-upload.sh
+  build-flatpak:
+    runs-on: ubuntu-latest
+    env:
+      OCPN_TARGET: flatpak-x86_64
+      BUILD_ARCH: x86_64
+      SDK_VER: 22.08
+      FLATPAK_BRANCH: stable
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: Install base dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git ca-certificates wget \
+            flatpak flatpak-builder
+  
+      - name: Build Flatpak
+        run: bash ci/circleci-build-flatpak.sh
+  
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
+	  
 
   build-macos:
     runs-on: macos-12
