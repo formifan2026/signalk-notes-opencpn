@@ -23,22 +23,50 @@ jobs:
   build-ubuntu-docker:
     runs-on: ubuntu-latest
     env:
-      OCPN_TARGET: ubuntu-gtk3
+      OCPN_TARGET: ubuntu-docker
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Build Ubuntu
-        run: bash ci/circleci-build-ubuntu-docker.sh
+      - name: Build inside Docker
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              apt-get update &&
+              apt-get install -y \
+                git cmake build-essential gettext \
+                wx-common libwxbase3.0-dev libwxgtk3.0-dev \
+                libbz2-dev libcurl4-openssl-dev libexpat1-dev \
+                libcairo2-dev libarchive-dev liblzma-dev \
+                libexif-dev lsb-release \
+                software-properties-common &&
+              
+              # OpenCPN installieren
+              add-apt-repository ppa:opencpn/opencpn -y &&
+              apt-get update &&
+              apt-get install -y opencpn opencpn-dev &&
+              
+              # Plugin bauen
+              mkdir -p build &&
+              cd build &&
+              cmake .. -DCMAKE_BUILD_TYPE=Release &&
+              make -j$(nproc) &&
+              make package
+            "
 
-      - name: Upload artifacts
+      - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
+            cd build
+            bash gha-cloudsmith-upload.sh
           fi
 
   build-debian:
@@ -46,32 +74,68 @@ jobs:
     env:
       OCPN_TARGET: debian-x86_64
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Build Debian
-        run: bash ci/circleci-build-debian.sh
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git cmake build-essential gettext \
+            wx-common libwxbase3.0-dev libwxgtk3.0-dev \
+            libbz2-dev libcurl4-openssl-dev libexpat1-dev \
+            libcairo2-dev libarchive-dev liblzma-dev \
+            libexif-dev lsb-release
 
-      - name: Upload artifacts
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          cd build
+          make package
+
+      - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
+            cd build
+            bash gha-cloudsmith-upload.sh
           fi
 
   build-flatpak:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak-x86_64
+      BUILD_ARCH: x86_64
+      SDK_VER: 22.08
+      FLATPAK_BRANCH: stable   # oder beta, wenn du willst
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Install base dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git ca-certificates wget \
+            flatpak flatpak-builder
 
       - name: Build Flatpak
         run: bash ci/circleci-build-flatpak.sh
@@ -79,51 +143,104 @@ jobs:
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
+            cd build && bash gha-cloudsmith-upload.sh
           fi
 
   build-macos:
-    runs-on: macos-11
+    runs-on: macos-12
     env:
       OCPN_TARGET: macos
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Build macOS
-        run: bash ci/circleci-build-macos.sh
+      - name: Install dependencies
+        run: |
+          brew update-reset
+          brew install cmake gettext libarchive libexif cairo wget
 
-      - name: Upload artifacts
+      - name: Install wxWidgets 3.2.2.1
+        run: |
+          wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxWidgets-3.2.2.1.tar.bz2
+          tar xf wxWidgets-3.2.2.1.tar.bz2
+          cd wxWidgets-3.2.2.1
+          ./configure --disable-debug --enable-unicode --enable-shared
+          make -j$(sysctl -n hw.logicalcpu)
+          sudo make install
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=app/files
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(sysctl -n hw.logicalcpu)
+          make install
+          make package
+
+      - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
-          fi
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
 
   build-macos-universal:
-    runs-on: macos-11
+    runs-on: macos-12
     env:
       OCPN_TARGET: macos-universal
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Build macOS Universal
-        run: bash ci/circleci-build-macos-universal.sh
+      - name: Install dependencies
+        run: |
+          brew update-reset
+          brew install cmake gettext libarchive libexif cairo wget
 
-      - name: Upload artifacts
+      - name: Install universal dependencies
+        run: |
+          wget -q https://dl.cloudsmith.io/public/nohal/opencpn-plugins/raw/files/macos_deps_universal.tar.xz \
+               -O /tmp/macos_deps_universal.tar.xz
+          sudo tar -C /usr/local -xJf /tmp/macos_deps_universal.tar.xz
+
+      - name: Configure Universal Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX= \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DOCPN_TARGET_TUPLE="darwin-wx32;10;universal"
+
+      - name: Build Universal
+        run: |
+          cd build
+          make -j$(sysctl -n hw.logicalcpu)
+          make package || make package
+
+      - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
-          fi
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
 
   build-msvc:
     runs-on: windows-2022
@@ -264,28 +381,150 @@ jobs:
         if: github.event_name == 'push'
         shell: bash
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
             cd build
-            bash cloudsmith-upload.sh
+            bash gha-cloudsmith-upload.sh
           fi
 
   build-android-armhf:
     runs-on: ubuntu-latest
     env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
       OCPN_TARGET: android-armhf
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Build Android ARMHF
-        run: bash ci/circleci-build-android-armhf.sh
+      - name: Install base tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip git cmake ninja-build gettext
+
+      - name: Install Android SDK
+        run: |
+          mkdir -p $ANDROID_HOME
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+            "platform-tools" \
+            "platforms;android-29" \
+            "build-tools;33.0.2" \
+            "ndk;25.2.9519653"
+
+      - name: Set NDK path
+        run: |
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
+      - name: Download OCPNAndroidCommon
+        run: |
+          wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+          unzip master.zip
+          mv OCPNAndroidCommon-master OCPNAndroidCommon
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
+            -DANDROID_NDK=$ANDROID_NDK_HOME \
+            -DOCPN_Android_Common=../OCPNAndroidCommon \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          cd build
+          make package
 
       - name: Upload artifacts
         if: github.event_name == 'push'
         run: |
-          if [ -f build/cloudsmith-upload.sh ]; then
-            cd build && bash cloudsmith-upload.sh
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
+            cd build && bash gha-cloudsmith-upload.sh
+          fi
+
+  build-android-arm64:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
+      OCPN_TARGET: android-arm64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install base tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip git cmake ninja-build gettext
+
+      - name: Install Android SDK + NDK
+        run: |
+          mkdir -p $ANDROID_HOME
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+            "platform-tools" \
+            "platforms;android-29" \
+            "build-tools;33.0.2" \
+            "ndk;25.2.9519653"
+
+      - name: Set NDK path
+        run: |
+          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
+      - name: Download OCPNAndroidCommon
+        run: |
+          wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+          unzip master.zip
+          mv OCPNAndroidCommon-master OCPNAndroidCommon
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/android-aarch64-toolchain.cmake \
+            -DANDROID_NDK=$ANDROID_NDK_HOME \
+            -DOCPN_Android_Common=../OCPNAndroidCommon \
+            -D_wx_selected_config=androideabi-qt-arm64 \
+            -DwxQt_Build=build_android_release_64_static_O3 \
+            -DQt_Build=build_arm64/qtbase \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package
+        run: |
+          cd build
+          make package
+
+      - name: Upload artifacts
+        if: github.event_name == 'push'
+        run: |
+          if [ -f build/gha-cloudsmith-upload.sh ]; then
+            cd build && bash gha-cloudsmith-upload.sh
           fi
