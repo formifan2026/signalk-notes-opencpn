@@ -14,42 +14,44 @@ env:
   CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
 
 jobs:
+
   build-ubuntu-docker:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: ubuntu-docker
       CMAKE_BUILD_PARALLEL_LEVEL: 2
-  
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-  
+
       - name: Install Cloudsmith CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
           pip3 install cloudsmith-cli
-  
+
       - name: Build inside Docker
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            ubuntu:22.04 \
+            ubuntu:24.04 \
             bash -c "
               set -xe
-  
+
               apt-get update &&
               apt-get install -y \
                 git cmake build-essential gettext devscripts equivs \
+                software-properties-common \
                 wx-common libwxbase3.2-dev libwxgtk3.2-dev \
                 libbz2-dev libcurl4-openssl-dev libexpat1-dev \
                 libcairo2-dev libarchive-dev liblzma-dev \
-                libexif-dev lsb-release software-properties-common &&
-  
+                libexif-dev lsb-release &&
+
               # Extra libs
               if [ -f ci/extras/extra_libs.txt ]; then
                 xargs -a ci/extras/extra_libs.txt apt-get install -y
@@ -57,21 +59,21 @@ jobs:
               if [ -f ci/extras/ubuntu-docker_extra_libs.txt ]; then
                 xargs -a ci/extras/ubuntu-docker_extra_libs.txt apt-get install -y
               fi
-  
+
               # OpenCPN installieren
               add-apt-repository ppa:opencpn/opencpn -y &&
               apt-get update &&
               apt-get install -y opencpn opencpn-dev &&
-  
+
               # Build dependencies aus control-Datei
               if [ -f ci/control ]; then
                 mk-build-deps --install ci/control
               fi
-  
+
               # opencpn-libs aktualisieren
               git config --global protocol.file.allow always
               git submodule update --init opencpn-libs
-  
+
               # Plugin bauen
               rm -rf build &&
               mkdir build &&
@@ -79,10 +81,10 @@ jobs:
               cmake .. \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DOCPN_TARGET=ubuntu-docker &&
-              make -j$(nproc) &&
+              make -j\$(nproc) &&
               make package
             "
-  
+
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
@@ -160,7 +162,7 @@ jobs:
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
-        working-directory: build
+        working-directory: .
         run: |
           chmod +x ../ci/gha-cloudsmith-upload.sh
           ../ci/gha-cloudsmith-upload.sh
@@ -568,7 +570,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
       OCPN_TARGET: android-arm64
       CMAKE_BUILD_PARALLEL_LEVEL: 2
   
@@ -601,10 +603,9 @@ jobs:
             "build-tools;33.0.2" \
             "ndk;25.2.9519653"
   
-      - name: Set NDK path
-        run: |
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          # NDK nach /opt/android linken (CMake erwartet diesen Pfad)
+          sudo mkdir -p /opt/android
+          sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
   
       - name: Update opencpn-libs
         run: |
@@ -636,7 +637,6 @@ jobs:
           mkdir build
           cd build
   
-          # Determine BUILD_TYPE
           if git describe --exact-match --tags >/dev/null 2>&1; then
             BUILD_TYPE=Release
           else
@@ -644,6 +644,7 @@ jobs:
           fi
   
           cmake .. \
+            -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=cmake/android-aarch64-toolchain.cmake \
             -DANDROID_NDK=$ANDROID_NDK_HOME \
             -DOCPN_Android_Common=../OCPNAndroidCommon \
@@ -655,7 +656,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          make -j$(nproc)
+          ninja
   
       - name: Package
         run: |
@@ -679,49 +680,48 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
       OCPN_TARGET: android-armhf
       CMAKE_BUILD_PARALLEL_LEVEL: 2
-  
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-  
+
       - name: Install base tools
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip git ninja-build gettext python3-pip
-  
+
       - name: Install Cloudsmith CLI
         run: |
           pip3 install --upgrade pip
           pip3 install cloudsmith-cli
-  
+
       - name: Install Android SDK + NDK
         run: |
           mkdir -p $ANDROID_HOME
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
           unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-  
+
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
             "platform-tools" \
             "platforms;android-19" \
             "build-tools;33.0.2" \
             "ndk;25.2.9519653"
-  
-      - name: Set NDK path
-        run: |
-          export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
-  
+
+          # NDK nach /opt/android linken (CMake erwartet diesen Pfad)
+          sudo mkdir -p /opt/android
+          sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
+
       - name: Update opencpn-libs
         run: |
           git config --global protocol.file.allow always
           git submodule update --init opencpn-libs
-  
+
       - name: Install extra libs
         run: |
           if [ -f ci/extras/extra_libs.txt ]; then
@@ -730,31 +730,31 @@ jobs:
           if [ -f ci/extras/android-armhf_extra_libs.txt ]; then
             sudo xargs -a ci/extras/android-armhf_extra_libs.txt apt-get install -y
           fi
-  
+
       - name: Download OCPNAndroidCommon
         run: |
           wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
           unzip master.zip
           mv OCPNAndroidCommon-master OCPNAndroidCommon
-  
+
       - name: Install latest CMake via pip
         run: |
           python3 -m pip install --upgrade pip setuptools
           python3 -m pip install cmake
-  
+
       - name: Configure CMake
         run: |
           mkdir build
           cd build
-  
-          # Determine BUILD_TYPE
+
           if git describe --exact-match --tags >/dev/null 2>&1; then
             BUILD_TYPE=Release
           else
             BUILD_TYPE=Debug
           fi
-  
+
           cmake .. \
+            -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
             -DANDROID_NDK=$ANDROID_NDK_HOME \
             -DOCPN_Android_Common=../OCPNAndroidCommon \
@@ -762,17 +762,17 @@ jobs:
             -DwxQt_Build=build_android_release_19_static_O3 \
             -DQt_Build=build_arm32_19_O3/qtbase \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-  
+
       - name: Build
         run: |
           cd build
-          make -j$(nproc)
-  
+          ninja
+
       - name: Package
         run: |
           cd build
           make package
-  
+
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
@@ -785,4 +785,3 @@ jobs:
           CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
           CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
           CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
-  
