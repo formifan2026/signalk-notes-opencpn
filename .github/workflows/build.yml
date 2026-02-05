@@ -65,10 +65,11 @@ jobs:
               apt-get update &&
               apt-get install -y opencpn &&
 
-              # Git Safe Directory setzen
+              # Git Safe Directories setzen (Hauptrepo + Submodule)
               git config --global --add safe.directory /workspace
+              git config --global --add safe.directory /workspace/opencpn-libs
 
-              # opencpn-libs aktualisieren
+              # Submodule aktualisieren
               git submodule update --init opencpn-libs
 
               # Plugin bauen
@@ -629,11 +630,24 @@ jobs:
           unzip master.zip
           mv OCPNAndroidCommon-master OCPNAndroidCommon
 
-      - name: Build Qt for Android (arm64)
+      - name: Download Android Qt SDK
         run: |
-          cd OCPNAndroidCommon
-          chmod +x build-qt.sh
-          ./build-qt.sh arm64
+          git clone https://github.com/OpenCPN/android-qt-sdk.git
+
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+
+          cmake .. \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/android-aarch64-toolchain.cmake \
+            -DANDROID_NDK=$ANDROID_NDK_HOME \
+            -DOCPN_Android_Common=../OCPNAndroidCommon \
+            -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/arm64 \
+            -DQt_Build=../android-qt-sdk/qt5/arm64/qtbase \
+            -D_wx_selected_config=androideabi-qt-arm64 \
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Install latest CMake via pip
         run: |
@@ -684,7 +698,7 @@ jobs:
           CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
           CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
   
-  build-android-armhf:
+   build-android-armhf:
     runs-on: ubuntu-latest
     env:
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
@@ -721,7 +735,6 @@ jobs:
             "build-tools;33.0.2" \
             "ndk;25.2.9519653"
 
-          # NDK nach /opt/android linken (CMake erwartet diesen Pfad)
           sudo mkdir -p /opt/android
           sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
 
@@ -730,52 +743,30 @@ jobs:
           git config --global protocol.file.allow always
           git submodule update --init opencpn-libs
 
-      - name: Install extra libs
-        run: |
-          if [ -f ci/extras/extra_libs.txt ]; then
-            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
-          fi
-          if [ -f ci/extras/android-armhf_extra_libs.txt ]; then
-            sudo xargs -a ci/extras/android-armhf_extra_libs.txt apt-get install -y
-          fi
-
       - name: Download OCPNAndroidCommon
         run: |
           wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
           unzip master.zip
           mv OCPNAndroidCommon-master OCPNAndroidCommon
 
-      - name: Build Qt for Android (arm64)
+      - name: Download Android Qt SDK
         run: |
-          cd OCPNAndroidCommon
-          chmod +x build-qt.sh
-          ./build-qt.sh arm64
-
-      - name: Install latest CMake via pip
-        run: |
-          python3 -m pip install --upgrade pip setuptools
-          python3 -m pip install cmake
+          git clone https://github.com/OpenCPN/android-qt-sdk.git
 
       - name: Configure CMake
         run: |
           mkdir build
           cd build
 
-          if git describe --exact-match --tags >/dev/null 2>&1; then
-            BUILD_TYPE=Release
-          else
-            BUILD_TYPE=Debug
-          fi
-
           cmake .. \
             -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
             -DANDROID_NDK=$ANDROID_NDK_HOME \
             -DOCPN_Android_Common=../OCPNAndroidCommon \
+            -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/armhf \
+            -DQt_Build=../android-qt-sdk/qt5/armhf/qtbase \
             -D_wx_selected_config=androideabi-qt-armhf \
-            -DwxQt_Build=build_android_release_19_static_O3 \
-            -DQt_Build=build_arm32_19_O3/qtbase \
-            -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+            -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
