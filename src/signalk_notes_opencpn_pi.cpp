@@ -9,21 +9,19 @@
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
  *   - Some icons are based on OpenCPN standard icons (GPLv2)
  ******************************************************************************/
-#if defined(__WXGTK__)
-#include <GL/gl.h>
-#include <GL/glu.h>
-#elif defined(__WXMSW__)
-#include <GL/gl.h>
-#include <GL/glu.h>
-#elif defined(__WXOSX__)
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
+#ifdef __WXMSW__   // Windows
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+  #include <GL/gl.h>
+  #include <GL/glu.h>
+
+#elif defined(__WXGTK__) || defined(__WXOSX__)  // Linux/macOS
+  #include <GL/gl.h>
+  #include <GL/glu.h>
 #endif
-#if defined(__OCPN__ANDROID__)
-#include <GLES2/gl2.h>
-#else
-#include <GL/gl.h>
-#include <GL/glu.h>
+
+#ifdef __OCPN__ANDROID__   // nur Android
+  #include <GLES2/gl2.h>
 #endif
 
 #include "version.h"
