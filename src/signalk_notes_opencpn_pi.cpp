@@ -1064,7 +1064,7 @@ wxBitmap signalk_notes_opencpn_pi::PrepareIconBitmapForGL(const wxBitmap& src,
   return finalBmp;
 }
 
-#if #if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
 
 // --- Desktop OpenGL (Windows, Linux, macOS) ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
