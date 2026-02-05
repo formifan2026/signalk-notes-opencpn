@@ -20,8 +20,8 @@ BUILD_ID="${GITHUB_RUN_NUMBER:-1}"
 BUILD_BRANCH="${GITHUB_REF_NAME}"
 commit=$(git rev-parse --short=7 HEAD || echo "unknown")
 
-if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-    BUILD_TAG="$GITHUB_REF_NAME"
+if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+    BUILD_TAG="${GITHUB_REF#refs/tags/}"
 else
     BUILD_TAG=""
 fi
