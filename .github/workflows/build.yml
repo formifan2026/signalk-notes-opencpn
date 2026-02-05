@@ -69,73 +69,72 @@ jobs:
           chmod +x gha-cloudsmith-upload.sh
           ./gha-cloudsmith-upload.sh
 
-build-debian:
-  runs-on: ubuntu-latest
-  env:
-    OCPN_TARGET: debian-x86_64
-    CMAKE_BUILD_PARALLEL_LEVEL: 2
-
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: recursive
-
-    - name: Install base tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          devscripts equivs git cmake build-essential gettext
-
-    - name: Install extra libs
-      run: |
-        if [ -f ci/extras/extra_libs.txt ]; then
-          sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
-        fi
-        if [ -f ci/extras/debian_extra_libs.txt ]; then
-          sudo xargs -a ci/extras/debian_extra_libs.txt apt-get install -y
-        fi
-
-    - name: Install build-deps from control file
-      run: |
-        sudo mk-build-deps --install ./ci/control
-
-    - name: Update opencpn-libs
-      run: |
-        git submodule update --init opencpn-libs
-
-    - name: Configure
-      run: |
-        mkdir build
-        cd build
-        cmake .. \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/usr/local
-
-    - name: Build
-      run: |
-        cd build
-        make -j$(nproc)
-
-    - name: Package
-      run: |
-        cd build
-        make package
-        ls -l
-
-    - name: Upload to Cloudsmith
-      if: github.event_name == 'push'
-      shell: bash
-      working-directory: build
-      run: |
-        chmod +x ../ci/gha-cloudsmith-upload.sh
-        ../ci/gha-cloudsmith-upload.sh
-      env:
-        CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-        CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
-        CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
-        CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
-
+  build-debian:
+    runs-on: ubuntu-latest
+    env:
+      OCPN_TARGET: debian-x86_64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: Install base tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            devscripts equivs git cmake build-essential gettext
+  
+      - name: Install extra libs
+        run: |
+          if [ -f ci/extras/extra_libs.txt ]; then
+            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
+          fi
+          if [ -f ci/extras/debian_extra_libs.txt ]; then
+            sudo xargs -a ci/extras/debian_extra_libs.txt apt-get install -y
+          fi
+  
+      - name: Install build-deps from control file
+        run: |
+          sudo mk-build-deps --install ./ci/control
+  
+      - name: Update opencpn-libs
+        run: |
+          git submodule update --init opencpn-libs
+  
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local
+  
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+  
+      - name: Package
+        run: |
+          cd build
+          make package
+          ls -l
+  
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: build
+        run: |
+          chmod +x ../ci/gha-cloudsmith-upload.sh
+          ../ci/gha-cloudsmith-upload.sh
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
       
   build-flatpak:
     runs-on: ubuntu-latest
