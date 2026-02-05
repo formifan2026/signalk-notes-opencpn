@@ -236,14 +236,17 @@ if (NOT OCPN_FLATPAK_CONFIG)
   add_subdirectory(opencpn-libs/api-${OCPN_API_VERSION_MINOR})
   target_link_libraries(${PACKAGE_NAME} ocpn::api)
 
-  add_subdirectory(opencpn-libs/tinyxml)
-  target_link_libraries(${PACKAGE_NAME} ocpn::tinyxml)
+  #D.B.: Nur nötig, wenn das Plugin XML liest oder schreibt.
+  #add_subdirectory(opencpn-libs/tinyxml)
+  #target_link_libraries(${PACKAGE_NAME} ocpn::tinyxml)
 
-  add_subdirectory(opencpn-libs/odapi)
-  target_link_libraries(${PACKAGE_NAME} ocpn::odapi)
+  #D.B.: Draw‑API (für Shapes, Linien, Polygone). Nur nötig, wenn das Plugin OD‑Objekte zeichnet
+  #add_subdirectory(opencpn-libs/odapi)
+  #target_link_libraries(${PACKAGE_NAME} ocpn::odapi)
 
-  add_subdirectory(opencpn-libs/jsonlib)
-  target_link_libraries(${PACKAGE_NAME} ocpn::jsonlib)
+  #D.B.: JSON‑Libs - jsonlib ist ein alter JSON‑Parser. wxJSON ist moderner und wird bevorzugt.
+  #add_subdirectory(opencpn-libs/jsonlib)
+  #target_link_libraries(${PACKAGE_NAME} ocpn::jsonlib)
 
   add_subdirectory(opencpn-libs/wxJSON)
   target_link_libraries(${PACKAGE_NAME} ocpn::wxjson)
