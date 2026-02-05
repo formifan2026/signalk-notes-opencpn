@@ -9,20 +9,22 @@
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
  *   - Some icons are based on OpenCPN standard icons (GPLv2)
  ******************************************************************************/
-#ifdef __WXMSW__  // Windows
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-
-#elif defined(__WXGTK__) || defined(__WXOSX__)  // Linux/macOS
-#include <GL/gl.h>
-#include <GL/glu.h>
+#ifdef _WIN32          // Windows
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
 #endif
 
-#ifdef __OCPN__ANDROID__  // nur Android
-#include <GLES2/gl2.h>
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
+// Desktop-OpenGL (Windows, Linux, macOS)
+  #include <GL/gl.h>
+  #include <GL/glu.h>
 #endif
+
+#ifdef __OCPN__ANDROID__
+// GLES für Android
+  #include <GLES2/gl2.h>
+#endif
+
 
 #include "version.h"
 #include "tpSignalKNotes.h"
@@ -1062,7 +1064,7 @@ wxBitmap signalk_notes_opencpn_pi::PrepareIconBitmapForGL(const wxBitmap& src,
   return finalBmp;
 }
 
-#if defined(ocpnUSE_GL)
+#if #if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
 
 // --- Desktop OpenGL (Windows, Linux, macOS) ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
