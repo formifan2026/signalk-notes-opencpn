@@ -20,22 +20,23 @@ jobs:
     env:
       OCPN_TARGET: ubuntu-docker
       CMAKE_BUILD_PARALLEL_LEVEL: 2
-
+  
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
           submodules: recursive
-          fetch-depth: 0 
-          clean: true
-
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
       - name: Install Cloudsmith CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install --upgrade pip
           pip3 install cloudsmith-cli
-
+  
       - name: Build inside Docker
         run: |
           docker run --rm \
@@ -44,23 +45,23 @@ jobs:
             ubuntu:22.04 \
             bash -c "
               set -xe
-
+  
               apt-get update &&
               apt-get install -y \
-                git cmake build-essential gettext devscripts equivs \
+                cmake build-essential gettext devscripts equivs \
                 software-properties-common \
                 libbz2-dev libcurl4-openssl-dev libexpat1-dev \
                 libcairo2-dev libarchive-dev liblzma-dev \
                 libexif-dev lsb-release pkg-config libgtk-3-dev \
                 libtiff-dev libjpeg-dev libpng-dev libsecret-1-dev \
-                libnotify-dev libsm-dev libx11-dev libxtst-dev &&
-
+                libnotify-dev libsm-dev libx11-dev libxtst-dev git &&
+  
               # Entferne alte wxWidgets 3.0 Pakete
-              apt-get remove -y wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev || true
-
+              apt-get remove -y wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev || true &&
+  
               # wxWidgets 3.2.2.1 bauen
-              git clone --depth 1 --branch v3.2.2.1 https://github.com/wxWidgets/wxWidgets.git &&
-              cd wxWidgets &&
+              git clone --depth 1 --branch v3.2.2.1 https://github.com/wxWidgets/wxWidgets.git /tmp/wxWidgets &&
+              cd /tmp/wxWidgets &&
               mkdir buildgtk &&
               cd buildgtk &&
               ../configure --with-gtk=3 --enable-unicode --enable-graphics_ctx --enable-shared &&
@@ -68,27 +69,20 @@ jobs:
               make install &&
               ldconfig &&
               cd /workspace &&
-
-              # Extra libs
+  
+              # Extra libs (falls vorhanden)
               if [ -f ci/extras/extra_libs.txt ]; then
-                xargs -a ci/extras/extra_libs.txt apt-get install -y
-              fi
+                xargs -a ci/extras/extra_libs.txt apt-get install -y || true
+              fi &&
               if [ -f ci/extras/ubuntu-docker_extra_libs.txt ]; then
-                xargs -a ci/extras/ubuntu-docker_extra_libs.txt apt-get install -y
-              fi
-
-              # OpenCPN installieren (ohne opencpn-dev)
+                xargs -a ci/extras/ubuntu-docker_extra_libs.txt apt-get install -y || true
+              fi &&
+  
+              # OpenCPN installieren
               add-apt-repository ppa:opencpn/opencpn -y &&
               apt-get update &&
               apt-get install -y opencpn &&
-
-              # Git Safe Directories setzen (Hauptrepo + Submodule)
-              git config --global --add safe.directory /workspace
-              git config --global --add safe.directory /workspace/opencpn-libs
-
-              # Submodule aktualisieren
-              git submodule update --init opencpn-libs
-
+  
               # Plugin bauen
               rm -rf build &&
               mkdir build &&
@@ -99,7 +93,7 @@ jobs:
               make -j\$(nproc) &&
               make package
             "
-
+  
       - name: Upload to Cloudsmith
         if: github.event_name == 'push'
         shell: bash
@@ -200,9 +194,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
           submodules: recursive
           fetch-depth: 0
-          clean: true
+          clean: true                     # löscht kaputte alte Checkouts
+  
       - name: Restore Git remote URL
         run: |
           git remote set-url origin https://github.com/${{ github.repository }}.git
@@ -599,9 +595,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
           submodules: recursive
           fetch-depth: 0
-          clean: true
+          clean: true                     # löscht kaputte alte Checkouts
+  
       - name: Install base tools
         run: |
           sudo apt-get update
@@ -709,9 +707,11 @@ jobs:
      - name: Checkout
        uses: actions/checkout@v3
        with:
-         submodules: recursive
-         fetch-depth: 0
-         clean: true
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
+          submodules: recursive
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
      - name: Install base tools
        run: |
          sudo apt-get update
