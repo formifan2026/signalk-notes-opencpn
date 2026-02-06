@@ -62,11 +62,21 @@ fi
 
 #D.B.: start - changed assignment of DOCKER_CONTAINER_ID (background: variable was empty when later docker exec command was executed, which caused the command to fail)
 #old line: DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
-DOCKER_CONTAINER_ID=$(docker run --privileged -d -ti -e "container=docker"  \
-    -e "CIRCLECI=$CIRCLECI" \
-    ... \
-    -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
-echo "Docker Container ID: $DOCKER_CONTAINER_ID"
+DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
+
+# Add retry logic with timeout
+max_attempts=10
+attempt=0
+while [ -z "$DOCKER_CONTAINER_ID" ] && [ $attempt -lt $max_attempts ]; do
+    sleep 0.5
+    DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
+    ((attempt++))
+done
+
+if [ -z "$DOCKER_CONTAINER_ID" ]; then
+    echo "ERROR: Failed to get Docker container ID"
+    exit 1
+fi
 #D.B.: end - changed assignment of DOCKER_CONTAINER_ID
 
 
