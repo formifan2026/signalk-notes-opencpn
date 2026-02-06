@@ -15,7 +15,7 @@ if [ "${CIRCLECI_LOCAL,,}" = "true" ]; then
 fi
 
 sudo apt-get -qq update
-sudo apt-get install devscripts equivs
+sudo apt-get install -y devscripts equivs
 
 rm -rf build && mkdir build && cd build
 
@@ -24,13 +24,13 @@ ME=$(echo ${0##*/} | sed 's/\.sh//g')
 EXTRA_LIBS=./ci/extras/extra_libs.txt
 if test -f "$EXTRA_LIBS"; then
     while read line; do
-        sudo apt-get install $line
+        sudo apt-get install -y $line
     done < $EXTRA_LIBS
 fi
 EXTRA_LIBS=./ci/extras/${ME}_extra_libs.txt
 if test -f "$EXTRA_LIBS"; then
     while read line; do
-        sudo apt-get install $line
+        sudo apt-get install -y $line
     done < $EXTRA_LIBS
 fi
 
@@ -41,7 +41,7 @@ sudo apt-get --allow-unauthenticated install ./*all.deb  || :
 sudo apt-get --allow-unauthenticated install -f
 rm -f ./*all.deb
 
-sudo apt-get install libwxgtk3.2-dev
+sudo apt-get install -y libwxgtk3.2-dev
 
 if [ -n "$BUILD_GTK3" ] && [ "$BUILD_GTK3" = "TRUE" ]; then
   sudo update-alternatives --set wx-config /usr/lib/*-linux-*/wx/config/gtk3-unicode-3.0

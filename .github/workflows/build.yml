@@ -622,8 +622,8 @@ jobs:
 
       - name: Build Debian Bullseye x86_64
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-debian.sh
+          chmod a+x github/*.sh
+          github/github-build-debian.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -753,8 +753,8 @@ jobs:
 
       - name: Build Ubuntu Jammy x86_64
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-debian.sh
+          chmod a+x github/*.sh
+          github/github-build-jammy.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
