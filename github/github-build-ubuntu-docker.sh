@@ -26,9 +26,9 @@ else
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 fi
 
-#D.B.: start - changed added if else statement (original statement is in else) + r
+#D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
 if [ "$DOCKER_EXEC_NO_TTY" = "1" ]; then
-    docker run --privileged -d -e "container=docker"  \
+    DOCKER_CONTAINER_ID=$(docker run --privileged -d -e "container=docker"  \
         -e "CIRCLECI=$CIRCLECI" \
         -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
         -e "CIRCLE_TAG=$CIRCLE_TAG" \
@@ -41,9 +41,9 @@ if [ "$DOCKER_EXEC_NO_TTY" = "1" ]; then
         -e "BUILD_ENV=$BUILD_ENV" \
         -e "TZ=$TZ" \
         -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
-        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash
+        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
 else
-    docker run --privileged -d -ti -e "container=docker"  \
+    DOCKER_CONTAINER_ID=$(docker run --privileged -d -ti -e "container=docker"  \
         -e "CIRCLECI=$CIRCLECI" \
         -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
         -e "CIRCLE_TAG=$CIRCLE_TAG" \
@@ -56,27 +56,17 @@ else
         -e "BUILD_ENV=$BUILD_ENV" \
         -e "TZ=$TZ" \
         -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
-        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash
+        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
 fi
 #D.B.: end - changed added if else statement (original statement is in else)
 
 #D.B.: start - changed assignment of DOCKER_CONTAINER_ID (background: variable was empty when later docker exec command was executed, which caused the command to fail)
 #old line: DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
-DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
-
-# Add retry logic with timeout
-max_attempts=10
-attempt=0
-while [ -z "$DOCKER_CONTAINER_ID" ] && [ $attempt -lt $max_attempts ]; do
-    sleep 0.5
-    DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
-    ((attempt++))
-done
-
 if [ -z "$DOCKER_CONTAINER_ID" ]; then
     echo "ERROR: Failed to get Docker container ID"
     exit 1
 fi
+echo "Docker Container ID: $DOCKER_CONTAINER_ID"
 #D.B.: end - changed assignment of DOCKER_CONTAINER_ID
 
 
