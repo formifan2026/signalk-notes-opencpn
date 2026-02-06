@@ -30,24 +30,52 @@ fi
 
 #D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
 # TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
+# TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
 TTY_FLAG=""
 [ "$DOCKER_EXEC_NO_TTY" != "1" ] && TTY_FLAG="-ti"
 
-# Container starten und am Leben halten
-DOCKER_CONTAINER_ID=$(docker run --privileged -d $TTY_FLAG \
-    -e "container=docker" \
-    -e "CIRCLECI=$CIRCLECI" \
-    -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
-    -e "CIRCLE_TAG=$CIRCLE_TAG" \
-    -e "CIRCLE_PROJECT_USERNAME=$CIRCLE_PROJECT_USERNAME" \
-    -e "CIRCLE_PROJECT_REPONAME=$CIRCLE_PROJECT_REPONAME" \
-    -e "GIT_REPOSITORY_SERVER=$GIT_REPOSITORY_SERVER" \
-    -e "OCPN_TARGET=$OCPN_TARGET" \
-    -e "BUILD_GTK3=$BUILD_GTK3" \
-    -e "WX_VER=$WX_VER" \
-    -e "BUILD_ENV=$BUILD_ENV" \
-    -e "TZ=$TZ" \
-    -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
+# Dynamisch ENV-Variablen sammeln
+ENV_ARGS=()
+
+add_env() {
+    local name="$1"
+    local value="$2"
+    if [ -n "$value" ]; then
+        ENV_ARGS+=("-e" "$name=$value")
+    fi
+}
+add_env "container" "docker"
+add_env "CIRCLECI" "$CIRCLECI"
+add_env "CIRCLE_BRANCH" "$CIRCLE_BRANCH"
+add_env "CIRCLE_TAG" "$CIRCLE_TAG"
+add_env "CIRCLE_PROJECT_USERNAME" "$CIRCLE_PROJECT_USERNAME"
+add_env "CIRCLE_PROJECT_REPONAME" "$CIRCLE_PROJECT_REPONAME"
+add_env "GIT_REPOSITORY_SERVER" "$GIT_REPOSITORY_SERVER"
+add_env "OCPN_TARGET" "$OCPN_TARGET"
+add_env "BUILD_GTK3" "$BUILD_GTK3"
+add_env "WX_VER" "$WX_VER"
+add_env "BUILD_ENV" "$BUILD_ENV"
+add_env "TZ" "$TZ"
+add_env "DEBIAN_FRONTEND" "$DEBIAN_FRONTEND"
+
+# Architektur aus OCPN_TARGET ableiten
+case "$OCPN_TARGET" in
+    *arm64*)
+        PLATFORM_FLAG="--platform=linux/arm64"
+        ;;
+    *armhf*)
+        PLATFORM_FLAG="--platform=linux/arm/v7"
+        ;;
+    *)
+        PLATFORM_FLAG="--platform=linux/amd64"
+        ;;
+esac
+
+echo "Using platform: $PLATFORM_FLAG"
+
+# Container starten
+DOCKER_CONTAINER_ID=$(docker run $PLATFORM_FLAG --privileged -d $TTY_FLAG \
+    "${ENV_ARGS[@]}" \
     -v "$(pwd)":/ci-source:rw \
     -v ~/source_top:/source_top \
     "$DOCKER_IMAGE" \

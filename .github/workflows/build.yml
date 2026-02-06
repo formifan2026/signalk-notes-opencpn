@@ -389,7 +389,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: trixie-arm64
-      DOCKER_IMAGE: arm64v8/debian:trixie
+      DOCKER_IMAGE: debian:trixie
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       WX_VER: 32
@@ -433,7 +433,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: trixie-armhf
-      DOCKER_IMAGE: arm32v7/debian:trixie
+      DOCKER_IMAGE: debian:trixie
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       WX_VER: 32
@@ -515,7 +515,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bookworm-arm64
-      DOCKER_IMAGE: arm64v8/debian:bookworm
+      DOCKER_IMAGE: debian:bookworm
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       WX_VER: 32
@@ -559,7 +559,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bookworm-armhf
-      DOCKER_IMAGE: arm32v7/debian:bookworm
+      DOCKER_IMAGE: debian:bookworm
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       WX_VER: 32
@@ -651,7 +651,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bullseye-arm64
-      DOCKER_IMAGE: arm64v8/debian:bullseye-backports
+      DOCKER_IMAGE: debian:bullseye-backports
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       BUILD_GTK3: true
@@ -694,7 +694,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bullseye-armhf
-      DOCKER_IMAGE: jongough/debian-armhf:bullseye
+      DOCKER_IMAGE: debian-armhf:bullseye
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       BUILD_GTK3: true
