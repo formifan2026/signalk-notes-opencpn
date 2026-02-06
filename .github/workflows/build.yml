@@ -530,8 +530,8 @@ jobs:
 
       - name: Build Debian Bookworm ARM64
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-ubuntu-docker.sh
+          chmod a+x github/*.sh
+          github/github-build-ubuntu-docker.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -575,8 +575,8 @@ jobs:
 
       - name: Build Debian Bookworm ARMHF
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-ubuntu-docker.sh
+          chmod a+x github/*.sh
+          github/github-build-ubuntu-docker.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -600,7 +600,6 @@ jobs:
     runs-on: ubuntu-22.04
     container:
       image: buildpack-deps:bullseye-scm
-      options: --user root
     env:
       OCPN_TARGET: bullseye
       BUILD_GTK3: true
@@ -615,6 +614,11 @@ jobs:
         run: |
           echo "deb-src http://ftp.us.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list
           echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main" | tee -a /etc/apt/sources.list
+
+      - name: Install sudo
+        run: |
+         apt-get update
+         apt-get install -y sudo
 
       - name: Build Debian Bullseye x86_64
         run: |
@@ -661,8 +665,8 @@ jobs:
 
       - name: Build Debian Bullseye ARM64
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-ubuntu-docker.sh
+          chmod a+x github/*.sh
+          github/github-build-ubuntu-docker.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -704,8 +708,8 @@ jobs:
 
       - name: Build Debian Bullseye ARMHF
         run: |
-          chmod a+x ci/*.sh
-          ci/circleci-build-ubuntu-docker.sh
+          chmod a+x github/*.sh
+          github/github-build-ubuntu-docker.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
