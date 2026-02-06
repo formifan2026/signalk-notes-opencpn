@@ -516,6 +516,7 @@ jobs:
       BUILD_ENV: debian
       WX_VER: 32
       BUILD_GTK3: true
+      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -559,7 +560,8 @@ jobs:
       BUILD_ENV: debian
       WX_VER: 32
       BUILD_GTK3: true
-      
+      DOCKER_EXEC_NO_TTY: 1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -659,8 +661,8 @@ jobs:
 
       - name: Build Debian Bullseye ARM64
         run: |
-          chmod a+x github/*.sh
-          github/circleci-build-ubuntu-docker.sh
+          chmod a+x ci/*.sh
+          ci/circleci-build-ubuntu-docker.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
