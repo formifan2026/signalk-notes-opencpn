@@ -221,13 +221,17 @@ then
     BUILD_FLAGS="-j"$(nproc)
 fi
 
+#D.B.: start - new environment variable to steer the log output of cmake
+VERBOSE_FLAG=${CMAKE_DETAILLED_LOG:-ON}
+#D.B.: end - new environment variable to steer the log output of cmake
+
 #D.B.: start - changed added if else statement (original statement is in else)
 if [ "$DOCKER_EXEC_NO_TTY" = "1" ]; then
     docker exec \
-        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake ..; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
+        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake .. -DCMAKE_VERBOSE_MAKEFILE=\${VERBOSE_FLAG}; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
 else
     docker exec -ti \
-        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake ..; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
+        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake .. -DCMAKE_VERBOSE_MAKEFILE=\${VERBOSE_FLAG}; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
 fi
 #D.B.: end - changed added if else statement (original statement is in else)
 echo "Stopping"
