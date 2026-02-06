@@ -15,7 +15,9 @@ if (NOT APPLE)
 endif (NOT APPLE)
 
 if (WIN32)
+  message(STATUS "D.B.: PluginInstall.cmake if (WIN32)")
   if (MSVC)
+    message(STATUS "D.B.: PluginInstall.cmake if (MSVC)")
     # TARGET_LINK_LIBRARIES(${PACKAGE_NAME} gdiplus.lib glu32.lib)
     target_link_libraries(${PACKAGE_NAME} ${OPENGL_LIBRARIES})
     # add_subdirectory(libs/ocpn-api) target_link_libraries(${PACKAGE_NAME}
@@ -25,6 +27,7 @@ if (WIN32)
   if (MINGW)
     # assuming wxwidgets is compiled with unicode, this is needed for mingw
     # headers
+    message(STATUS "D.B.: PluginInstall.cmake if (MINGW)")
     add_definitions(" -DUNICODE")
     target_link_libraries(${PACKAGE_NAME} ${OPENGL_LIBRARIES})
     set(CMAKE_SHARED_LINKER_FLAGS "-L../buildwin")

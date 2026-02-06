@@ -8,12 +8,36 @@ set(CMLOC "PluginConfigure: ")
 
 message(STATUS "${CMLOC}*** Staging to build ${PACKAGE_NAME} ***")
 
+message(STATUS "${CMLOC}GitHub Actions: $ENV{GITHUB_ACTIONS}")
 message(STATUS "${CMLOC}CIRCLECI: ${CIRCLECLI}, Env CIRCLECI: $ENV{CIRCLECI}")
 message(STATUS "${CMLOC}TRAVIS: ${TRAVIS}, Env TRAVIS: $ENV{TRAVIS}")
 
 set(GIT_REPOSITORY "")
 
-if ($ENV{CIRCLECI})
+# GitHub Actions support
+if ($ENV{GITHUB_ACTIONS})
+  set(GIT_REPOSITORY "$ENV{GITHUB_REPOSITORY}")
+  # Extract branch or tag from GITHUB_REF
+  string(REGEX REPLACE "^refs/heads/" "" GIT_REPOSITORY_BRANCH "$ENV{GITHUB_REF}")
+  string(REGEX REPLACE "^refs/tags/" "" GIT_REPOSITORY_TAG "$ENV{GITHUB_REF}")
+  
+  if ("${GIT_REPOSITORY_BRANCH}" STREQUAL "$ENV{GITHUB_REF}")
+    # Not a branch, clear it
+    set(GIT_REPOSITORY_BRANCH "")
+  endif()
+  
+  if ("${GIT_REPOSITORY_TAG}" STREQUAL "$ENV{GITHUB_REF}")
+    # Not a tag, clear it
+    set(GIT_REPOSITORY_TAG "")
+  endif()
+  
+  message(STATUS "${CMLOC}GitHub Actions detected")
+  message(STATUS "${CMLOC}GITHUB_REPOSITORY: $ENV{GITHUB_REPOSITORY}")
+  message(STATUS "${CMLOC}GITHUB_REF: $ENV{GITHUB_REF}")
+  message(STATUS "${CMLOC}GITHUB_SHA: $ENV{GITHUB_SHA}")
+
+# Legacy CI systems support
+elseif ($ENV{CIRCLECI})
   set(GIT_REPOSITORY
       "$ENV{CIRCLE_PROJECT_USERNAME}/$ENV{CIRCLE_PROJECT_REPONAME}"
   )

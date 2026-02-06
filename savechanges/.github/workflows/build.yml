@@ -1,0 +1,787 @@
+---
+name: Build SignalK Notes Plugin
+
+on:
+  workflow_dispatch:        # Manuelles Starten im GitHub UI
+  push:
+    tags:
+      - v*                  # Automatisch nur bei Tags wie v1.0.0-alpha
+
+env:
+  CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+  CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+  CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+  CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+
+jobs:
+
+  build-ubuntu-docker:
+    runs-on: ubuntu-latest
+    env:
+      OCPN_TARGET: ubuntu-docker
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
+          submodules: recursive
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
+      - name: Install Cloudsmith CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install --upgrade pip
+          pip3 install cloudsmith-cli
+  
+      - name: Build inside Docker
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            ubuntu:22.04 \
+            bash -c "
+              set -xe
+  
+              apt-get update &&
+              apt-get install -y \
+                cmake build-essential gettext devscripts equivs \
+                software-properties-common \
+                libbz2-dev libcurl4-openssl-dev libexpat1-dev \
+                libcairo2-dev libarchive-dev liblzma-dev \
+                libexif-dev lsb-release pkg-config libgtk-3-dev \
+                libtiff-dev libjpeg-dev libpng-dev libsecret-1-dev \
+                libnotify-dev libsm-dev libx11-dev libxtst-dev git &&
+  
+              # Entferne alte wxWidgets 3.0 Pakete
+              apt-get remove -y wx-common libwxbase3.0-dev libwxgtk3.0-gtk3-dev || true &&
+  
+              # wxWidgets 3.2.2.1 bauen
+              git clone --depth 1 --branch v3.2.2.1 https://github.com/wxWidgets/wxWidgets.git /tmp/wxWidgets &&
+              cd /tmp/wxWidgets &&
+              mkdir buildgtk &&
+              cd buildgtk &&
+              ../configure --with-gtk=3 --enable-unicode --enable-graphics_ctx --enable-shared &&
+              make -j\$(nproc) &&
+              make install &&
+              ldconfig &&
+              cd /workspace &&
+  
+              # Extra libs (falls vorhanden)
+              if [ -f ci/extras/extra_libs.txt ]; then
+                xargs -a ci/extras/extra_libs.txt apt-get install -y || true
+              fi &&
+              if [ -f ci/extras/ubuntu-docker_extra_libs.txt ]; then
+                xargs -a ci/extras/ubuntu-docker_extra_libs.txt apt-get install -y || true
+              fi &&
+  
+              # OpenCPN installieren
+              add-apt-repository ppa:opencpn/opencpn -y &&
+              apt-get update &&
+              apt-get install -y opencpn &&
+  
+              # Plugin bauen
+              rm -rf build &&
+              mkdir build &&
+              cd build &&
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DOCPN_TARGET=ubuntu-docker &&
+              make -j\$(nproc) &&
+              make package
+            "
+  
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: build
+        run: |
+          chmod +x ../ci/gha-cloudsmith-upload.sh
+          ../ci/gha-cloudsmith-upload.sh
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+
+#  build-debian:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: debian-x86_64
+#      CMAKE_BUILD_PARALLEL_LEVEL: 2
+#  
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          submodules: recursive
+#  
+#      - name: Install base tools
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y \
+#            devscripts equivs git cmake build-essential gettext
+#  
+#      - name: Install extra libs
+#        run: |
+#          if [ -f ci/extras/extra_libs.txt ]; then
+#            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
+#          fi
+#          if [ -f ci/extras/debian_extra_libs.txt ]; then
+#            sudo xargs -a ci/extras/debian_extra_libs.txt apt-get install -y
+#          fi
+#  
+#      - name: Install build-deps from control file
+#        run: |
+#          sudo mk-build-deps --install ./ci/control
+#  
+#      - name: Update opencpn-libs
+#        run: |
+#          git submodule update --init opencpn-libs
+#  
+#      - name: Configure
+#        run: |
+#          mkdir build
+#          cd build
+#          cmake .. \
+#            -DCMAKE_BUILD_TYPE=Release \
+#            -DCMAKE_INSTALL_PREFIX=/usr/local
+#  
+#      - name: Build
+#        run: |
+#          cd build
+#          make -j$(nproc)
+#  
+#      - name: Package
+#        run: |
+#          cd build
+#          make package
+#          ls -l
+#
+#      - name: Install Cloudsmith CLI
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip
+#          pip3 install --upgrade pip
+#          pip3 install cloudsmith-cli
+#
+#      - name: Upload to Cloudsmith
+#        if: github.event_name == 'push'
+#        shell: bash
+#        working-directory: .
+#        run: |
+#          chmod +x ci/gha-cloudsmith-upload.sh
+#          ci/gha-cloudsmith-upload.sh
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+#          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+#          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+      
+  build-flatpak:
+    runs-on: ubuntu-latest
+    env:
+      OCPN_TARGET: flatpak-x86_64
+      BUILD_ARCH: x86_64
+      SDK_VER: 22.08
+      FLATPAK_BRANCH: stable
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
+          submodules: recursive
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
+      - name: Restore Git remote URL
+        run: |
+          git remote set-url origin https://github.com/${{ github.repository }}.git
+          git fetch --all
+
+      - name: Install base dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git ca-certificates wget \
+            flatpak flatpak-builder python3-pip
+
+      - name: Install Cloudsmith CLI
+        run: |
+          pip3 install --upgrade pip
+          pip3 install cloudsmith-cli
+
+      - name: Install extra libs
+        run: |
+          if [ -f ci/extras/extra_libs.txt ]; then
+            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
+          fi
+          if [ -f ci/extras/flatpak_extra_libs.txt ]; then
+            sudo xargs -a ci/extras/flatpak_extra_libs.txt apt-get install -y
+          fi
+
+      - name: Update opencpn-libs
+        run: |
+          git config --global protocol.file.allow always
+          git submodule update --init opencpn-libs
+
+      - name: Setup Flatpak environment
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y flathub org.freedesktop.Sdk//$SDK_VER
+          flatpak install --user -y flathub org.opencpn.OpenCPN
+
+      - name: Configure CMake
+        run: |
+          rm -rf build
+          mkdir build
+          cd build
+          cmake .. \
+            -DOCPN_TARGET=$OCPN_TARGET \
+            -DBUILD_ARCH=$BUILD_ARCH \
+            -DOCPN_FLATPAK_CONFIG=ON \
+            -DSDK_VER=$SDK_VER \
+            -DFLATPAK_BRANCH=$FLATPAK_BRANCH
+
+      - name: Build Flatpak
+        run: |
+          cd build
+          make flatpak-build
+          make flatpak-pkg
+
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: build
+        run: |
+          chmod +x ../ci/gha-cloudsmith-upload.sh
+          ../ci/gha-cloudsmith-upload.sh
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+
+  build-macos:
+    runs-on: macos-12
+    env:
+      OCPN_TARGET: macos
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew update-reset
+          brew install cmake gettext libarchive libexif cairo wget
+
+      - name: Install wxWidgets 3.2.2.1
+        run: |
+          wget https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxWidgets-3.2.2.1.tar.bz2
+          tar xf wxWidgets-3.2.2.1.tar.bz2
+          cd wxWidgets-3.2.2.1
+          ./configure --disable-debug --enable-unicode --enable-shared
+          make -j$(sysctl -n hw.logicalcpu)
+          sudo make install
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=app/files
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(sysctl -n hw.logicalcpu)
+          make install
+          make package
+
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        run: |
+          cp ci/gha-cloudsmith-upload.sh build/
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
+      
+
+  build-macos-universal:
+    runs-on: macos-12
+    env:
+      OCPN_TARGET: macos-universal
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew update-reset
+          brew install cmake gettext libarchive libexif cairo wget
+
+      - name: Install universal dependencies
+        run: |
+          wget -q https://dl.cloudsmith.io/public/nohal/opencpn-plugins/raw/files/macos_deps_universal.tar.xz \
+               -O /tmp/macos_deps_universal.tar.xz
+          sudo tar -C /usr/local -xJf /tmp/macos_deps_universal.tar.xz
+
+      - name: Configure Universal Build
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX= \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DOCPN_TARGET_TUPLE="darwin-wx32;10;universal"
+
+      - name: Build Universal
+        run: |
+          cd build
+          make -j$(sysctl -n hw.logicalcpu)
+          make package || make package
+
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        run: |
+          cp ci/gha-cloudsmith-upload.sh build/
+          cd build
+          chmod +x gha-cloudsmith-upload.sh
+          ./gha-cloudsmith-upload.sh
+      
+# build-msvc:
+#   runs-on: windows-2022
+#   env:
+#     OCPN_TARGET: msvc-wx32
+#     CMAKE_BUILD_PARALLEL_LEVEL: 2
+#   steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
+#       with:
+#         submodules: recursive
+#
+#     - name: Setup MSVC
+#       uses: microsoft/setup-msbuild@v1.1
+#
+#     - name: Setup MSVC Environment
+#       uses: ilammy/msvc-dev-cmd@v1
+#       with:
+#         arch: x86
+#
+#     - name: Cache wxWidgets
+#       id: cache-wx
+#       uses: actions/cache@v3
+#       with:
+#         path: C:\wxWidgets-3.2.2.1
+#         key: wxWidgets-3.2.2.1-msvc-x86-v3
+#
+#     - name: Install Dependencies
+#       shell: pwsh
+#       run: |
+#         choco install -y python --version=3.11.0
+#         choco install -y gettext
+#         
+#         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+#         
+#         python -m pip install --upgrade pip
+#         python -m pip install cloudsmith-cli
+#         python -m pip install cryptography
+#         
+#         Write-Host "Checking Gettext installation..."
+#         where.exe msgfmt
+#         where.exe msgmerge
+#
+#     - name: Download and Install wxWidgets
+#       if: steps.cache-wx.outputs.cache-hit != 'true'
+#       shell: pwsh
+#       run: |
+#         $wx_version = "3.2.2.1"
+#         $wx_source_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version.7z"
+#         $wx_headers_url = "https://github.com/wxWidgets/wxWidgets/releases/download/v$wx_version/wxWidgets-$wx_version-headers.7z"
+#         
+#         Write-Host "Downloading wxWidgets..."
+#         curl.exe -L -o wxWidgets-source.7z $wx_source_url
+#         curl.exe -L -o wxWidgets-headers.7z $wx_headers_url
+#         
+#         $sourceSize = (Get-Item wxWidgets-source.7z).Length
+#         $headerSize = (Get-Item wxWidgets-headers.7z).Length
+#         
+#         if ($sourceSize -lt 10000000 -or $headerSize -lt 1000000) {
+#           Write-Error "Download failed"
+#           exit 1
+#         }
+#         
+#         New-Item -Path "C:\wxWidgets-3.2.2.1" -ItemType Directory -Force
+#         7z x wxWidgets-source.7z -o"C:\wxWidgets-3.2.2.1" -y
+#         7z x wxWidgets-headers.7z -o"C:\wxWidgets-3.2.2.1" -y
+#         
+#         cd "C:\wxWidgets-3.2.2.1\build\msw"
+#         nmake /f makefile.vc BUILD=release SHARED=1 RUNTIME_LIBS=dynamic COMPILER_VERSION=143 VENDOR=custom
+#
+#     - name: Download OpenCPN Dependencies
+#       shell: pwsh
+#       run: |
+#         curl.exe -L -o opencpn.lib https://sourceforge.net/projects/opencpnplugins/files/opencpn.lib/download
+#         curl.exe -L -o nsis-setup.exe https://download.opencpn.org/s/54HsBDLNzRZLL6i/download/nsis-3.04-setup.exe
+#         Start-Process -FilePath "nsis-setup.exe" -ArgumentList "/S" -Wait
+#
+#     - name: Determine wxWidgets Lib Directory
+#       id: wx-lib-dir
+#       shell: pwsh
+#       run: |
+#         $possibleDirs = @(
+#           "C:\wxWidgets-3.2.2.1\lib\vc14x_dll",
+#           "C:\wxWidgets-3.2.2.1\lib\vc143_dll",
+#           "C:\wxWidgets-3.2.2.1\lib\vc_dll"
+#         )
+#         
+#         foreach ($dir in $possibleDirs) {
+#           if (Test-Path $dir) {
+#             echo "WX_LIB_DIR=$dir" >> $env:GITHUB_OUTPUT
+#             exit 0
+#           }
+#         }
+#         
+#         $foundDir = Get-ChildItem "C:\wxWidgets-3.2.2.1\lib" -Directory | Select-Object -First 1
+#         if ($foundDir) {
+#           echo "WX_LIB_DIR=$($foundDir.FullName)" >> $env:GITHUB_OUTPUT
+#         } else {
+#           Write-Error "No wxWidgets lib directory found"
+#           exit 1
+#         }
+#
+#     - name: Configure CMake
+#       shell: pwsh
+#       run: |
+#         New-Item -Path "build" -ItemType Directory -Force
+#         cd build
+#         
+#         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+#         
+#         $gettextPath = "C:\Program Files\gettext-iconv\bin"
+#         if (Test-Path $gettextPath) {
+#           $env:Path = "$gettextPath;$env:Path"
+#         }
+#         
+#         Write-Host "PATH: $env:Path"
+#         Write-Host "Looking for msgfmt..."
+#         where.exe msgfmt
+#         
+#         $wxLibDir = "${{ steps.wx-lib-dir.outputs.WX_LIB_DIR }}"
+#         
+#         cmake -A Win32 -G "Visual Studio 17 2022" `
+#           -DCMAKE_BUILD_TYPE=Release `
+#           -DwxWidgets_ROOT_DIR="C:\wxWidgets-3.2.2.1" `
+#           -DwxWidgets_LIB_DIR="$wxLibDir" `
+#           ..
+#         
+#         if ($LASTEXITCODE -ne 0) {
+#           Write-Error "CMake configuration failed"
+#           exit 1
+#         }
+#
+#     - name: Build
+#       working-directory: build
+#       run: cmake --build . --config Release --target package
+#
+#     - name: Upload to Cloudsmith
+#       if: github.event_name == 'push'
+#       shell: bash
+#       working-directory: build
+#       run: |
+#         chmod +x ../ci/gha-cloudsmith-upload.sh
+#         ../ci/gha-cloudsmith-upload.sh
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+#         CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+#         CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+#
+# build-android-armhf:
+#   runs-on: ubuntu-latest
+#   env:
+#     ANDROID_HOME: ${{ github.workspace }}/android-sdk
+#     ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk
+#     OCPN_TARGET: android-armhf
+#     CMAKE_BUILD_PARALLEL_LEVEL: 2
+#
+#   steps:
+#     - name: Checkout
+#       uses: actions/checkout@v3
+#       with:
+#         submodules: recursive
+#
+#     - name: Install base tools
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y wget unzip git cmake ninja-build gettext
+#
+#     - name: Install Android SDK
+#       run: |
+#         mkdir -p $ANDROID_HOME
+#         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+#         unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+#         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+#
+#         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+#           "platform-tools" \
+#           "platforms;android-29" \
+#           "build-tools;33.0.2" \
+#           "ndk;25.2.9519653"
+#
+#     - name: Set NDK path
+#       run: |
+#         export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/25.2.9519653
+#         echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+#
+#     - name: Download OCPNAndroidCommon
+#       run: |
+#         wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+#         unzip master.zip
+#         mv OCPNAndroidCommon-master OCPNAndroidCommon
+#
+#     - name: Configure CMake
+#       run: |
+#         mkdir build
+#         cd build
+#         cmake .. \
+#           -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
+#           -DANDROID_NDK=$ANDROID_NDK_HOME \
+#           -DOCPN_Android_Common=../OCPNAndroidCommon \
+#           -DCMAKE_BUILD_TYPE=Release
+#
+#     - name: Build
+#       run: |
+#         cd build
+#         make -j$(nproc)
+#
+#     - name: Package
+#       run: |
+#         cd build
+#         make package
+#     - name: Upload to Cloudsmith
+#       if: github.event_name == 'push'
+#       run: |
+#         cp ci/gha-cloudsmith-upload.sh build/
+#         cd build
+#         chmod +x gha-cloudsmith-upload.sh
+#         ./gha-cloudsmith-upload.sh
+      
+  build-android-arm64:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
+      OCPN_TARGET: android-arm64
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+  
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
+          submodules: recursive
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
+      - name: Install base tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip git ninja-build gettext python3-pip
+  
+      - name: Install Cloudsmith CLI
+        run: |
+          pip3 install --upgrade pip
+          pip3 install cloudsmith-cli
+  
+      - name: Install Android SDK + NDK
+        run: |
+          mkdir -p $ANDROID_HOME
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+          unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+  
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+            "platform-tools" \
+            "platforms;android-29" \
+            "build-tools;33.0.2" \
+            "ndk;25.2.9519653"
+  
+          # NDK nach /opt/android linken (CMake erwartet diesen Pfad)
+          sudo mkdir -p /opt/android
+          sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
+  
+      - name: Install extra libs
+        run: |
+          if [ -f ci/extras/extra_libs.txt ]; then
+            sudo xargs -a ci/extras/extra_libs.txt apt-get install -y
+          fi
+          if [ -f ci/extras/android-arm64_extra_libs.txt ]; then
+            sudo xargs -a ci/extras/android-arm64_extra_libs.txt apt-get install -y
+          fi
+  
+      - name: Download OCPNAndroidCommon
+        run: |
+          wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+          unzip master.zip
+          mv OCPNAndroidCommon-master OCPNAndroidCommon
+
+      - name: Download Android Qt SDK
+        run: |
+          git clone https://github.com/OpenCPN/android-qt-sdk.git
+
+      - name: Install latest CMake via pip
+        run: |
+          python3 -m pip install --upgrade pip setuptools
+          python3 -m pip install cmake
+  
+      - name: Configure CMake
+        run: |
+          mkdir build
+          cd build
+  
+          if git describe --exact-match --tags >/dev/null 2>&1; then
+            BUILD_TYPE=Release
+          else
+            BUILD_TYPE=Debug
+          fi
+  
+          cmake .. \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/android-aarch64-toolchain.cmake \
+            -DANDROID_NDK=$ANDROID_NDK_HOME \
+            -DOCPN_Android_Common=../OCPNAndroidCommon \
+            -D_wx_selected_config=androideabi-qt-arm64 \
+            -DwxQt_Build=build_android_release_64_static_O3 \
+            -DQt_Build=build_arm64/qtbase \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  
+      - name: Build
+        run: |
+          cd build
+          ninja
+  
+      - name: Package
+        run: |
+          cd build
+          make package
+  
+      - name: Upload to Cloudsmith
+        if: github.event_name == 'push'
+        shell: bash
+        working-directory: build
+        run: |
+          chmod +x ../ci/gha-cloudsmith-upload.sh
+          ../ci/gha-cloudsmith-upload.sh
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+          CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+          CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
+  
+  build-android-armhf:
+   runs-on: ubuntu-latest
+   env:
+     ANDROID_HOME: ${{ github.workspace }}/android-sdk
+     ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
+     OCPN_TARGET: android-armhf
+     CMAKE_BUILD_PARALLEL_LEVEL: 2
+
+   steps:
+     - name: Checkout
+       uses: actions/checkout@v3
+       with:
+          ref: ${{ github.sha }}          # erzwingt vollständigen Checkout
+          submodules: recursive
+          fetch-depth: 0
+          clean: true                     # löscht kaputte alte Checkouts
+  
+     - name: Install base tools
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y wget unzip git ninja-build gettext python3-pip
+
+     - name: Install Cloudsmith CLI
+       run: |
+         pip3 install --upgrade pip
+         pip3 install cloudsmith-cli
+
+     - name: Install Android SDK + NDK
+       run: |
+         mkdir -p $ANDROID_HOME
+         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+         unzip cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+         mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+
+         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME \
+           "platform-tools" \
+           "platforms;android-19" \
+           "build-tools;33.0.2" \
+           "ndk;25.2.9519653"
+
+         sudo mkdir -p /opt/android
+         sudo ln -sf $ANDROID_HOME/ndk/25.2.9519653 /opt/android/ndk
+
+     - name: Download OCPNAndroidCommon
+       run: |
+         wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+         unzip master.zip
+         mv OCPNAndroidCommon-master OCPNAndroidCommon
+
+     - name: Download Android Qt SDK
+       run: |
+         git clone https://github.com/OpenCPN/android-qt-sdk.git
+
+     - name: Configure CMake
+       run: |
+         mkdir build
+         cd build
+
+         cmake .. \
+           -G Ninja \
+           -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
+           -DANDROID_NDK=$ANDROID_NDK_HOME \
+           -DOCPN_Android_Common=../OCPNAndroidCommon \
+           -DCMAKE_PREFIX_PATH=../android-qt-sdk/qt5/armhf \
+           -DQt_Build=../android-qt-sdk/qt5/armhf/qtbase \
+           -D_wx_selected_config=androideabi-qt-armhf \
+           -DCMAKE_BUILD_TYPE=Release
+
+     - name: Build
+       run: |
+         cd build
+         ninja
+
+     - name: Package
+       run: |
+         cd build
+         make package
+
+     - name: Upload to Cloudsmith
+       if: github.event_name == 'push'
+       shell: bash
+       working-directory: build
+       run: |
+         chmod +x ../ci/gha-cloudsmith-upload.sh
+         ../ci/gha-cloudsmith-upload.sh
+       env:
+         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+         CLOUDSMITH_STABLE_REPO: ${{ secrets.CLOUDSMITH_STABLE_REPO }}
+         CLOUDSMITH_BETA_REPO: ${{ secrets.CLOUDSMITH_BETA_REPO }}
+         CLOUDSMITH_UNSTABLE_REPO: ${{ secrets.CLOUDSMITH_UNSTABLE_REPO }}
