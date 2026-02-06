@@ -26,42 +26,33 @@ else
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 fi
 
-#D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
-if [ "$DOCKER_EXEC_NO_TTY" = "1" ]; then
-    DOCKER_CONTAINER_ID=$(docker run --privileged -d -e "container=docker"  \
-        -e "CIRCLECI=$CIRCLECI" \
-        -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
-        -e "CIRCLE_TAG=$CIRCLE_TAG" \
-        -e "CIRCLE_PROJECT_USERNAME=$CIRCLE_PROJECT_USERNAME" \
-        -e "CIRCLE_PROJECT_REPONAME=$CIRCLE_PROJECT_REPONAME" \
-        -e "GIT_REPOSITORY_SERVER=$GIT_REPOSITORY_SERVER" \
-        -e "OCPN_TARGET=$OCPN_TARGET" \
-        -e "BUILD_GTK3=$BUILD_GTK3" \
-        -e "WX_VER=$WX_VER" \
-        -e "BUILD_ENV=$BUILD_ENV" \
-        -e "TZ=$TZ" \
-        -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
-        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
-else
-    DOCKER_CONTAINER_ID=$(docker run --privileged -d -ti -e "container=docker"  \
-        -e "CIRCLECI=$CIRCLECI" \
-        -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
-        -e "CIRCLE_TAG=$CIRCLE_TAG" \
-        -e "CIRCLE_PROJECT_USERNAME=$CIRCLE_PROJECT_USERNAME" \
-        -e "CIRCLE_PROJECT_REPONAME=$CIRCLE_PROJECT_REPONAME" \
-        -e "GIT_REPOSITORY_SERVER=$GIT_REPOSITORY_SERVER" \
-        -e "OCPN_TARGET=$OCPN_TARGET" \
-        -e "BUILD_GTK3=$BUILD_GTK3" \
-        -e "WX_VER=$WX_VER" \
-        -e "BUILD_ENV=$BUILD_ENV" \
-        -e "TZ=$TZ" \
-        -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
-        -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
-fi
-#D.B.: end - changed added if else statement (original statement is in else)
 
-#D.B.: start - changed assignment of DOCKER_CONTAINER_ID (background: variable was empty when later docker exec command was executed, which caused the command to fail)
-#old line: DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
+
+#D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
+# TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
+TTY_FLAG=""
+[ "$DOCKER_EXEC_NO_TTY" != "1" ] && TTY_FLAG="-ti"
+
+# Container starten und am Leben halten
+DOCKER_CONTAINER_ID=$(docker run --privileged -d $TTY_FLAG \
+    -e "container=docker" \
+    -e "CIRCLECI=$CIRCLECI" \
+    -e "CIRCLE_BRANCH=$CIRCLE_BRANCH" \
+    -e "CIRCLE_TAG=$CIRCLE_TAG" \
+    -e "CIRCLE_PROJECT_USERNAME=$CIRCLE_PROJECT_USERNAME" \
+    -e "CIRCLE_PROJECT_REPONAME=$CIRCLE_PROJECT_REPONAME" \
+    -e "GIT_REPOSITORY_SERVER=$GIT_REPOSITORY_SERVER" \
+    -e "OCPN_TARGET=$OCPN_TARGET" \
+    -e "BUILD_GTK3=$BUILD_GTK3" \
+    -e "WX_VER=$WX_VER" \
+    -e "BUILD_ENV=$BUILD_ENV" \
+    -e "TZ=$TZ" \
+    -e "DEBIAN_FRONTEND=$DEBIAN_FRONTEND" \
+    -v "$(pwd)":/ci-source:rw \
+    -v ~/source_top:/source_top \
+    "$DOCKER_IMAGE" \
+    tail -f /dev/null)
+
 if [ -z "$DOCKER_CONTAINER_ID" ]; then
     echo "ERROR: Failed to get Docker container ID"
     exit 1
@@ -222,18 +213,21 @@ then
 fi
 
 #D.B.: start - new environment variable to steer the log output of cmake
+s# CMake-Verbose-Flag aus Env, Default ON
 VERBOSE_FLAG=${CMAKE_DETAILLED_LOG:-ON}
-#D.B.: end - new environment variable to steer the log output of cmake
-
-#D.B.: start - changed added if else statement (original statement is in else)
-if [ "$DOCKER_EXEC_NO_TTY" = "1" ]; then
-    docker exec \
-        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake .. -DCMAKE_VERBOSE_MAKEFILE=\${VERBOSE_FLAG}; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
-else
-    docker exec -ti \
-        $DOCKER_CONTAINER_ID /bin/bash -xec "bash -xe ci-source/build.sh; rm -rf ci-source/build; mkdir ci-source/build; cd ci-source/build; cmake .. -DCMAKE_VERBOSE_MAKEFILE=\${VERBOSE_FLAG}; make $BUILD_FLAGS; make package; chmod -R a+rw ../build;"
-fi
+docker exec $TTY_FLAG \
+    "$DOCKER_CONTAINER_ID" /bin/bash -xec "
+        bash -xe ci-source/build.sh;
+        rm -rf ci-source/build;
+        mkdir ci-source/build;
+        cd ci-source/build;
+        cmake .. -DCMAKE_VERBOSE_MAKEFILE=${VERBOSE_FLAG};
+        make $BUILD_FLAGS;
+        make package;
+        chmod -R a+rw ../build;
+    "
 #D.B.: end - changed added if else statement (original statement is in else)
+
 echo "Stopping"
 docker ps -a
 docker stop $DOCKER_CONTAINER_ID
