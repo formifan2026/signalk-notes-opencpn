@@ -36,7 +36,7 @@ jobs:
       - name: Build Android ARM64
         run: |
           chmod a+x ci/*.sh
-          bash ci/github-build-android-arm64.sh
+          bash ci/circleci-build-android-arm64.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -152,8 +152,8 @@ jobs:
     env:
       OCPN_TARGET: MSVC
       MSVC_VERSION: 2022
-      #WX_VER: 32         // uncomment line for individual wxWidget version (normally configured in CMkakeLists.txt)
-      #WX_VER_PATCH: 2    // uncomment line for individual wxWidget patch (normally configured in CMkakeLists.txt)
+      WX_VER: 32
+      #WX_VER_PATCH: 2    // uncomment line for individual wxWidget patch
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -559,6 +559,7 @@ jobs:
       BUILD_ENV: debian
       WX_VER: 32
       BUILD_GTK3: true
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -687,6 +688,7 @@ jobs:
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       BUILD_GTK3: true
+      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

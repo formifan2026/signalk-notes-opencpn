@@ -30,14 +30,15 @@ if (OCPN_FLATPAK_CONFIG)
   )
   add_custom_target("flatpak-pkg")
   add_custom_command(
-    TARGET flatpak-pkg
-    COMMAND
-      ${TAR} -czf
-      ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz --verbose
-      --transform 's|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/|'
-      ${CMAKE_CURRENT_BINARY_DIR}/app/files
-    COMMAND chmod -R a+wr ../build
+      TARGET flatpak-pkg
+      COMMAND ${TAR} -czf
+          ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz
+          --verbose
+          --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/|
+          ${CMAKE_CURRENT_BINARY_DIR}/app/files
+      COMMAND chmod -R a+wr ../build
   )
+
 
   message(
     STATUS
