@@ -60,7 +60,15 @@ else
 fi
 #D.B.: end - changed added if else statement (original statement is in else)
 
-DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
+#D.B.: start - changed assignment of DOCKER_CONTAINER_ID (background: variable was empty when later docker exec command was executed, which caused the command to fail)
+#old line: DOCKER_CONTAINER_ID=$(docker ps | grep $DOCKER_IMAGE | awk '{print $1}')
+DOCKER_CONTAINER_ID=$(docker run --privileged -d -ti -e "container=docker"  \
+    -e "CIRCLECI=$CIRCLECI" \
+    ... \
+    -v $(pwd):/ci-source:rw -v ~/source_top:/source_top $DOCKER_IMAGE /bin/bash)
+echo "Docker Container ID: $DOCKER_CONTAINER_ID"
+#D.B.: end - changed assignment of DOCKER_CONTAINER_ID
+
 
 echo "Target build: $OCPN_TARGET"
 # Construct and run build script
