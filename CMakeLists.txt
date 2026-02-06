@@ -185,6 +185,7 @@ set(SRCS
     src/signalk_notes_opencpn_pi.cpp
     src/tpSignalKNotes.cpp
     src/tpConfigDialog.cpp
+    src/android_uuid.cpp
 )
 
 set(HDRS
@@ -192,6 +193,7 @@ set(HDRS
     include/tpicons.h
     include/tpSignalKNotes.h
     include/tpConfigDialog.h
+    include/android_uuid.h
 )
 
 add_definitions(-DPLUGIN_USE_SVG)

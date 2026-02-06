@@ -55,11 +55,17 @@
 #include <wx/graphics.h>
 #include <algorithm>
 #ifdef __WXMSW__
-// No uuid library on Windows. Use RPC-API instead
-#include <rpc.h>
-#pragma comment(lib, "Rpcrt4.lib")
+// Windows: RPC API
+  #include <rpc.h>
+  #pragma comment(lib, "Rpcrt4.lib")
+
+#elif defined(__OCPN__ANDROID__)
+// Android: eigenes UUID‑Backend
+  #include "android_uuid.h"
+
 #else
-#include <uuid/uuid.h>
+// Linux, macOS, Flatpak, Ubuntu-Docker
+  #include <uuid/uuid.h>
 #endif
 #include "signalk_notes_opencpn_pi.h"
 #include "wxWTranslateCatalog.h"

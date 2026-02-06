@@ -37,9 +37,6 @@ unzip -qq -o $MASTER_LOC/master.zip
 
 sudo apt-get -q update
 sudo apt-get -y install git cmake gettext unzip
-#D.B. start new lines
-sudo apt-get install -y uuid-dev
-#D.B. end new lines
 
 # Install extra build libs
 ME=$(echo ${0##*/} | sed 's/\.sh//g')
