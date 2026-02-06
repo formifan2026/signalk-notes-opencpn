@@ -14,14 +14,18 @@
   #include <windows.h>
 #endif
 
-#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__)
+#if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__) && !defined(__APPLE__)
 // Desktop-OpenGL (Windows, Linux, macOS)
   #include <GL/gl.h>
   #include <GL/glu.h>
 #endif
 
+#if defined(ocpnUSE_GL) && defined(__APPLE__)
+  #include <OpenGL/gl.h>
+#endif
+
 #ifdef __OCPN__ANDROID__
-// GLES für Android
+ // GLES für Android
   #include <GLES2/gl2.h>
 #endif
 
