@@ -395,6 +395,7 @@ jobs:
       WX_VER: 32
       BUILD_GTK3: true
       DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
+      APT_ALLOW_UNSTABLE: ON # Allow installing packages from unstable to get newer toolchain for ARM64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -694,7 +695,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bullseye-armhf
-      DOCKER_IMAGE: debian-armhf:bullseye
+      DOCKER_IMAGE: debian:bullseye
       BUILD_FLAGS: -j3
       BUILD_ENV: debian
       BUILD_GTK3: true
