@@ -16,6 +16,7 @@ on:
 
 env:
   CLOUDSMITH_USER: opencpn
+  APT_ALLOW_UNSTABLE: OFF
 
 jobs:
   # =============================================================================
