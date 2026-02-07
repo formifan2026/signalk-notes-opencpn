@@ -16,7 +16,7 @@ on:
 
 env:
   CLOUDSMITH_USER: opencpn
-  APT_ALLOW_UNSTABLE: OFF
+  USE_UNSTABLE_REPO: OFF
 
 jobs:
   # =============================================================================
@@ -396,7 +396,7 @@ jobs:
       WX_VER: 32
       BUILD_GTK3: true
       DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
-      APT_ALLOW_UNSTABLE: ON # Enable unstable repo
+      USE_UNSTABLE_REPO: ON # Enable unstable repo
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

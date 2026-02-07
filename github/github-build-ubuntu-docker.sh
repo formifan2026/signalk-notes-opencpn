@@ -130,7 +130,7 @@ EOF$delimstrnum
 else
 
     # Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
-    if [ "$GITHUB_ACTIONS" = "true" ] && [ "$APT_ALLOW_UNSTABLE" = "ON" ]; then
+    if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
         echo "GitHub Actions + APT_ALLOW_UNSTABLE=ON → enabling Debian unstable repo"
         echo "deb http://deb.debian.org/debian unstable main" >> /etc/apt/sources.list
         apt-get update
