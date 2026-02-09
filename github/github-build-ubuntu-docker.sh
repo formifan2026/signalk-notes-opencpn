@@ -137,6 +137,7 @@ else
             echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
             apt-get update
             apt-get -y --fix-broken --fix-missing install
+        "
     fi
 
     if [ "$OCPN_TARGET" = "bullseye-armhf" ] ||
