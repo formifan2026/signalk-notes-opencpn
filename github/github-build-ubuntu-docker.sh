@@ -57,6 +57,7 @@ add_env "WX_VER" "$WX_VER"
 add_env "BUILD_ENV" "$BUILD_ENV"
 add_env "TZ" "$TZ"
 add_env "DEBIAN_FRONTEND" "$DEBIAN_FRONTEND"
+add_env "USE_UNSTABLE_REPO" "$USE_UNSTABLE_REPO"
 
 # Architektur aus OCPN_TARGET ableiten
 case "$OCPN_TARGET" in
@@ -131,10 +132,11 @@ else
 
     #Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
     if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
-        echo "GitHub Actions + APT_ALLOW_UNSTABLE=ON → enabling Debian unstable repo"
-        echo "deb http://deb.debian.org/debian unstable main" >> /etc/apt/sources.list
-        apt-get update
-        apt-get -y --fix-broken --fix-missing install
+        echo "Enabling unstable repo inside container"
+        docker exec "$DOCKER_CONTAINER_ID" bash -c "
+            echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
+            apt-get update
+            apt-get -y --fix-broken --fix-missing install
     fi
 
     if [ "$OCPN_TARGET" = "bullseye-armhf" ] ||
