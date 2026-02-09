@@ -3,22 +3,27 @@
 #
 # Build for Raspbian and debian in a docker container
 #
-
-cd ~/project
+# D.B.: start - always move to repo root, independent of CI system cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/.."
+# D.B.: ends- always move to repo root, independent of CI system cd "$(dirname "$0")/.."
 
 git submodule update --init opencpn-libs
 
 # D.B.: start - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
-API_MINOR=$(grep -Eo 'set\(OCPN_API_VERSION_MINOR "[0-9]+"\)' ci-source/CMakeLists.txt \
+API_MINOR=$(grep -Eo 'set\(OCPN_API_VERSION_MINOR "[0-9]+"\)' CMakeLists.txt \
             | grep -Eo '[0-9]+')
+# Prüfen, ob API_MINOR überhaupt gefunden wurde
+if [ -z "$API_MINOR" ]; then
+    echo "ERROR: Could not read OCPN_API_VERSION_MINOR from CMakeLists.txt."
+    exit 1
+fi
+echo "Found API-Version: $API_MINOR"
 if [ "$API_MINOR" -lt 20 ] && [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
     echo "Applying <cstdint> patch for API < 20 on Trixie ARM64"
     sed -i 's/#include <unordered_map>/#include <unordered_map>\n#include <cstdint>/' \
         ci-source/opencpn-libs/api-18/ocpn_plugin.h
 fi
 # D.B.: end - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
-
-ls -la ~/project
 
 # bailout on errors and echo commands.
 set -x
