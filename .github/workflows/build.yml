@@ -22,369 +22,369 @@ jobs:
   # =============================================================================
   # Android Builds
   # =============================================================================
-  build-android-arm64:
-    runs-on: ubuntu-latest
-    container:
-      image: cimg/android:2023.12-ndk
-    env:
-      OCPN_TARGET: android-arm64
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Android ARM64
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-android-arm64.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-android-armhf:
-    runs-on: ubuntu-latest
-    container:
-      image: cimg/android:2022.12-ndk
-    env:
-      OCPN_TARGET: android-armhf
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Android ARMHF
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-android-armhf.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  # =============================================================================
-  # macOS Build
-  # =============================================================================
-  build-macos-universal:
-    runs-on: macos-14
-    env:
-      OCPN_TARGET: macos
-      CMAKE_BUILD_PARALLEL_LEVEL: 2
-      WX_VER: 32
-      MACOSX_DEPLOYMENT_TARGET: '10.10'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            /tmp/local.cache.tar
-            cache
-          key: macos-deps-${{ hashFiles('build-deps/macos-cache-stamp', 'cmake/MacosWxwidgets.cmake', 'ci/circleci-build-macos-universal.sh') }}
-          restore-keys: |
-            macos-deps-
-
-      - name: Build macOS Universal
-        run: |
-          chmod a+x ci/*.sh
-          chmod a+x cmake/*.sh
-          ci/circleci-build-macos-universal.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-universal-package
-          path: |
-            build/*.pkg
-            build/*.dmg
-            build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python3 -m venv $HOME/cs-venv
-          source $HOME/cs-venv/bin/activate
-          pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  # =============================================================================
-  # Windows MSVC Build
-  # =============================================================================
-  build-msvc-wx32-2022:
-    runs-on: windows-2022
-    env:
-      OCPN_TARGET: MSVC
-      MSVC_VERSION: 2022
-      WX_VER: 32
-      #WX_VER_PATCH: 2    // uncomment line for individual wxWidget patch
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build MSVC
-        shell: cmd
-        run: ci\circleci-build-msvc.bat
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: msvc-wx32-2022-package
-          path: |
-            build/*.exe
-            build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        shell: bash
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  # =============================================================================
-  # Flatpak Builds
-  # =============================================================================
-  build-flatpak-aarch64-2208:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak
-      BUILD_ARCH: aarch64
-      FLATPAK_BRANCH: stable
-      CLOUDSMITH_PKG_EXT: gz
-      SDK_VER: 22.08
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build Flatpak ARM64
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-flatpak.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-aarch64-2208-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-flatpak-x86-2208:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak
-      BUILD_ARCH: x86_64
-      FLATPAK_BRANCH: stable
-      CLOUDSMITH_PKG_EXT: gz
-      SDK_VER: 22.08
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Flatpak x86_64
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-flatpak.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-x86-2208-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-flatpak-aarch64-2408:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak
-      BUILD_ARCH: aarch64
-      FLATPAK_BRANCH: stable
-      CLOUDSMITH_PKG_EXT: gz
-      SDK_VER: 24.08
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build Flatpak ARM64
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-flatpak.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-aarch64-2408-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-flatpak-x86-2408:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak
-      BUILD_ARCH: x86_64
-      FLATPAK_BRANCH: stable
-      CLOUDSMITH_PKG_EXT: gz
-      SDK_VER: 24.08
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Flatpak x86_64
-        run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-flatpak.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-x86-2408-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
+# build-android-arm64:
+#   runs-on: ubuntu-latest
+#   container:
+#     image: cimg/android:2023.12-ndk
+#   env:
+#     OCPN_TARGET: android-arm64
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Build Android ARM64
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-android-arm64.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: android-arm64-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# build-android-armhf:
+#   runs-on: ubuntu-latest
+#   container:
+#     image: cimg/android:2022.12-ndk
+#   env:
+#     OCPN_TARGET: android-armhf
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Build Android ARMHF
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-android-armhf.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: android-armhf-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# # =============================================================================
+# # macOS Build
+# # =============================================================================
+# build-macos-universal:
+#   runs-on: macos-14
+#   env:
+#     OCPN_TARGET: macos
+#     CMAKE_BUILD_PARALLEL_LEVEL: 2
+#     WX_VER: 32
+#     MACOSX_DEPLOYMENT_TARGET: '10.10'
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Cache dependencies
+#       uses: actions/cache@v4
+#       with:
+#         path: |
+#           /tmp/local.cache.tar
+#           cache
+#         key: macos-deps-${{ hashFiles('build-deps/macos-cache-stamp', 'cmake/MacosWxwidgets.cmake', 'ci/circleci-build-macos-universal.sh') }}
+#         restore-keys: |
+#           macos-deps-
+#
+#     - name: Build macOS Universal
+#       run: |
+#         chmod a+x ci/*.sh
+#         chmod a+x cmake/*.sh
+#         ci/circleci-build-macos-universal.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: macos-universal-package
+#         path: |
+#           build/*.pkg
+#           build/*.dmg
+#           build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         python3 -m venv $HOME/cs-venv
+#         source $HOME/cs-venv/bin/activate
+#         pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# # =============================================================================
+# # Windows MSVC Build
+# # =============================================================================
+# build-msvc-wx32-2022:
+#   runs-on: windows-2022
+#   env:
+#     OCPN_TARGET: MSVC
+#     MSVC_VERSION: 2022
+#     WX_VER: 32
+#     #WX_VER_PATCH: 2    // uncomment line for individual wxWidget patch
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Build MSVC
+#       shell: cmd
+#       run: ci\circleci-build-msvc.bat
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: msvc-wx32-2022-package
+#         path: |
+#           build/*.exe
+#           build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       shell: bash
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# # =============================================================================
+# # Flatpak Builds
+# # =============================================================================
+# build-flatpak-aarch64-2208:
+#   runs-on: ubuntu-latest
+#   env:
+#     OCPN_TARGET: flatpak
+#     BUILD_ARCH: aarch64
+#     FLATPAK_BRANCH: stable
+#     CLOUDSMITH_PKG_EXT: gz
+#     SDK_VER: 22.08
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Set up QEMU
+#       uses: docker/setup-qemu-action@v3
+#       with:
+#         platforms: arm64
+#
+#     - name: Build Flatpak ARM64
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-flatpak.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: flatpak-aarch64-2208-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# build-flatpak-x86-2208:
+#   runs-on: ubuntu-latest
+#   env:
+#     OCPN_TARGET: flatpak
+#     BUILD_ARCH: x86_64
+#     FLATPAK_BRANCH: stable
+#     CLOUDSMITH_PKG_EXT: gz
+#     SDK_VER: 22.08
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Build Flatpak x86_64
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-flatpak.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: flatpak-x86-2208-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# build-flatpak-aarch64-2408:
+#   runs-on: ubuntu-latest
+#   env:
+#     OCPN_TARGET: flatpak
+#     BUILD_ARCH: aarch64
+#     FLATPAK_BRANCH: stable
+#     CLOUDSMITH_PKG_EXT: gz
+#     SDK_VER: 24.08
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Set up QEMU
+#       uses: docker/setup-qemu-action@v3
+#       with:
+#         platforms: arm64
+#
+#     - name: Build Flatpak ARM64
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-flatpak.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: flatpak-aarch64-2408-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
+# build-flatpak-x86-2408:
+#   runs-on: ubuntu-latest
+#   env:
+#     OCPN_TARGET: flatpak
+#     BUILD_ARCH: x86_64
+#     FLATPAK_BRANCH: stable
+#     CLOUDSMITH_PKG_EXT: gz
+#     SDK_VER: 24.08
+#   steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v4
+#       with:
+#         submodules: recursive
+#
+#     - name: Build Flatpak x86_64
+#       run: |
+#         chmod a+x ci/*.sh
+#         bash ci/circleci-build-flatpak.sh
+#
+#     - name: Upload artifacts
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: flatpak-x86-2408-package
+#         path: build/*.tar.gz
+#         if-no-files-found: warn
+#
+#     - name: Deploy to Cloudsmith
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       env:
+#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#       run: |
+#         sudo apt-get update
+#         sudo apt-get install -y python3-pip jq
+#         python3 -m pip install cloudsmith-cli
+#         bash ci/cloudsmith-upload.sh
+#
   # =============================================================================
   # Debian Builds
   # =============================================================================
-  build-debian-x86_64-13-trixie:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: trixie
-      BUILD_GTK3: true
-      WX_VER: 32
-      BUILD_ENV: debian
-      DOCKER_IMAGE: debian:trixie
-      DOCKER_EXEC_NO_TTY: 1
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Debian Trixie x86_64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-trixie-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
+#  build-debian-x86_64-13-trixie:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: trixie
+#      BUILD_GTK3: true
+#      WX_VER: 32
+#      BUILD_ENV: debian
+#      DOCKER_IMAGE: debian:trixie
+#      DOCKER_EXEC_NO_TTY: 1
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Build Debian Trixie x86_64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-trixie-x86_64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
 
   build-debian-arm64-13-trixie:
     runs-on: ubuntu-latest
@@ -431,351 +431,351 @@ jobs:
           python3 -m pip install cloudsmith-cli
           bash ci/cloudsmith-upload.sh
 
-  build-debian-armhf-13-trixie:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: trixie-armhf
-      DOCKER_IMAGE: debian:trixie
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      WX_VER: 32
-      BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
-
-      - name: Build Debian Trixie ARMHF
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-trixie-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-x86_64-12-bookworm:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: bookworm
-      BUILD_GTK3: true
-      WX_VER: 32
-      BUILD_ENV: debian
-      DOCKER_IMAGE: debian:bookworm
-      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build Debian Bookworm x86_64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-arm64-12-bookworm:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: bookworm-arm64
-      DOCKER_IMAGE: debian:bookworm
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      WX_VER: 32
-      BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build Debian Bookworm ARM64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-armhf-12-bookworm:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: bookworm-armhf
-      DOCKER_IMAGE: debian:bookworm
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      WX_VER: 32
-      BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
-
-      - name: Build Debian Bookworm ARMHF
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-x86_64-11-bullseye:
-    runs-on: ubuntu-22.04
-    container:
-      image: buildpack-deps:bullseye-scm
-    env:
-      OCPN_TARGET: bullseye
-      BUILD_GTK3: true
-      BUILD_ENV: debian
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup apt sources
-        run: |
-          echo "deb-src http://ftp.us.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list
-          echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main" | tee -a /etc/apt/sources.list
-
-      - name: Install sudo
-        run: |
-         apt-get update
-         apt-get install -y sudo
-
-      - name: Build Debian Bullseye x86_64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-debian.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          apt-get update
-          apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-arm64-11-bullseye:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: bullseye-arm64
-      DOCKER_IMAGE: debian:bullseye-backports
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Build Debian Bullseye ARM64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  build-debian-armhf-11-bullseye:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: bullseye-armhf
-      DOCKER_IMAGE: debian:bullseye
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
-
-      - name: Build Debian Bullseye ARMHF
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
-
-  # =============================================================================
-  # Ubuntu Build
-  # =============================================================================
-  build-ubuntu-x86_64-2204-jammy:
-    runs-on: ubuntu-22.04
-    env:
-      BUILD_GTK3: true
-      OCPN_TARGET: jammy
-      WX_VER: 32
-      BUILD_ENV: ubuntu
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup apt sources
-        run: |
-          echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
-          echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
-          echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
-
-      - name: Build Ubuntu Jammy x86_64
-        run: |
-          chmod a+x github/*.sh
-          github/github-build-jammy.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ubuntu-jammy-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
+#  build-debian-armhf-13-trixie:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: trixie-armhf
+#      DOCKER_IMAGE: debian:trixie
+#      BUILD_FLAGS: -j3
+#      BUILD_ENV: debian
+#      WX_VER: 32
+#      BUILD_GTK3: true
+#      DOCKER_EXEC_NO_TTY: 1
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: arm
+#
+#      - name: Build Debian Trixie ARMHF
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-trixie-armhf-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-x86_64-12-bookworm:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: bookworm
+#      BUILD_GTK3: true
+#      WX_VER: 32
+#      BUILD_ENV: debian
+#      DOCKER_IMAGE: debian:bookworm
+#      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Build Debian Bookworm x86_64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bookworm-x86_64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-arm64-12-bookworm:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: bookworm-arm64
+#      DOCKER_IMAGE: debian:bookworm
+#      BUILD_FLAGS: -j3
+#      BUILD_ENV: debian
+#      WX_VER: 32
+#      BUILD_GTK3: true
+#      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: arm64
+#
+#      - name: Build Debian Bookworm ARM64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bookworm-arm64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-armhf-12-bookworm:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: bookworm-armhf
+#      DOCKER_IMAGE: debian:bookworm
+#      BUILD_FLAGS: -j3
+#      BUILD_ENV: debian
+#      WX_VER: 32
+#      BUILD_GTK3: true
+#      DOCKER_EXEC_NO_TTY: 1
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: arm
+#
+#      - name: Build Debian Bookworm ARMHF
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bookworm-armhf-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-x86_64-11-bullseye:
+#    runs-on: ubuntu-22.04
+#    container:
+#      image: buildpack-deps:bullseye-scm
+#    env:
+#      OCPN_TARGET: bullseye
+#      BUILD_GTK3: true
+#      BUILD_ENV: debian
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Setup apt sources
+#        run: |
+#          echo "deb-src http://ftp.us.debian.org/debian bullseye main" | tee -a /etc/apt/sources.list
+#          echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main" | tee -a /etc/apt/sources.list
+#
+#      - name: Install sudo
+#        run: |
+#         apt-get update
+#         apt-get install -y sudo
+#
+#      - name: Build Debian Bullseye x86_64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-debian.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bullseye-x86_64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          apt-get update
+#          apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-arm64-11-bullseye:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: bullseye-arm64
+#      DOCKER_IMAGE: debian:bullseye-backports
+#      BUILD_FLAGS: -j3
+#      BUILD_ENV: debian
+#      BUILD_GTK3: true
+#      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: arm64
+#
+#      - name: Build Debian Bullseye ARM64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bullseye-arm64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  build-debian-armhf-11-bullseye:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: bullseye-armhf
+#      DOCKER_IMAGE: debian:bullseye
+#      BUILD_FLAGS: -j3
+#      BUILD_ENV: debian
+#      BUILD_GTK3: true
+#      DOCKER_EXEC_NO_TTY: 1 # Disable TTY for Docker execution to prevent issues in CI environment
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Set up QEMU
+#        uses: docker/setup-qemu-action@v3
+#        with:
+#          platforms: arm
+#
+#      - name: Build Debian Bullseye ARMHF
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-ubuntu-docker.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: debian-bullseye-armhf-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
+#
+#  # =============================================================================
+#  # Ubuntu Build
+#  # =============================================================================
+#  build-ubuntu-x86_64-2204-jammy:
+#    runs-on: ubuntu-22.04
+#    env:
+#      BUILD_GTK3: true
+#      OCPN_TARGET: jammy
+#      WX_VER: 32
+#      BUILD_ENV: ubuntu
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      - name: Setup apt sources
+#        run: |
+#          echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+#          echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
+#          echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+#
+#      - name: Build Ubuntu Jammy x86_64
+#        run: |
+#          chmod a+x github/*.sh
+#          github/github-build-jammy.sh
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ubuntu-jammy-x86_64-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+#
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
