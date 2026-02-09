@@ -8,6 +8,16 @@ cd ~/project
 
 git submodule update --init opencpn-libs
 
+# D.B.: start - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
+API_MINOR=$(grep -Eo 'set\(OCPN_API_VERSION_MINOR "[0-9]+"\)' ci-source/CMakeLists.txt \
+            | grep -Eo '[0-9]+')
+if [ "$API_MINOR" -lt 20 ] && [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
+    echo "Applying <cstdint> patch for API < 20 on Trixie ARM64"
+    sed -i 's/#include <unordered_map>/#include <unordered_map>\n#include <cstdint>/' \
+        ci-source/opencpn-libs/api-18/ocpn_plugin.h
+fi
+# D.B.: end - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
+
 ls -la ~/project
 
 # bailout on errors and echo commands.
@@ -267,7 +277,7 @@ then
 fi
 
 #D.B.: start - new environment variable to steer the log output of cmake
-s# CMake-Verbose-Flag aus Env, Default ON
+# CMake-Verbose-Flag aus Env, Default ON
 VERBOSE_FLAG=${CMAKE_DETAILLED_LOG:-ON}
 docker exec $TTY_FLAG \
     "$DOCKER_CONTAINER_ID" /bin/bash -xec "

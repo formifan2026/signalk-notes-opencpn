@@ -21,7 +21,7 @@ class tpSignalKNotesManager;
 class tpConfigDialog;
 class SignalKNote;
 
-class signalk_notes_opencpn_pi : public opencpn_plugin_118 {
+class signalk_notes_opencpn_pi : public opencpn_plugin_120 {
 public:
   signalk_notes_opencpn_pi(void* ppimgr);
   ~signalk_notes_opencpn_pi() override;

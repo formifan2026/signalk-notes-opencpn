@@ -108,7 +108,7 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p) { delete p; }
 // ---------------------------------------------------------------------------------------
 
 signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void* ppimgr)
-    : opencpn_plugin_118(ppimgr) {
+    : opencpn_plugin_120(ppimgr) {
   g_signalk_notes_opencpn_pi = this;
 
   // Plugin-Datenverzeichnis von OpenCPN ermitteln
