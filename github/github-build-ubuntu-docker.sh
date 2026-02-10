@@ -48,6 +48,7 @@ else
 fi
 
 
+
 #D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
 # TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
 # TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
@@ -109,6 +110,18 @@ fi
 echo "Docker Container ID: $DOCKER_CONTAINER_ID"
 #D.B.: end - changed assignment of DOCKER_CONTAINER_ID
 
+# >>>>> NEU: unstable-Repo direkt nach Containerstart aktivieren <<<<<
+#Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
+if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
+    echo "Enabling unstable repo inside container (EARLY)"
+    docker exec "$DOCKER_CONTAINER_ID" bash -c "
+        echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
+        apt-get update
+        apt-get -y --fix-broken --fix-missing install
+    "
+fi
+# >>>>> ENDE NEU <<<<<
+
 
 echo "Target build: $OCPN_TARGET"
 # Construct and run build script
@@ -149,16 +162,6 @@ EOF$delimstrnum
     fi
 
 else
-
-    #Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
-    if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
-        echo "Enabling unstable repo inside container"
-        docker exec "$DOCKER_CONTAINER_ID" bash -c "
-            echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
-            apt-get update
-            apt-get -y --fix-broken --fix-missing install
-        "
-    fi
 
     if [ "$OCPN_TARGET" = "bullseye-armhf" ] ||
        [ "$OCPN_TARGET" = "bullseye-arm64" ] ||
@@ -242,7 +245,7 @@ EOF$delimstrnum
             wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc --no-check-certificate 2>/dev/null | apt-key add -
             apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main'
             apt-get --allow-unauthenticated update
-            apt --allow-unauthenticated install cmake=$CMAKE_VERSION cmake-data=$CMAKE_VERSION
+            apt --allow-unauthenticated install cmake=\$CMAKE_VERSION cmake-data=\$CMAKE_VERSION
 EOF$delimstrnum
             ((delimstrnum++))
         else
@@ -287,8 +290,11 @@ EOF$delimstrnum
 ((delimstrnum++))
 
 echo "Build script --- start ----"
+set +x
 cat build.sh
+set -x
 echo "Build script --- end ---"
+
 
 if type nproc &> /dev/null
 then
@@ -315,4 +321,3 @@ echo "Stopping"
 docker ps -a
 docker stop $DOCKER_CONTAINER_ID
 docker rm -v $DOCKER_CONTAINER_ID
-
