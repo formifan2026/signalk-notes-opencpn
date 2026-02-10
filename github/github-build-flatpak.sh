@@ -80,7 +80,7 @@ else
 fi
 
 ##############################################
-# 9. CMake configure
+# 8. CMake configure
 ##############################################
 cmake \
   -DOCPN_TARGET="$OCPN_TARGET" \
@@ -92,7 +92,7 @@ cmake \
   ..
 
 ##############################################
-# 10. Build + Package
+# 9. Build + Package (mit Manifest-Override)
 ##############################################
-make flatpak-build make flatpak-build FLATPAK_MANIFEST=flatpak/org.opencpn.OpenCPN.Plugin.signalk_notes_opencpn.yaml
+make flatpak-build FLATPAK_MANIFEST=../flatpak/org.opencpn.OpenCPN.Plugin.signalk_notes_opencpn.yaml
 make flatpak-pkg
