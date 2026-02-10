@@ -61,7 +61,7 @@ jobs:
  build-android-armhf:
    runs-on: ubuntu-latest
    container:
-     image: cimg/android:2022.12-ndk
+     image: cimg/android:2021.10-ndk
    env:
      OCPN_TARGET: android-armhf
    steps:
