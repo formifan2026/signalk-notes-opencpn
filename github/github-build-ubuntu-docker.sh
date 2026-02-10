@@ -19,12 +19,30 @@ if [ -z "$API_MINOR" ]; then
     exit 1
 fi
 echo "Found API-Version: $API_MINOR"
+
+echo "DEBUG: API_MINOR='$API_MINOR'"
+echo "DEBUG: OCPN_TARGET='$OCPN_TARGET'"
+
+if [ "$API_MINOR" -lt 20 ]; then
+    echo "DEBUG: Condition API_MINOR < 20 = TRUE"
+else
+    echo "DEBUG: Condition API_MINOR < 20 = FALSE"
+fi
+
+if [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
+    echo "DEBUG: Condition OCPN_TARGET matches *trixie-arm64* = TRUE"
+else
+    echo "DEBUG: Condition OCPN_TARGET matches *trixie-arm64* = FALSE"
+fi
+
 if [ "$API_MINOR" -lt 20 ] && [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
     echo "Applying <cstdint> patch for API < 20 on Trixie ARM64"
     sed -i 's/#include <unordered_map>/#include <unordered_map>\n#include <cstdint>/' \
         ci-source/opencpn-libs/api-18/ocpn_plugin.h
 fi
 # D.B.: end - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
+
+exit 1
 
 # bailout on errors and echo commands.
 set -x
