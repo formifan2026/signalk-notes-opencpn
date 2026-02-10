@@ -31,9 +31,6 @@ if [ "$API_MINOR" -lt 20 ] && [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
 fi
 # D.B.: end - Detect OCPN API version from CMakeLists.txt and apply <cstdint> patch ONLY for "API < 20 & Trixie ARM64 builds"
 
-
-exit 1
-
 # bailout on errors and echo commands.
 set -x
 sudo apt-get -y --allow-unauthenticated update
@@ -49,7 +46,6 @@ if [ "$BUILD_ENV" = "raspbian" ]; then
 else
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 fi
-
 
 
 #D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
@@ -268,22 +264,31 @@ fi
 
 # Install extra build libs
 ME=$(echo ${0##*/} | sed 's/\.sh//g')
-#D.B.: start - changed /ci/ to /github/
-EXTRA_LIBS=./github/extras/extra_libs.txt
-if test -f "$EXTRA_LIBS"; then
-    while read line; do
-        sudo apt-get install $line
-    done < $EXTRA_LIBS
-fi
-EXTRA_LIBS=./github/extras/${ME}_extra_libs.txt
-if test -f "$EXTRA_LIBS"; then
-    while read line; do
-        sudo apt-get install $line
-    done < $EXTRA_LIBS
-fi
-#D.B.: end - changed /ci/ to /github/
 
+# Add extra libs installation to build.sh
+cat >> build.sh <<EOF$delimstrnum
+# Install extra build libs
+if [ -f "ci-source/github/extras/extra_libs.txt" ]; then
+    echo "Installing extra libs from extra_libs.txt"
+    while read line; do
+        [ -z "\$line" ] && continue
+        apt-get install -y --allow-unauthenticated \$line || true
+    done < ci-source/github/extras/extra_libs.txt
+fi
+
+if [ -f "ci-source/github/extras/${ME}_extra_libs.txt" ]; then
+    echo "Installing script-specific extra libs for ${ME}"
+    while read line; do
+        [ -z "\$line" ] && continue
+        apt-get install -y --allow-unauthenticated \$line || true
+    done < ci-source/github/extras/${ME}_extra_libs.txt
+fi
+EOF$delimstrnum
+((delimstrnum++))
+
+echo "Build script --- start ----"
 cat build.sh
+echo "Build script --- end ---"
 
 if type nproc &> /dev/null
 then
