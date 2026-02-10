@@ -86,7 +86,7 @@ jobs:
       - name: Build Android ARMHF
         run: |
           chmod a+x ci/*.sh
-          bash ci/circleci-build-android-armhf.sh
+          bash github/github-build-android-arm64.sh
   
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
