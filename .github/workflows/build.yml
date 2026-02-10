@@ -407,9 +407,6 @@ jobs:
 
       - name: Build Debian Trixie ARM64
         run: |
-          for v in OCPN_TARGET DOCKER_IMAGE BUILD_FLAGS BUILD_ENV WX_VER BUILD_GTK3 DOCKER_EXEC_NO_TTY USE_UNSTABLE_REPO; do
-            export "$v"="${!v}"
-          done
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
 
