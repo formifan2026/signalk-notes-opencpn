@@ -75,11 +75,12 @@ fi
 ##############################################
 rm -rf build && mkdir build && cd build
 
-if [[ -n "$WX_VER" ]]; then
+if [[ -n "${WX_VER:-}" ]]; then
     SET_WX_VER="-DWX_VER=$WX_VER"
 else
     SET_WX_VER=""
 fi
+
 
 ##############################################
 # 7. CMake configure
