@@ -36,19 +36,27 @@ if (OCPN_FLATPAK_CONFIG)
       TARGET flatpak-pkg
       POST_BUILD
 
-      # 1. Find the files/ directory created by flatpak-builder
-      COMMAND sh -c "find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files | head -n 1 > ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt"
+      # 1. Debug: show where we are
+      COMMAND echo "DEBUG: Running flatpak-pkg in ${CMAKE_CURRENT_BINARY_DIR}"
 
-      # 2. Validate that it exists
-      COMMAND sh -c "if [ ! -s ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt ]; then echo 'ERROR: Could not locate Flatpak output directory (files/)'; exit 1; fi"
+      # 2. Find the files/ directory created by flatpak-builder
+      COMMAND sh -c "find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files | head -n 1 > ${CMAKE_CURRENT_BINARY_DIR}/files_dir.txt"
 
-      # 3. Read the directory path
-      COMMAND sh -c "FILES_DIR=\$(cat ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt) && \
+      # 3. Debug: show what was found
+      COMMAND sh -c "echo 'DEBUG: files_dir.txt content:' && cat ${CMAKE_CURRENT_BINARY_DIR}/files_dir.txt || true"
+
+      # 4. Validate that it exists
+      COMMAND sh -c "if [ ! -s ${CMAKE_CURRENT_BINARY_DIR}/files_dir.txt ]; then echo 'ERROR: Could not locate Flatpak output directory (files/)'; exit 1; fi"
+
+      # 5. Run TAR
+      COMMAND sh -c "FILES_DIR=\$(cat ${CMAKE_CURRENT_BINARY_DIR}/files_dir.txt); \
+                     echo 'DEBUG: Using FILES_DIR=' \"\$FILES_DIR\"; \
                      ${TAR} -czf ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz \
                      --verbose \
                      --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/| \
                      \"\$FILES_DIR\""
 
+      # 6. Fix permissions
       COMMAND chmod -R a+wr ../build
   )
 
