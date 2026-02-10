@@ -35,15 +35,10 @@ if (OCPN_FLATPAK_CONFIG)
   add_custom_command(
       TARGET flatpak-pkg
       POST_BUILD
-      COMMAND sh -c "echo 'DEBUG: Searching for files/ directory under ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles'; \
-                     FILES_DIR=\$(find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files | head -n 1); \
-                     echo 'DEBUG: Found FILES_DIR=' \"\$FILES_DIR\"; \
-                     if [ -z \"\$FILES_DIR\" ]; then echo 'ERROR: Could not locate Flatpak output directory (files/)'; exit 1; fi; \
-                     echo 'DEBUG: Running TAR now...'; \
-                     ${TAR} -czf ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz \
-                     --verbose \
-                     --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/| \
-                     \"\$FILES_DIR\""
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/flatpak-package.sh
+              ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles
+              ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz
+              ${PACKAGE}-flatpak-${PACKAGE_VERSION}
       COMMAND chmod -R a+wr ../build
   )
 
