@@ -80,16 +80,6 @@ else
 fi
 
 ##############################################
-# 8. GitHub Actions: use local source
-#    CircleCI: use git source
-##############################################
-if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
-    PLUGIN_SOURCE="-DPLUGIN_SOURCE_DIR=../.."
-else
-    PLUGIN_SOURCE=""
-fi
-
-##############################################
 # 9. CMake configure
 ##############################################
 cmake \
@@ -99,11 +89,10 @@ cmake \
   -DSDK_VER="$SDK_VER" \
   -DFLATPAK_BRANCH="$FLATPAK_BRANCH" \
   $SET_WX_VER \
-  $PLUGIN_SOURCE \
   ..
 
 ##############################################
 # 10. Build + Package
 ##############################################
-make flatpak-build
+make flatpak-build make flatpak-build FLATPAK_MANIFEST=flatpak/org.opencpn.OpenCPN.Plugin.signalk_notes_opencpn.yaml
 make flatpak-pkg
