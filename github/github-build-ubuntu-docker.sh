@@ -5,6 +5,7 @@
 #
 # D.B.: start - always move to repo root, independent of CI system cd "$(dirname "$0")/.."
 cd "$(dirname "$0")/.."
+ls -la
 # D.B.: ends- always move to repo root, independent of CI system cd "$(dirname "$0")/.."
 
 git submodule update --init opencpn-libs
