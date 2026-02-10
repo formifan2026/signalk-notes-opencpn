@@ -1106,50 +1106,21 @@ void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
 
 #elif defined(__OCPN__ANDROID__)
 
-// --- GLES (Android) ---
+// --- Android / GLES2: OpenCPN‑Renderer verwenden ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
-    wxImage img = bmp.ConvertToImage();
-    img.InitAlpha();
-
-    int w = img.GetWidth();
-    int h = img.GetHeight();
-
-    if (!img.GetData()) return;
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    GLuint texId;
-    glGenTextures(1, &texId);
-    glBindTexture(GL_TEXTURE_2D, texId);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, img.GetData());
-
-    glEnable(GL_TEXTURE_2D);
-
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(x, y);
-    glTexCoord2f(1, 0); glVertex2f(x + w, y);
-    glTexCoord2f(1, 1); glVertex2f(x + w, y + h);
-    glTexCoord2f(0, 1); glVertex2f(x, y + h);
-    glEnd();
-
-    glDisable(GL_TEXTURE_2D);
-    glDeleteTextures(1, &texId);
+    ocpnDC dc;
+    dc.DrawBitmap(bmp, x, y, false);
 }
 
 #else
 
-// --- Kein GL verfügbar (Windows ohne GL, Linux ohne GL) ---
+// --- Kein GL verfügbar ---
 void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap&, int, int) {
-    // nichts tun - RenderOverlay wird aufgerufen
+    // nichts tun
 }
 
 #endif
+
 
 struct FutureViewPort {
   double lat_min, lat_max;
