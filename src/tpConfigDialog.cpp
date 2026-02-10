@@ -20,7 +20,9 @@
 #include <wx/notebook.h>
 #include <wx/filename.h>
 #include <wx/dir.h>
-#include <wx/bmpbndl.h>
+#ifndef __OCPN__ANDROID__
+  #include <wx/bmpbndl.h>
+#endif
 #include <wx/timer.h>
 #include <wx/artprov.h>
 
@@ -219,11 +221,28 @@ void tpConfigDialog::LoadPluginIcons() {
 }
 
 wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
-  wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
-  if (bundle.IsOk()) return bundle.GetBitmap(wxSize(size, size));
+#ifdef __OCPN__ANDROID__
+    // Android: kein wxBitmapBundle, kein SVG-Support → PNG-Fallback
+    wxString pngPath = path;
+    pngPath.Replace(".svg", ".png");
 
-  return wxBitmap(size, size);  // Fallback: leeres Bitmap
+    wxBitmap bmp(pngPath, wxBITMAP_TYPE_PNG);
+    if (bmp.IsOk())
+        return bmp;
+
+    // Fallback: leeres Bitmap
+    return wxBitmap(size, size);
+
+#else
+    // Desktop: SVG normal laden
+    wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
+    if (bundle.IsOk())
+        return bundle.GetBitmap(wxSize(size, size));
+
+    return wxBitmap(size, size);
+#endif
 }
+
 
 void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
   // Für jedes neue SignalK-Icon eine Zeile hinzufügen
