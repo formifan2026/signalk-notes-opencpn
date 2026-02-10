@@ -30,19 +30,28 @@ if (OCPN_FLATPAK_CONFIG)
       ${CMAKE_CURRENT_BINARY_DIR}/flatpak/org.opencpn.OpenCPN.Plugin.${PACKAGE}.yaml
   )
 
-  add_custom_target("flatpak-pkg")
-  
+  add_custom_target(flatpak-pkg)
+
   add_custom_command(
       TARGET flatpak-pkg
       POST_BUILD
-      COMMAND sh -c "FILES_DIR=\$(find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files | head -n 1); \
-                     if [ -z \"\$FILES_DIR\" ]; then echo 'ERROR: Could not locate Flatpak output directory (files/)'; exit 1; fi; \
+
+      # 1. Find the files/ directory created by flatpak-builder
+      COMMAND sh -c "find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files | head -n 1 > ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt"
+
+      # 2. Validate that it exists
+      COMMAND sh -c "if [ ! -s ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt ]; then echo 'ERROR: Could not locate Flatpak output directory (files/)'; exit 1; fi"
+
+      # 3. Read the directory path
+      COMMAND sh -c "FILES_DIR=\$(cat ${CMAKE_CURRENT_BINARY_DIR}/flatpak/files_dir.txt) && \
                      ${TAR} -czf ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz \
                      --verbose \
                      --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/| \
                      \"\$FILES_DIR\""
+
       COMMAND chmod -R a+wr ../build
   )
+
 
   message(
     STATUS
