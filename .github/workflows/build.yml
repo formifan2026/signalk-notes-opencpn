@@ -248,47 +248,47 @@ jobs:
 #         python3 -m pip install cloudsmith-cli
 #         bash ci/cloudsmith-upload.sh
 #
-  build-flatpak-x86-2208:
-    runs-on: ubuntu-latest
-    env:
-      OCPN_TARGET: flatpak
-      BUILD_ARCH: x86_64
-      FLATPAK_BRANCH: stable
-      CLOUDSMITH_PKG_EXT: gz
-      SDK_VER: 22.08
-      WX_VER: 32
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Install Flatpak dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y bubblewrap flatpak flatpak-builder
-     
-      - name: Build Flatpak x86_64
-        run: |
-          chmod a+x github/*.sh
-          bash github/github-build-flatpak.sh
- 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-x86-2208-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
- 
-      - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-        env:
-          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
-          bash ci/cloudsmith-upload.sh
+#  build-flatpak-x86-2208:
+#    runs-on: ubuntu-latest
+#    env:
+#      OCPN_TARGET: flatpak
+#      BUILD_ARCH: x86_64
+#      FLATPAK_BRANCH: stable
+#      CLOUDSMITH_PKG_EXT: gz
+#      SDK_VER: 22.08
+#      WX_VER: 32
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#      - name: Install Flatpak dependencies
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y bubblewrap flatpak flatpak-builder
+#     
+#      - name: Build Flatpak x86_64
+#        run: |
+#          chmod a+x github/*.sh
+#          bash github/github-build-flatpak.sh
+# 
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: flatpak-x86-2208-package
+#          path: build/*.tar.gz
+#          if-no-files-found: warn
+# 
+#      - name: Deploy to Cloudsmith
+#        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#        env:
+#          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y python3-pip jq
+#          python3 -m pip install cloudsmith-cli
+#          bash ci/cloudsmith-upload.sh
  
 # build-flatpak-aarch64-2408:
 #   runs-on: ubuntu-latest
@@ -311,6 +311,8 @@ jobs:
 #
 #     - name: Build Flatpak ARM64
 #       run: |
+#         chmod a+x github/*.sh
+#         bash github/github-build-flatpak.sh
 #         chmod a+x ci/*.sh
 #         bash ci/circleci-build-flatpak.sh
 #
@@ -332,43 +334,43 @@ jobs:
 #         python3 -m pip install cloudsmith-cli
 #         bash ci/cloudsmith-upload.sh
 #
-# build-flatpak-x86-2408:
-#   runs-on: ubuntu-latest
-#   env:
-#     OCPN_TARGET: flatpak
-#     BUILD_ARCH: x86_64
-#     FLATPAK_BRANCH: stable
-#     CLOUDSMITH_PKG_EXT: gz
-#     SDK_VER: 24.08
-#   steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
-#       with:
-#         submodules: recursive
-#
-#     - name: Build Flatpak x86_64
-#       run: |
-#         chmod a+x ci/*.sh
-#         bash ci/circleci-build-flatpak.sh
-#
-#     - name: Upload artifacts
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: flatpak-x86-2408-package
-#         path: build/*.tar.gz
-#         if-no-files-found: warn
-#
-#     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
-#       env:
-#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y python3-pip jq
-#         python3 -m pip install cloudsmith-cli
-#         bash ci/cloudsmith-upload.sh
-#
+  build-flatpak-x86-2408:
+    runs-on: ubuntu-latest
+    env:
+      OCPN_TARGET: flatpak
+      BUILD_ARCH: x86_64
+      FLATPAK_BRANCH: stable
+      CLOUDSMITH_PKG_EXT: gz
+      SDK_VER: 24.08
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+ 
+      - name: Build Flatpak x86_64
+        run: |
+          chmod a+x ci/*.sh
+          bash ci/circleci-build-flatpak.sh
+ 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-x86-2408-package
+          path: build/*.tar.gz
+          if-no-files-found: warn
+ 
+      - name: Deploy to Cloudsmith
+        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip jq
+          python3 -m pip install cloudsmith-cli
+          bash ci/cloudsmith-upload.sh
+ 
   # =============================================================================
   # Debian Builds
   # =============================================================================
