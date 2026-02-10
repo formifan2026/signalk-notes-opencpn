@@ -35,10 +35,12 @@ if (OCPN_FLATPAK_CONFIG)
   add_custom_command(
       TARGET flatpak-pkg
       POST_BUILD
-      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cmake/flatpak-package.sh
-              ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles
+      COMMAND echo "DEBUG: Packaging from ${CMAKE_CURRENT_BINARY_DIR}/app/files"
+      COMMAND ${TAR} -czf
               ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz
-              ${PACKAGE}-flatpak-${PACKAGE_VERSION}
+              --verbose
+              --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/|
+              ${CMAKE_CURRENT_BINARY_DIR}/app/files
       COMMAND chmod -R a+wr ../build
   )
 
