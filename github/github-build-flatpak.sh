@@ -13,7 +13,7 @@ if [[ "${CIRCLECI_LOCAL:-false}" == "true" ]]; then
 fi
 
 ##############################################
-# 1. Extra build libs (shared for both CI systems)
+# 1. Extra build libs
 ##############################################
 ME=$(echo "${0##*/}" | sed 's/\.sh//g')
 
@@ -35,19 +35,14 @@ git submodule update --init opencpn-libs
 
 ##############################################
 # 3. Install Flatpak + Builder
-#    GitHub Actions braucht zusätzliche Pakete
 ##############################################
-if [[ -n "$CI" ]]; then
-    sudo apt-get update
-    sudo apt-get install --reinstall -y ca-certificates
+sudo apt-get update
+sudo apt-get install --reinstall -y ca-certificates
 
-    # GitHub Actions benötigt bubblewrap + --noninteractive
-    if [[ "$GITHUB_ACTIONS" == "true" ]]; then
-        sudo apt-get install -y flatpak flatpak-builder bubblewrap
-    else
-        # CircleCI Standard
-        sudo apt-get install -y flatpak flatpak-builder
-    fi
+if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
+    sudo apt-get install -y flatpak flatpak-builder bubblewrap
+else
+    sudo apt-get install -y flatpak flatpak-builder
 fi
 
 ##############################################
@@ -59,7 +54,7 @@ flatpak remote-add --user --if-not-exists \
 ##############################################
 # 5. Install SDK + OpenCPN runtime
 ##############################################
-if [[ "$FLATPAK_BRANCH" == "beta" ]]; then
+if [[ "${FLATPAK_BRANCH:-stable}" == "beta" ]]; then
     flatpak install --user -y --noninteractive flathub org.freedesktop.Sdk//$SDK_VER
     flatpak remote-add --user --if-not-exists flathub-beta \
         https://dl.flathub.org/beta-repo/flathub-beta.flatpakrepo
@@ -75,23 +70,28 @@ fi
 ##############################################
 rm -rf build && mkdir build && cd build
 
+##############################################
+# 7. WX_VER optional
+##############################################
 if [[ -n "${WX_VER:-}" ]]; then
     SET_WX_VER="-DWX_VER=$WX_VER"
 else
     SET_WX_VER=""
 fi
 
-
 ##############################################
-# 7. CMake configure
+# 8. GitHub Actions: use local source
+#    CircleCI: use git source
 ##############################################
-# GitHub Actions benötigt lokalen Source-Pfad, CircleCI nicht
 if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     PLUGIN_SOURCE="-DPLUGIN_SOURCE_DIR=../.."
 else
     PLUGIN_SOURCE=""
 fi
 
+##############################################
+# 9. CMake configure
+##############################################
 cmake \
   -DOCPN_TARGET="$OCPN_TARGET" \
   -DBUILD_ARCH="$BUILD_ARCH" \
@@ -103,7 +103,7 @@ cmake \
   ..
 
 ##############################################
-# 8. Build + Package
+# 10. Build + Package
 ##############################################
 make flatpak-build
 make flatpak-pkg
