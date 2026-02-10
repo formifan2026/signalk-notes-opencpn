@@ -404,10 +404,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0 
           clean: false
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Build Debian Trixie ARM64
         run: |
