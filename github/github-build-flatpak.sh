@@ -85,6 +85,13 @@ fi
 ##############################################
 # 7. CMake configure
 ##############################################
+# GitHub Actions benötigt lokalen Source-Pfad, CircleCI nicht
+if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
+    PLUGIN_SOURCE="-DPLUGIN_SOURCE_DIR=../.."
+else
+    PLUGIN_SOURCE=""
+fi
+
 cmake \
   -DOCPN_TARGET="$OCPN_TARGET" \
   -DBUILD_ARCH="$BUILD_ARCH" \
@@ -92,6 +99,7 @@ cmake \
   -DSDK_VER="$SDK_VER" \
   -DFLATPAK_BRANCH="$FLATPAK_BRANCH" \
   $SET_WX_VER \
+  $PLUGIN_SOURCE \
   ..
 
 ##############################################
