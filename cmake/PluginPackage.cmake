@@ -1,5 +1,6 @@
 # ---------------------------------------------------------------------------
-# Author:      Pavel Kalian (Based on the work of Sean D'Epagnier) Copyright:
+# Author:      Pavel Kalian (Based on the work of Sean D'Epagnier) 
+# Copyright:
 # 2014 License:     GPLv3+
 # ---------------------------------------------------------------------------
 
@@ -29,6 +30,18 @@ if (OCPN_FLATPAK_CONFIG)
       ${CMAKE_CURRENT_BINARY_DIR}/flatpak/org.opencpn.OpenCPN.Plugin.${PACKAGE}.yaml
   )
   add_custom_target("flatpak-pkg")
+
+  # Find the real Flatpak output directory (rofiles)
+  execute_process(
+      COMMAND sh -c "find ${CMAKE_CURRENT_BINARY_DIR}/flatpak/.flatpak-builder/rofiles -type d -name files"
+      OUTPUT_VARIABLE FLATPAK_FILES_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if(NOT FLATPAK_FILES_DIR)
+      message(FATAL_ERROR "Could not locate Flatpak output directory (files/)")
+  endif()
+
   add_custom_command(
       TARGET flatpak-pkg
       POST_BUILD
@@ -36,9 +49,10 @@ if (OCPN_FLATPAK_CONFIG)
           ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz
           --verbose
           --transform=s|.*/files/|${PACKAGE}-flatpak-${PACKAGE_VERSION}/|
-          ${CMAKE_CURRENT_BINARY_DIR}/app/files
+          ${FLATPAK_FILES_DIR}
       COMMAND chmod -R a+wr ../build
   )
+
   message(
     STATUS
       "${CMLOC}Zip file name: ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz"
