@@ -79,9 +79,15 @@ jobs:
           wget https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
           unzip android-ndk-r21e-linux-x86_64.zip
           sudo mv android-ndk-r21e /opt/android-ndk
+  
+          # Wichtig: Symlink für CMake
+          sudo mkdir -p /opt/android
+          sudo ln -s /opt/android-ndk /opt/android/ndk
+  
           echo "ANDROID_NDK_HOME=/opt/android-ndk" >> $GITHUB_ENV
           echo "ANDROID_NDK=/opt/android-ndk" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=/opt/android-ndk" >> $GITHUB_ENV
+
   
       - name: Build Android ARMHF
         run: |
