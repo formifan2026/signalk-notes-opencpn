@@ -39,8 +39,6 @@ if (OCPN_FLATPAK_CONFIG)
           ${CMAKE_CURRENT_BINARY_DIR}/app/files
       COMMAND chmod -R a+wr ../build
   )
-
-
   message(
     STATUS
       "${CMLOC}Zip file name: ${PKG_NVR}-${ARCH}${PKG_TARGET_WX_VER}_${PKG_TARGET_NVR}.tar.gz"
