@@ -69,7 +69,6 @@ fi
 # 6. Build directory
 ##############################################
 rm -rf build && mkdir build && cd build
-cp ../flatpak/org.opencpn.OpenCPN.Plugin.signalk_notes_opencpn.yaml .
 
 ##############################################
 # 7. WX_VER optional
@@ -93,7 +92,7 @@ cmake \
   ..
 
 ##############################################
-# 9. Build + Package (mit Manifest-Override)
+# 9. Build + Package
 ##############################################
-make flatpak-build FLATPAK_MANIFEST=org.opencpn.OpenCPN.Plugin.signalk_notes_opencpn.yaml
+make flatpak-build
 make flatpak-pkg
