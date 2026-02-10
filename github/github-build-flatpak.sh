@@ -4,7 +4,7 @@ set -xeuo pipefail
 ##############################################
 # 0. CircleCI optional: apt proxy + cache
 ##############################################
-if [[ "${CIRCLECI_LOCAL,,}" == "true" ]]; then
+if [[ "${CIRCLECI_LOCAL,,:-false}" == "true" ]]; then
     if [[ -d ~/circleci-cache ]]; then
         if [[ -f ~/circleci-cache/apt-proxy ]]; then
             cat ~/circleci-cache/apt-proxy | sudo tee -a /etc/apt/apt.conf.d/00aptproxy
