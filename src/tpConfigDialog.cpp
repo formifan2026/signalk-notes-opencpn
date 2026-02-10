@@ -21,7 +21,7 @@
 #include <wx/filename.h>
 #include <wx/dir.h>
 #ifndef __OCPN__ANDROID__
-  #include <wx/bmpbndl.h>
+#include <wx/bmpbndl.h>
 #endif
 #include <wx/timer.h>
 #include <wx/artprov.h>
@@ -178,7 +178,7 @@ void tpConfigDialog::CreateControls() {
                       m_parent->GetClusterFontSize());
 
   //  ---Auth status setzen ---
-    InitializeAuthUI();
+  InitializeAuthUI();
   if (!m_authCheckTimer->IsRunning()) {
     m_authCheckTimer->Start(2000);
   }
@@ -222,27 +222,24 @@ void tpConfigDialog::LoadPluginIcons() {
 
 wxBitmap tpConfigDialog::LoadSvgBitmap(const wxString& path, int size) {
 #ifdef __OCPN__ANDROID__
-    // Android: kein wxBitmapBundle, kein SVG-Support → PNG-Fallback
-    wxString pngPath = path;
-    pngPath.Replace(".svg", ".png");
+  // Android: kein wxBitmapBundle, kein SVG-Support → PNG-Fallback
+  wxString pngPath = path;
+  pngPath.Replace(".svg", ".png");
 
-    wxBitmap bmp(pngPath, wxBITMAP_TYPE_PNG);
-    if (bmp.IsOk())
-        return bmp;
+  wxBitmap bmp(pngPath, wxBITMAP_TYPE_PNG);
+  if (bmp.IsOk()) return bmp;
 
-    // Fallback: leeres Bitmap
-    return wxBitmap(size, size);
+  // Fallback: leeres Bitmap
+  return wxBitmap(size, size);
 
 #else
-    // Desktop: SVG normal laden
-    wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
-    if (bundle.IsOk())
-        return bundle.GetBitmap(wxSize(size, size));
+  // Desktop: SVG normal laden
+  wxBitmapBundle bundle = wxBitmapBundle::FromSVGFile(path, wxSize(size, size));
+  if (bundle.IsOk()) return bundle.GetBitmap(wxSize(size, size));
 
-    return wxBitmap(size, size);
+  return wxBitmap(size, size);
 #endif
 }
-
 
 void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
   // Für jedes neue SignalK-Icon eine Zeile hinzufügen
@@ -298,7 +295,8 @@ void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
       }
     }
 
-    wxString selectedIconName = combo->GetStringSelection();
+    wxString selectedIconName = combo->wxChoice::GetStringSelection();
+
     if (!selectedIconName.IsEmpty()) {
       wxFileName iconPath(m_iconDir);
       iconPath.SetFullName(selectedIconName + ".svg");
@@ -355,7 +353,7 @@ std::map<wxString, wxString> tpConfigDialog::GetIconMappings() const {
     const wxString& skIconName = pair.first;
     wxBitmapComboBox* combo = pair.second;
 
-    wxString selectedIconName = combo->GetStringSelection();
+    wxString selectedIconName = combo->wxChoice::GetStringSelection();
 
     if (!selectedIconName.IsEmpty()) {
       // Vollständigen Pfad bauen
@@ -753,8 +751,8 @@ void tpConfigDialog::CreateDisplayTab() {
   mainSizer->Add(iconBox, 0, wxEXPAND | wxALL, 10);
 
   // Cluster-Einstellungen
-  wxStaticBoxSizer* clusterBox =
-      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
+  wxStaticBoxSizer* clusterBox = new wxStaticBoxSizer(
+      wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
 
   wxFlexGridSizer* clusterGrid = new wxFlexGridSizer(2, 5, 5);
   clusterGrid->AddGrowableCol(1);
@@ -808,8 +806,8 @@ void tpConfigDialog::CreateDisplayTab() {
   // ---------------------------------------------------------
   // Debug-Checkbox ("Erweitertes Logging")
   // ---------------------------------------------------------
-  m_debugCheckbox =
-      new wxCheckBox(m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
+  m_debugCheckbox = new wxCheckBox(
+      m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
   m_debugCheckbox->SetValue(m_parent->IsDebugMode());
   mainSizer->Add(m_debugCheckbox, 0, wxALL, 10);
 
