@@ -9,10 +9,12 @@
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
  *   - Some icons are based on OpenCPN standard icons (GPLv2)
  ******************************************************************************/
+
 #include "ocpn_plugin.h"
 #include "tpSignalKNotes.h"
 #include "signalk_notes_opencpn_pi.h"
 #include "tpConfigDialog.h"
+
 #include <wx/filename.h>
 #include <wx/jsonreader.h>
 #include <wx/url.h>
@@ -25,559 +27,68 @@
 #include <wx/artprov.h>
 #include <cstring>
 
-tpSignalKNotesManager::tpSignalKNotesManager(signalk_notes_opencpn_pi* parent) {
-  m_parent = parent;
-  m_serverHost = wxEmptyString;
-  m_serverPort = 3000;
+#ifndef __OCPN__ANDROID__
+#include <wx/bmpbndl.h>
+#endif
+
+// ---------------------------------------------------------------------------
+// Helper: strip extension and return base path (without .svg/.png)
+// ---------------------------------------------------------------------------
+static wxString GetBasePathWithoutExt(const wxString& fullPath) {
+  wxFileName fn(fullPath);
+  fn.ClearExt();
+  return fn.GetPathWithSep() + fn.GetName();
 }
 
-tpSignalKNotesManager::~tpSignalKNotesManager() { ClearAllIcons(); }
+// ---------------------------------------------------------------------------
+// Helper: unified icon loader (Desktop: SVG+PNG, Android: PNG only)
+// basePathWithoutExt: full path without extension
+// size: requested size (square)
+// outBmp: resulting bitmap
+// ---------------------------------------------------------------------------
+bool tpSignalKNotesManager::LoadIconSmart(const wxString& basePathWithoutExt,
+                                          int size,
+                                          wxBitmap& outBmp) {
+#ifdef __OCPN__ANDROID__
+  // ANDROID → PNG ONLY
+  wxString pngPath = basePathWithoutExt + ".png";
 
-void tpSignalKNotesManager::SetServerDetails(const wxString& host, int port) {
-  m_serverHost = host;
-  m_serverPort = port;
-}
-
-bool tpSignalKNotesManager::FetchNotesForViewport(double centerLat,
-                                                  double centerLon,
-                                                  double maxDistance) {
-  if (m_serverHost.IsEmpty()) {
-    SKN_LOG(m_parent, _("Server host not configured"));
-    return false;
+  wxBitmap bmp(pngPath, wxBITMAP_TYPE_PNG);
+  if (bmp.IsOk()) {
+    outBmp = bmp;
+    return true;
   }
 
-  return FetchNotesList(centerLat, centerLon, maxDistance);
-}
-
-void tpSignalKNotesManager::UpdateDisplayedIcons(double centerLat,
-                                                 double centerLon,
-                                                 double maxDistance) {
-  // 1. Notes vom Server holen
-  if (!FetchNotesForViewport(centerLat, centerLon, maxDistance)) {
-    SKN_LOG(m_parent, "Failed to fetch notes");
-    return;
-  }
-
-  // 2. Neue Icon-Mappings automatisch speichern
-  bool newMappingsFound = false;
-
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    if (!note.iconName.IsEmpty()) {
-      if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
-        wxString iconPath = ResolveIconPath(note.iconName);
-        m_iconMappings[note.iconName] = iconPath;
-        newMappingsFound = true;
-      }
-    }
-  }
-
-  if (newMappingsFound && m_parent) {
-    m_parent->SaveConfig();
-  }
-
-  // 3. Provider-Filter anwenden
-  std::set<wxString> visibleNoteIds;
-
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    bool providerEnabled = true;
-
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
-    }
-
-    if (providerEnabled) {
-      visibleNoteIds.insert(note.id);
-    }
-  }
-
-  // 4. Notes entfernen, die nicht mehr sichtbar sind
-  for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
-    if (visibleNoteIds.find(*it) == visibleNoteIds.end()) {
-      // Note aus Anzeige entfernen
-      auto noteIt = m_notes.find(*it);
-      if (noteIt != m_notes.end()) {
-        noteIt->second.isDisplayed = false;
-      }
-      it = m_displayedGUIDs.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
-  // 5. Neue Notes anzeigen
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    // Provider deaktiviert?
-    bool providerEnabled = true;
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
-    }
-    if (!providerEnabled) continue;
-
-    // Bereits sichtbar?
-    if (note.isDisplayed) continue;
-
-    // Icon laden (Details NICHT laden!)
-    if (CreateNoteIcon(note)) {
-      note.isDisplayed = true;
-
-      // ID in Liste aufnehmen
-      if (std::find(m_displayedGUIDs.begin(), m_displayedGUIDs.end(),
-                    note.id) == m_displayedGUIDs.end()) {
-        m_displayedGUIDs.push_back(note.id);
-      }
-    }
-  }
-}
-
-void tpSignalKNotesManager::ClearAllIcons() {
-  // Keine ODraw-Icons mehr löschen – nur interne Zustände zurücksetzen
-  m_displayedGUIDs.clear();
-
-  for (auto& pair : m_notes) {
-    pair.second.isDisplayed = false;
-  }
-}
-
-SignalKNote* tpSignalKNotesManager::GetNoteByGUID(const wxString& guid) {
-  auto it = m_notes.find(guid);
-  if (it != m_notes.end()) return &it->second;
-
-  return nullptr;
-}
-
-void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
-  SKN_LOG(m_parent, "OnIconClick called with guid='%s'", guid);
-
-  SignalKNote* note = GetNoteByGUID(guid);
-  if (!note) {
-    SKN_LOG(m_parent, "Note with guid='%s' not found!", guid);
-    return;
-  }
-
-  // Details beim Klick laden
-  if (note->name.IsEmpty() || note->description.IsEmpty()) {
-    if (!FetchNoteDetails(note->id, *note)) {
-      SKN_LOG(m_parent, "Failed to fetch details for %s",
-              note->id);
-      if (note->name.IsEmpty()) note->name = note->id;
-      if (note->description.IsEmpty())
-        note->description = _("Details konnten nicht geladen werden.");
-    }
-  }
-
-  SKN_LOG(m_parent, "Found note '%s'", note->name);
-
-  wxDialog* dlg =
-      new wxDialog(NULL, wxID_ANY, _("SignalK Note Details"), wxDefaultPosition,
-                   wxSize(500, 400), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-
-  wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-
-  // Titel
-  wxStaticText* title = new wxStaticText(dlg, wxID_ANY, note->name);
-  wxFont font = title->GetFont();
-  font.SetPointSize(font.GetPointSize() + 2);
-  font.SetWeight(wxFONTWEIGHT_BOLD);
-  title->SetFont(font);
-  sizer->Add(title, 0, wxALL | wxEXPAND, 10);
-
-  // HTML-Fenster
-  wxHtmlWindow* htmlWin = new wxHtmlWindow(dlg, wxID_ANY, wxDefaultPosition,
-                                           wxDefaultSize, wxHW_SCROLLBAR_AUTO);
-
-  htmlWin->Bind(wxEVT_HTML_LINK_CLICKED, [this](wxHtmlLinkEvent& evt) {
-    wxString url = evt.GetLinkInfo().GetHref();
-    SKN_LOG(m_parent, "Opening URL: %s", url);
-    wxLaunchDefaultBrowser(url);
-  });
-
-  wxString htmlContent;
-  htmlContent << "<html><body><font size=\"3\">" << note->description
-              << "</font>";
-
-  if (!note->url.IsEmpty()) {
-    htmlContent << "<br><br>"
-                << "<b>Link:</b> "
-                << "<a href=\"" << note->url << "\">" << note->url << "</a>";
-  }
-
-  htmlContent << "</body></html>";
-
-  htmlWin->SetPage(htmlContent);
-  sizer->Add(htmlWin, 1, wxALL | wxEXPAND, 10);
-
-  // Button-Sizer
-  wxBoxSizer* btnSizer = new wxBoxSizer(wxHORIZONTAL);
-
-  // Zentrieren-Button
-  wxButton* centerBtn = new wxButton(dlg, wxID_ANY, _("Auf Karte zentrieren"));
-  centerBtn->Bind(wxEVT_BUTTON, [note, this](wxCommandEvent&) {
-    PlugIn_ViewPort vp = m_parent->m_lastViewPort;
-
-    double lat = note->latitude;
-    double lon = note->longitude;
-
-    double scale =
-        vp.view_scale_ppm;  // oder chart_scale, je nachdem was gültig ist
-
-    // Mittelpunkt setzen
-    vp.clat = lat;
-    vp.clon = lon;
-
-    // min/max neu berechnen
-    double latSpan = vp.lat_max - vp.lat_min;
-    double lonSpan = vp.lon_max - vp.lon_min;
-
-    vp.lat_min = lat - latSpan / 2.0;
-    vp.lat_max = lat + latSpan / 2.0;
-    vp.lon_min = lon - lonSpan / 2.0;
-    vp.lon_max = lon + lonSpan / 2.0;
-
-    SKN_LOG(m_parent,
-            "Centering via VP lat=%.6f lon=%.6f scale=%.6f", lat,
-            lon, scale);
-
-    JumpToPosition(lat, lon, scale);
-  });
-  btnSizer->Add(centerBtn, 0, wxALL, 5);
-
-  btnSizer->AddStretchSpacer();
-
-  wxButton* okBtn = new wxButton(dlg, wxID_OK, _("OK"));
-  btnSizer->Add(okBtn, 0, wxALL, 5);
-
-  sizer->Add(btnSizer, 0, wxALL | wxEXPAND, 5);
-
-  dlg->SetSizer(sizer);
-
-  dlg->ShowModal();
-  dlg->Destroy();
-}
-
-bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
-                                           double maxDistance) {
-  // URL erzeugen
-  wxString path;
-  path.Printf(
-      wxT("/signalk/v2/api/resources/notes?position=[%f,%f]&distance=%.0f"),
-      centerLon, centerLat, maxDistance);
-
-  // HTTP-Abfrage
-  wxString response = MakeHTTPRequest(path);
-
-  // Ergebnis ins Log schreiben
-  if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
-    return false;
-  }
-
-  // JSON parsen
-  bool ok = ParseNotesListJSON(response);
-
-  if (!ok) {
-    SKN_LOG(m_parent,
-            "FetchNotesList FAILED - JSON parse error");
-  }
-  return ok;
-}
-
-bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
-                                             SignalKNote& note) {
-  wxString path;
-  path.Printf(wxT("/signalk/v2/api/resources/notes/%s"), noteId);
-
-  wxString response = MakeHTTPRequest(path);
-  if (response.IsEmpty()) {
-    return false;
-  }
-
-  return ParseNoteDetailsJSON(response, note);
-}
-
-wxString tpSignalKNotesManager::MakeHTTPRequest(const wxString& path) {
-  wxString urlStr;
-  urlStr.Printf(wxT("http://%s:%d%s"), m_serverHost, m_serverPort, path);
-  SKN_LOG(m_parent, _("SignalKNotes: fetching data with URL: %s"), urlStr);
-  wxURL url(urlStr);
-  if (!url.IsOk()) {
-    SKN_LOG(m_parent, _("Invalid URL: %s"), urlStr);
-    return wxEmptyString;
-  }
-
-  wxInputStream* in_stream = url.GetInputStream();
-  if (!in_stream || !in_stream->IsOk()) {
-    SKN_LOG(m_parent, _("Failed to connect to: %s"), urlStr);
-    if (in_stream) delete in_stream;
-    return wxEmptyString;
-  }
-
-  wxString response;
-  wxStringOutputStream out_stream(&response);
-  in_stream->Read(out_stream);
-
-  delete in_stream;
-  return response;
-}
-
-bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
-  wxJSONReader reader;
-  wxJSONValue root;
-
-  int errors = reader.Parse(json, &root);
-  if (errors > 0) {
-    SKN_LOG(m_parent, _("Failed to parse notes list JSON"));
-    return false;
-  }
-
-  m_notes.clear();
-
-  wxArrayString memberNames = root.GetMemberNames();
-
-  for (size_t i = 0; i < memberNames.GetCount(); i++) {
-    wxString noteId = memberNames[i];
-    wxJSONValue noteData = root[noteId];
-
-    SignalKNote note;
-    note.id = noteId;
-
-    if (noteData.HasMember(wxT("name"))) {
-      note.name = noteData[wxT("name")].AsString();
-    }
-
-    // SOURCE AUSLESEN
-    if (noteData.HasMember(wxT("$source"))) {
-      note.source = noteData[wxT("$source")].AsString();
-      m_discoveredProviders.insert(note.source);
-
-      // Neue Provider standardmäßig aktivieren
-      if (m_providerSettings.find(note.source) == m_providerSettings.end()) {
-        m_providerSettings[note.source] = true;
-      }
-    }
-
-    if (noteData.HasMember(wxT("position"))) {
-      wxJSONValue pos = noteData[wxT("position")];
-      if (pos.HasMember(wxT("latitude"))) {
-        note.latitude = pos[wxT("latitude")].AsDouble();
-      }
-      if (pos.HasMember(wxT("longitude"))) {
-        note.longitude = pos[wxT("longitude")].AsDouble();
-      }
-    }
-
-    if (noteData.HasMember(wxT("url"))) {
-      note.url = noteData[wxT("url")].AsString();
-    }
-
-    // ICON NAME AUSLESEN
-    if (noteData.HasMember(wxT("properties"))) {
-      wxJSONValue props = noteData[wxT("properties")];
-      if (props.HasMember(wxT("skIcon"))) {
-        note.iconName = props[wxT("skIcon")].AsString();
-        m_discoveredIcons.insert(note.iconName);
-      }
-    }
-
-    note.isDisplayed = false;
-    m_notes[noteId] = note;
-  }
-  return true;
-}
-
-bool tpSignalKNotesManager::ParseNoteDetailsJSON(const wxString& json,
-                                                 SignalKNote& note) {
-  wxJSONReader reader;
-  wxJSONValue root;
-
-  int errors = reader.Parse(json, &root);
-  if (errors > 0) {
-    SKN_LOG(m_parent, _("Failed to parse note details JSON"));
-    return false;
-  }
-
-  if (root.HasMember(wxT("name"))) {
-    note.name = root[wxT("name")].AsString();
-  }
-
-  if (root.HasMember(wxT("description"))) {
-    note.description = root[wxT("description")].AsString();
-    // HTML-Tags NICHT mehr entfernen!
-  }
-
-  if (root.HasMember(wxT("position"))) {
-    wxJSONValue pos = root[wxT("position")];
-    if (pos.HasMember(wxT("latitude"))) {
-      note.latitude = pos[wxT("latitude")].AsDouble();
-    }
-    if (pos.HasMember(wxT("longitude"))) {
-      note.longitude = pos[wxT("longitude")].AsDouble();
-    }
-  }
-
-  if (root.HasMember(wxT("properties"))) {
-    wxJSONValue props = root[wxT("properties")];
-    if (props.HasMember(wxT("skIcon"))) {
-      note.iconName = props[wxT("skIcon")].AsString();
-    }
-  }
-
-  return true;
-}
-
-bool tpSignalKNotesManager::DownloadIcon(const wxString& iconName,
-                                         wxBitmap& bitmap) {
-  // 1. Cache prüfen
-  auto cacheIt = m_iconCache.find(iconName);
-  if (cacheIt != m_iconCache.end()) {
-    if (cacheIt->second.IsOk()) {
-      bitmap = cacheIt->second;
+  outBmp = wxBitmap(size, size);
+  return false;
+#else
+  // DESKTOP → SVG preferred, PNG fallback
+  wxString svgPath = basePathWithoutExt + ".svg";
+  wxString pngPath = basePathWithoutExt + ".png";
+
+  if (wxFileExists(svgPath)) {
+    wxBitmapBundle bundle =
+        wxBitmapBundle::FromSVGFile(svgPath, wxSize(size, size));
+    if (bundle.IsOk()) {
+      outBmp = bundle.GetBitmap(wxSize(size, size));
       return true;
     }
   }
 
-  wxString iconPath;
-
-  // 2. Prüfen ob bereits Mapping existiert (aus Config geladen)
-  auto mapIt = m_iconMappings.find(iconName);
-  if (mapIt != m_iconMappings.end() && !mapIt->second.IsEmpty()) {
-    // Mapping existiert - verwende es
-    iconPath = mapIt->second;
-  } else {
-    // Kein Mapping - automatisch auflösen
-    iconPath = ResolveIconPath(iconName);
-
-    // Mapping speichern für zukünftige Verwendung
-    m_iconMappings[iconName] = iconPath;
-  }
-
-  // 3. Icon laden
-  wxBitmap bmp;
-
-  if (iconPath.EndsWith(wxT(".svg"))) {
-    // SVG laden (32x32 für Karte)
-    wxBitmapBundle bundle =
-        wxBitmapBundle::FromSVGFile(iconPath, wxSize(32, 32));
-    if (bundle.IsOk()) {
-      bmp = bundle.GetBitmap(wxSize(32, 32));
-    }
-  } else {
-    // PNG/andere Formate
-    bmp.LoadFile(iconPath, wxBITMAP_TYPE_ANY);
-  }
-
-  if (!bmp.IsOk()) {
-    SKN_LOG(m_parent, "Failed to load icon from: %s", iconPath);
-    return false;
-  }
-
-  // 4. In Cache speichern
-  m_iconCache[iconName] = bmp;
-  bitmap = bmp;
-
-  return true;
-}
-
-// ----------------------------------------------------------
-// Note-Icon "erzeugen" (hier: nur sicherstellen, dass Icon geladen ist)
-// ----------------------------------------------------------
-bool tpSignalKNotesManager::CreateNoteIcon(SignalKNote& note) {
-  wxString iconName = note.iconName;
-  if (iconName.IsEmpty()) {
-    iconName = wxT("fallback");
-  }
-
-  wxBitmap bmp;
-  if (!DownloadIcon(iconName, bmp)) {
-    SKN_LOG(m_parent,
-            "CreateNoteIcon - failed to load icon '%s'",
-            iconName);
-    return false;
-  }
-
-  return true;
-}
-
-// ----------------------------------------------------------
-// Note-Icon "löschen" (nur interne Flags)
-// ----------------------------------------------------------
-bool tpSignalKNotesManager::DeleteNoteIcon(const wxString& guid) {
-  // GUID entspricht intern note.id
-  auto it = m_notes.find(guid);
-  if (it == m_notes.end()) return false;
-
-  it->second.isDisplayed = false;
-  return true;
-}
-
-void tpSignalKNotesManager::GetVisibleNotes(
-    std::vector<const SignalKNote*>& outNotes) {
-  outNotes.clear();
-  for (auto& pair : m_notes) {
-    const SignalKNote& note = pair.second;
-    if (note.isDisplayed) {
-      outNotes.push_back(&note);
+  if (wxFileExists(pngPath)) {
+    wxBitmap bmp(pngPath, wxBITMAP_TYPE_PNG);
+    if (bmp.IsOk()) {
+      outBmp = bmp;
+      return true;
     }
   }
+
+  outBmp = wxBitmap(size, size);
+  return false;
+#endif
 }
 
-// Icon-Bitmap mit Konfiguration holen
-bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
-                                                 wxBitmap& bmp) {
-  wxString skIcon = note.iconName;
-
-  // 1. Prüfen: Gibt es ein Mapping?
-  auto it = m_iconMappings.find(skIcon);
-  if (it != m_iconMappings.end()) {
-    wxString mappedPath = it->second;
-
-    if (wxFileExists(mappedPath)) {
-      wxBitmapBundle bundle =
-          wxBitmapBundle::FromSVGFile(mappedPath, wxSize(24, 24));
-      if (bundle.IsOk()) {
-        wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
-        bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-        return true;
-      }
-    }
-  }
-/******************************************************************************
- * Project:   SignalK Notes Plugin for OpenCPN
- * Purpose:   Handling of SignalK note objects and data updates
- * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
- * Licence:   GPLv2
- *
- * Icon Licensing:
- *   - Some icons are derived from freeboard-sk (Apache License 2.0)
- *   - Some icons are based on OpenCPN standard icons (GPLv2)
- ******************************************************************************/
-#include "ocpn_plugin.h"
-#include "tpSignalKNotes.h"
-#include "signalk_notes_opencpn_pi.h"
-#include "tpConfigDialog.h"
-#include <wx/filename.h>
-#include <wx/jsonreader.h>
-#include <wx/url.h>
-#include <wx/mstream.h>
-#include <wx/image.h>
-#include <wx/log.h>
-#include <wx/html/htmlwin.h>
-#include <wx/protocol/http.h>
-#include <wx/datetime.h>
-#include <wx/artprov.h>
-#include <cstring>
+// ---------------------------------------------------------------------------
 
 tpSignalKNotesManager::tpSignalKNotesManager(signalk_notes_opencpn_pi* parent) {
   m_parent = parent;
@@ -982,27 +493,8 @@ bool tpSignalKNotesManager::DownloadIcon(const wxString& iconName,
 
   wxBitmap bmp;
 
-#ifdef __OCPN__ANDROID__
-  if (iconPath.EndsWith(".svg")) {
-    wxString pngPath = iconPath;
-    pngPath.Replace(".svg", ".png");
-    bmp.LoadFile(pngPath, wxBITMAP_TYPE_PNG);
-  } else {
-    bmp.LoadFile(iconPath, wxBITMAP_TYPE_ANY);
-  }
-#else
-  if (iconPath.EndsWith(wxT(".svg"))) {
-    wxBitmapBundle bundle =
-        wxBitmapBundle::FromSVGFile(iconPath, wxSize(32, 32));
-    if (bundle.IsOk()) {
-      bmp = bundle.GetBitmap(wxSize(32, 32));
-    }
-  } else {
-    bmp.LoadFile(iconPath, wxBITMAP_TYPE_ANY);
-  }
-#endif
-
-  if (!bmp.IsOk()) {
+  wxString basePath = GetBasePathWithoutExt(iconPath);
+  if (!LoadIconSmart(basePath, 32, bmp) || !bmp.IsOk()) {
     SKN_LOG(m_parent, "Failed to load icon from: %s", iconPath);
     return false;
   }
@@ -1051,84 +543,36 @@ bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
                                                  wxBitmap& bmp) {
   wxString skIcon = note.iconName;
 
+  // 1. Mapping aus Config?
   auto it = m_iconMappings.find(skIcon);
   if (it != m_iconMappings.end()) {
     wxString mappedPath = it->second;
 
     if (wxFileExists(mappedPath)) {
-#ifdef __OCPN__ANDROID__
+      wxString base = GetBasePathWithoutExt(mappedPath);
       wxBitmap raw;
-      if (mappedPath.EndsWith(".svg")) {
-        wxString pngPath = mappedPath;
-        pngPath.Replace(".svg", ".png");
-        raw.LoadFile(pngPath, wxBITMAP_TYPE_PNG);
-      } else {
-        raw.LoadFile(mappedPath, wxBITMAP_TYPE_ANY);
-      }
-      if (raw.IsOk()) {
+      if (LoadIconSmart(base, 24, raw) && raw.IsOk()) {
         bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
         return true;
       }
-#else
-      if (mappedPath.EndsWith(".svg")) {
-        wxBitmapBundle bundle =
-            wxBitmapBundle::FromSVGFile(mappedPath, wxSize(24, 24));
-        if (bundle.IsOk()) {
-          wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
-          bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-          return true;
-        }
-      } else {
-        wxBitmap raw(mappedPath, wxBITMAP_TYPE_ANY);
-        if (raw.IsOk()) {
-          bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-          return true;
-        }
-      }
-#endif
     }
   }
 
-  wxString pluginIcon = m_parent->GetPluginIconDir() + skIcon + ".svg";
-  if (wxFileExists(pluginIcon)) {
-#ifdef __OCPN__ANDROID__
-    wxString pngPath = pluginIcon;
-    pngPath.Replace(".svg", ".png");
-    wxBitmap raw(pngPath, wxBITMAP_TYPE_PNG);
-    if (raw.IsOk()) {
-      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-      return true;
-    }
-#else
-    wxBitmapBundle bundle =
-        wxBitmapBundle::FromSVGFile(pluginIcon, wxSize(24, 24));
-    if (bundle.IsOk()) {
-      wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
-      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-      return true;
-    }
-#endif
+  // 2. Fallback: Plugin-Icon-Verzeichnis (skIcon.*)
+  wxString basePluginIcon = m_parent->GetPluginIconDir() + skIcon;
+  wxBitmap raw2;
+  if (LoadIconSmart(basePluginIcon, 24, raw2) && raw2.IsOk()) {
+    bmp = m_parent->PrepareIconBitmapForGL(raw2, 24);
+    return true;
   }
 
-  wxString fallback = m_parent->GetPluginIconDir() + "notice-to-mariners.svg";
-  if (wxFileExists(fallback)) {
-#ifdef __OCPN__ANDROID__
-    wxString pngPath = fallback;
-    pngPath.Replace(".svg", ".png");
-    wxBitmap raw(pngPath, wxBITMAP_TYPE_PNG);
-    if (raw.IsOk()) {
-      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-      return true;
-    }
-#else
-    wxBitmapBundle bundle =
-        wxBitmapBundle::FromSVGFile(fallback, wxSize(24, 24));
-    if (bundle.IsOk()) {
-      wxBitmap raw = bundle.GetBitmap(wxSize(24, 24));
-      bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
-      return true;
-    }
-#endif
+  // 3. Letzter Fallback: notice-to-mariners.*
+  wxString baseFallback =
+      m_parent->GetPluginIconDir() + "notice-to-mariners";
+  wxBitmap raw3;
+  if (LoadIconSmart(baseFallback, 24, raw3) && raw3.IsOk()) {
+    bmp = m_parent->PrepareIconBitmapForGL(raw3, 24);
+    return true;
   }
 
   return false;
@@ -1175,10 +619,9 @@ wxString tpSignalKNotesManager::ResolveIconPath(const wxString& skIconName) {
 
   auto it = m_iconMappings.find(skIconName);
   if (it != m_iconMappings.end()) {
-    fn.SetName(it->second);
-    fn.SetExt("svg");
-    if (fn.FileExists()) {
-      return fn.GetFullPath();
+    wxFileName mapped(it->second);
+    if (mapped.FileExists()) {
+      return mapped.GetFullPath();
     }
   }
 
@@ -1188,8 +631,18 @@ wxString tpSignalKNotesManager::ResolveIconPath(const wxString& skIconName) {
     return fn.GetFullPath();
   }
 
+  fn.SetExt("png");
+  if (fn.FileExists()) {
+    return fn.GetFullPath();
+  }
+
   fn.SetName("notice-to-mariners");
   fn.SetExt("svg");
+  if (fn.FileExists()) {
+    return fn.GetFullPath();
+  }
+
+  fn.SetExt("png");
   return fn.GetFullPath();
 }
 
@@ -1363,9 +816,10 @@ bool tpSignalKNotesManager::ValidateToken() {
 
   if (responseCode == 200) {
     if (response.IsEmpty()) {
-      SKN_LOG(m_parent,
-              "Token validation - EMPTY response despite HTTP 200 "
-              "(suspicious)");
+      SKN_LOG(
+          m_parent,
+          "Token validation - EMPTY response despite HTTP 200 "
+          "(suspicious)");
       return false;
     }
 
@@ -1480,7 +934,8 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
   std::map<wxString, bool> installedPlugins;
 
   if (!FetchInstalledPlugins(installedPlugins)) {
-    SKN_LOG(m_parent, "Cannot cleanup providers - plugin fetch failed");
+    SKN_LOG(m_parent,
+            "Cannot cleanup providers - plugin fetch failed");
     return;
   }
 
