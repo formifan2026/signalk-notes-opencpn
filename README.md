@@ -8,6 +8,9 @@ If there are too many notes in one place, they will be clustered (shown as a cir
 
 Several SignalK plugins (like ['Garmin Active Captain Resources'](https://activecaptain.garmin.com/en-US/map) or ['EuRIS (European River Information Services)'](https://www.eurisportal.eu/)) create notes and with this enhanced information for the skipper.
 
+<img src="docs/images/map1.png" width="75%"  style="margin-bottom: 8px;">
+<img src="docs/images/map-detail1.png" width="75%">
+
 ## Features
 
 ### • Display SignalK Notes on the Chart
@@ -19,14 +22,12 @@ New or modified notes are detected automatically and refreshed on the chart.
 ### • Selectable SignalK Providers
 If multiple SignalK data sources (providers) are available, you can choose which ones the plugin should use.
 
+<img src="docs/images/configuration1.png" width="75%">
+
 ### • Customizable Icons
 Each note type can be assigned its own icon. Icon mappings can be configured in the settings dialog.
 
-### • Display Options
-- Toggle visibility of notes  
-- Adjust icon size  
-- Show or hide labels  
-- Control zoom behavior  
+<img src="docs/images/configuration2.png" width="75%">
 
 ### • SignalK Authentication Support
 The plugin supports authentication for SignalK servers that require login credentials. The current authentication status is shown in the settings dialog.
@@ -62,6 +63,7 @@ As soon as the request has been approved the valid connection is displayed in Si
 - Adjust icon size for single notes  
 - Adjust icon size, colour, font for cluster symbol
 - Detailed debug logging for the plugin in the opencpn.log file is possible via the checkbox. However, this should only be activated temporarily if there are real problems with the plugin.
+- <img src="docs/images/configuration3.png" width="75%">
 
 ## Installation
 
