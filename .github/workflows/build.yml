@@ -54,7 +54,7 @@ jobs:
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #       run: |
 #         sudo apt-get update
-#         sudo apt-get install -y python3-pip jq
+#         sudo apt-get install -y python3-pip 
 #         python3 -m pip install cloudsmith-cli
 #         bash ci/cloudsmith-upload.sh
 #
@@ -108,7 +108,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 # # =============================================================================
@@ -244,7 +244,7 @@ jobs:
 #           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #         run: |
 #           sudo apt-get update
-#           sudo apt-get install -y python3-pip jq
+#           sudo apt-get install -y python3-pip 
 #           python3 -m pip install cloudsmith-cli
 #           bash ci/cloudsmith-upload.sh
   
@@ -286,7 +286,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
  
@@ -330,7 +330,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip jq
+          sudo apt-get install -y python3-pip 
           python3 -m pip install cloudsmith-cli
           bash ci/cloudsmith-upload.sh
  
@@ -367,7 +367,7 @@ jobs:
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #       run: |
 #         sudo apt-get update
-#         sudo apt-get install -y python3-pip jq
+#         sudo apt-get install -y python3-pip 
 #         python3 -m pip install cloudsmith-cli
 #         bash ci/cloudsmith-upload.sh
 #
@@ -408,7 +408,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 
@@ -454,7 +454,7 @@ jobs:
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #       run: |
 #         sudo apt-get update
-#         sudo apt-get install -y python3-pip jq
+#         sudo apt-get install -y python3-pip 
 #         python3 -m pip install cloudsmith-cli
 #         bash ci/cloudsmith-upload.sh
 #
@@ -498,7 +498,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -536,7 +536,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -580,7 +580,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -625,7 +625,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -715,7 +715,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -758,7 +758,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh
 #
@@ -803,6 +803,6 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          sudo apt-get update
-#          sudo apt-get install -y python3-pip jq
+#          sudo apt-get install -y python3-pip 
 #          python3 -m pip install cloudsmith-cli
 #          bash ci/cloudsmith-upload.sh

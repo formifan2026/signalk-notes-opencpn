@@ -34,7 +34,6 @@ elif [ "$TRAVIS" ]; then
     BUILD_BRANCH=$TRAVIS_BRANCH
     BUILD_TAG=$TRAVIS_TAG
     if [ "$BUILD_BRANCH" = "$BUILD_TAG" ]; then
-        # Travis makes BUILD_BRANCH = BUILD_TAG so make BUILD_BRANCH ""
         BUILD_BRANCH=""
     fi
     PKG_EXT=${CLOUDSMITH_PKG_EXT:-'deb'}
@@ -44,6 +43,28 @@ elif [ "$APPVEYOR" ]; then
     BUILD_BRANCH=$APPVEYOR_REPO_BRANCH
     BUILD_TAG=$APPVEYOR_REPO_TAG_NAME
     PKG_EXT=${CLOUDSMITH_PKG_EXT:-'exe'}
+elif [ "$GITHUB_ACTIONS" = "true" ]; then
+    BUILD_ID=${GITHUB_RUN_NUMBER:-1}
+    BUILD_DIR=$GITHUB_WORKSPACE/build
+
+    # Branch/Tag aus GITHUB_REF ableiten
+    case "$GITHUB_REF" in
+        refs/heads/*)
+            BUILD_BRANCH=${GITHUB_REF#refs/heads/}
+            BUILD_TAG=""
+            ;;
+        refs/tags/*)
+            BUILD_BRANCH=""
+            BUILD_TAG=${GITHUB_REF#refs/tags/}
+            ;;
+        *)
+            BUILD_BRANCH=""
+            BUILD_TAG=""
+            ;;
+    esac
+
+    # Für Flatpak: nur .tar.gz relevant, kein deb/exe
+    PKG_EXT=${CLOUDSMITH_PKG_EXT:-'gz'}
 else
     BUILD_ID=${CIRCLE_BUILD_NUM:-1}
     BUILD_DIR=.
@@ -171,7 +192,7 @@ fi
 echo $VERSION
 echo $REPO
 
-if [ "$APPVEYOR" ] || [ $LOCAL_BUILD=true ]; then
+if [ "$APPVEYOR" ] || [ "$LOCAL_BUILD" = "true" ]; then
     echo 'substituting xml file variables for windows build'
     while read line; do
         line=${line//--pkg_repo--/$REPO}
