@@ -14,7 +14,7 @@ Several SignalK plugins (like ['Garmin Active Captain Resources'](https://active
 ## Features
 
 ### • Display SignalK Notes on the Chart
-The plugin reads notes from the SignalK and displays them as icons at their respective positions on the map.
+The plugin reads notes from SignalK and displays them as icons at their respective positions on the map.
 
 ### • Automatic Updates
 New or modified notes are detected automatically and refreshed on the chart.
