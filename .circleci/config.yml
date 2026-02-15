@@ -210,8 +210,21 @@ jobs:
             privileged: False
             shell: cmd.exe
             command: ci\circleci-build-msvc.bat
-        - deploy-code:
-            deploy_use_orb: false
+        #- deploy-code:
+        #    deploy_use_orb: false
+        - run:
+            name: Upload to Cloudsmith (Windows)
+            shell: bash.exe
+            command: |
+              echo "Pretending to be APPVEYOR so Windows upload works"
+              export APPVEYOR=true
+
+              echo "Installing Cloudsmith CLI"
+              pip install cloudsmith-cli
+
+              echo "Running Windows-compatible upload script"
+              bash build/cloudsmith-upload.sh
+
     build-flatpak-aarch64-2208:
         machine:
             image: ubuntu-2404:current
@@ -294,9 +307,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-armhf-13-trixie:
@@ -313,9 +326,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-x86_64-13-trixie:
@@ -330,9 +343,9 @@ jobs:
         - DOCKER_IMAGE=debian:trixie
         steps:
         - checkout
-        - run: chmod a+x ci/*.sh
+        - run: chmod a+x github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-arm64-12-bookworm:
@@ -349,9 +362,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-armhf-12-bookworm:
@@ -368,9 +381,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-x86_64-12-bookworm:
@@ -385,9 +398,9 @@ jobs:
         - DOCKER_IMAGE=debian:bookworm
         steps:
         - checkout
-        - run: chmod a+x ci/*.sh
+        - run: chmod a+x github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-armhf-11-bullseye:
@@ -403,9 +416,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-arm64-11-bullseye:
@@ -421,9 +434,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./ci/*.sh
+        - run: chmod a+x ./github/*.sh
         - run:
-            command: ci/circleci-build-ubuntu-docker.sh
+            command: github/github-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-x86_64-11-bullseye:
@@ -443,8 +456,8 @@ jobs:
             echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main"
             | sudo tee -a /etc/apt/sources.list
         - run: cat /etc/apt/sources.list
-        - run: chmod a+x ci/*.sh
-        - run: ci/circleci-build-debian.sh
+        - run: chmod a+x github/*.sh
+        - run: github/github-build-ubuntu-docker.sh
         - deploy-code
 ## KEEP needed for OpenCPN v5.8 Jammy wx32 build
     build-ubuntu-x86_64-2204-jammy:
@@ -465,8 +478,8 @@ jobs:
               echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
               echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
         - run: cat /etc/apt/sources.list
-        - run: chmod a+x ci/*.sh
-        - run: ci/circleci-build-debian.sh
+        - run: chmod a+x github/*.sh
+        - run: github/github-build-ubuntu-docker.sh
         - deploy-code
 ## ---------------------
 ## OpenCPN 5.6.2 Plugins
@@ -474,23 +487,24 @@ jobs:
 
 ## Appveyor doesn't build for Windows now.
 ## If below is used, WinXT will not work.
-    build-msvc-2022:
-        executor:
-            name: win/server-2022
-            shell: bash.exe
-        environment:
-        - OCPN_TARGET: MSVC
-        - MSVC_VERSION: 2022
-        - WX_VER: 31
-        - WX_VER_PATCH: 2
-        - DEPLOY_USE_ORB: false
-        steps:
-        - checkout
-        - run:
-            privileged: False
-            shell: cmd.exe
-            command: ci\circleci-build-msvc.bat
-        - deploy-code:
-            deploy_use_orb: false
+## uncomment if plugin is able to use wxWidget version < 32 (plugin signalk-opencpn-notes requires min. version 32)
+#    build-msvc-2022:
+#        executor:
+#            name: win/server-2022
+#            shell: bash.exe
+#        environment:
+#        - OCPN_TARGET: MSVC
+#        - MSVC_VERSION: 2022
+#        - WX_VER: 31
+#        - WX_VER_PATCH: 2
+#        - DEPLOY_USE_ORB: false
+#        steps:
+#        - checkout
+#        - run:
+#            privileged: False
+#            shell: cmd.exe
+#            command: ci\circleci-build-msvc.bat
+#        - deploy-code:
+#            deploy_use_orb: false
 
 
