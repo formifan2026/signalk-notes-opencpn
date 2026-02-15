@@ -458,10 +458,8 @@ jobs:
           sudo apt-get install -y python3-pip jq
           python3 -m pip install --user cloudsmith-cli
           export PATH="$HOME/.local/bin:$PATH"
+          echo "Running wrapper script ci/cloudsmith-upload.sh"
           bash ci/cloudsmith-upload.sh
-
-
-
 
 # ---------------------------------------------------------
 # Debian 13 Trixie — ARMHF
