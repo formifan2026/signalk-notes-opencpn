@@ -216,7 +216,7 @@ if (NOT WIN32 AND NOT QT_ANDROID)
     # END FLATPAK CHECK
     # ========================================================================
 
-    iif (NOT DEFINED PACKAGE_FORMAT AND EXISTS /etc/debian_version)
+    if (NOT DEFINED PACKAGE_FORMAT AND EXISTS /etc/debian_version)
       message(STATUS "${CMLOC}*** Debian detected  ***")
       set(PACKAGE_FORMAT "DEB")
       set(PACKAGE_DEPS
