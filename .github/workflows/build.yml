@@ -28,9 +28,6 @@ jobs:
 #     image: cimg/android:2023.12-ndk
 #   env:
 #     OCPN_TARGET: android-arm64
-#     PKG_TARGET: android
-#     PKG_TARGET_VERSION: ""
-#     COMPOUND_ARCH_DASH: arm64-
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -65,9 +62,6 @@ jobs:
 #   runs-on: ubuntu-latest
 #   env:
 #     OCPN_TARGET: android-armhf
-#     PKG_TARGET: android
-#     PKG_TARGET_VERSION: ""
-#     COMPOUND_ARCH_DASH: armhf-
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -122,9 +116,6 @@ jobs:
 #   runs-on: macos-14
 #   env:
 #     OCPN_TARGET: macos
-#     PKG_TARGET: macos
-#     PKG_TARGET_VERSION: ""
-#     COMPOUND_ARCH_DASH: ""
 #     PKG_TARGET_WX_VER: "32"
 #     CMAKE_BUILD_PARALLEL_LEVEL: 2
 #     WX_VER: 32
@@ -179,9 +170,6 @@ jobs:
  #   runs-on: windows-2022
  #   env:
  #     OCPN_TARGET: MSVC
- #     PKG_TARGET: MSVC
- #     PKG_TARGET_VERSION: ""
- #     COMPOUND_ARCH_DASH: ""
  #     PKG_TARGET_WX_VER: "32"
  #     MSVC_VERSION: 2022
  #     WX_VER: 32
@@ -221,10 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak
-      PKG_TARGET: flatpak
-      PKG_TARGET_VERSION: "22.08"
-      COMPOUND_ARCH_DASH: aarch64-
-      ARCH: aarch64
+      BUILD_ARCH: aarch64
       FLATPAK_BRANCH: stable
       CLOUDSMITH_PKG_EXT: gz
       SDK_VER: 22.08
@@ -241,8 +226,8 @@ jobs:
  
       - name: Build Flatpak ARM64
         run: |
-          chmod a+x ci/*.sh
-          bash ci/circleci-build-flatpak.sh
+          chmod a+x github/*.sh
+          bash github/github-build-flatpak.sh
  
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -266,10 +251,7 @@ jobs:
 #  runs-on: ubuntu-latest
 #  env:
 #    OCPN_TARGET: flatpak
-#    PKG_TARGET: flatpak
-#    PKG_TARGET_VERSION: "22.08"
-#    COMPOUND_ARCH_DASH: x86_64-
-#    ARCH: x86_64
+#    BUILD_ARCH: x86_64
 #    FLATPAK_BRANCH: stable
 #    CLOUDSMITH_PKG_EXT: gz
 #    SDK_VER: 22.08
@@ -311,10 +293,7 @@ jobs:
  #  runs-on: ubuntu-latest
  #  env:
  #    OCPN_TARGET: flatpak
- #    PKG_TARGET: flatpak
- #    PKG_TARGET_VERSION: "24.08"
- #    COMPOUND_ARCH_DASH: aarch64-
- #    ARCH: aarch64
+ #    BUILD_ARCH: aarch64
  #    FLATPAK_BRANCH: stable
  #    CLOUDSMITH_PKG_EXT: gz
  #    SDK_VER: 24.08
@@ -356,10 +335,7 @@ jobs:
 #   runs-on: ubuntu-latest
 #   env:
 #     OCPN_TARGET: flatpak
-#     PKG_TARGET: flatpak
-#     PKG_TARGET_VERSION: "24.08"
-#     COMPOUND_ARCH_DASH: x86_64-
-#     ARCH: x86_64
+#     BUILD_ARCH: x86_64
 #     FLATPAK_BRANCH: stable
 #     CLOUDSMITH_PKG_EXT: gz
 #     SDK_VER: 24.08
@@ -399,9 +375,6 @@ jobs:
 #   runs-on: ubuntu-latest
 #   env:
 #     OCPN_TARGET: trixie
-#     PKG_TARGET: debian
-#     PKG_TARGET_VERSION: "13"
-#     COMPOUND_ARCH_DASH: x86_64-
 #     PKG_BUILD_GTK: gtk3
 #     PKG_TARGET_WX_VER: "32"
 #     BUILD_GTK3: true
@@ -439,9 +412,6 @@ jobs:
 #   runs-on: ubuntu-latest
 #   env:
 #     OCPN_TARGET: trixie-arm64
-#     PKG_TARGET: debian
-#     PKG_TARGET_VERSION: "13"
-#     COMPOUND_ARCH_DASH: arm64-
 #     PKG_BUILD_GTK: gtk3
 #     PKG_TARGET_WX_VER: "32"
 #     DOCKER_IMAGE: debian:trixie

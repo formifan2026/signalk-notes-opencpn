@@ -1,98 +1,101 @@
 #!/usr/bin/env bash
-set -xeuo pipefail
 
-##############################################
-# 0. CircleCI optional: apt proxy + cache
-##############################################
-if [[ "${CIRCLECI_LOCAL:-false}" == "true" ]]; then
+#
+# Build the flatpak artifacts. Uses docker to run Fedora on
+# in full-fledged VM; the actual build is done in the Fedora
+# container.
+#
+# flatpak-builder can be run in a docker image. However, this
+# must then be run in privileged mode, which means it we need
+# a full VM to run it.
+#
+
+# bailout on errors and echo commands.
+set -xe
+
+if [ "${CIRCLECI_LOCAL,,}" = "true" ]; then
     if [[ -d ~/circleci-cache ]]; then
         if [[ -f ~/circleci-cache/apt-proxy ]]; then
             cat ~/circleci-cache/apt-proxy | sudo tee -a /etc/apt/apt.conf.d/00aptproxy
+            cat /etc/apt/apt.conf.d/00aptproxy
         fi
     fi
 fi
 
-##############################################
-# 1. Extra build libs
-##############################################
-ME=$(echo "${0##*/}" | sed 's/\.sh//g')
+# Install extra build libs
+ME=$(echo ${0##*/} | sed 's/\.sh//g')
+EXTRA_LIBS=./ci/extras/extra_libs.txt
+if test -f "$EXTRA_LIBS"; then
+    sudo apt update
+    while read line; do
+        sudo apt-get install $line
+    done < $EXTRA_LIBS
+fi
+EXTRA_LIBS=./ci/extras/${ME}_extra_libs.txt
+if test -f "$EXTRA_LIBS"; then
+    sudo apt update
+    while read line; do
+        sudo apt-get install $line
+    done < $EXTRA_LIBS
+fi
 
-for EXTRA in ./ci/extras/extra_libs.txt ./ci/extras/${ME}_extra_libs.txt; do
-    if [[ -f "$EXTRA" ]]; then
-        sudo apt-get update
-        while read -r line; do
-            [[ -z "$line" ]] && continue
-            sudo apt-get install -y "$line"
-        done < "$EXTRA"
-    fi
-done
-
-##############################################
-# 2. Submodules
-##############################################
 git config --global protocol.file.allow always
 git submodule update --init opencpn-libs
 
-##############################################
-# 3. Install Flatpak + Builder
-##############################################
-sudo apt-get update
-sudo apt-get install --reinstall -y ca-certificates
+if [ -n "$CI" ]; then
+    sudo apt update
 
-if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
-    sudo apt-get install -y flatpak flatpak-builder bubblewrap
-else
-    sudo apt-get install -y flatpak flatpak-builder
+    # Avoid using outdated TLS certificates, see #210.
+    sudo apt install --reinstall  ca-certificates
+
+    # Handle possible outdated key for google packages, see #486
+    wget -q -O - https://cli-assets.heroku.com/apt/release.key \
+        | sudo apt-key add -
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub \
+        | sudo apt-key add -
+
+    # Install flatpak and flatpak-builder - obsoleted by flathub
+    sudo apt install flatpak flatpak-builder
+
 fi
 
-##############################################
-# 4. Add flathub remote
-##############################################
 flatpak remote-add --user --if-not-exists \
     flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-##############################################
-# 5. Install SDK + OpenCPN runtime
-##############################################
-if [[ "${FLATPAK_BRANCH:-stable}" == "beta" ]]; then
-    flatpak install --user -y --noninteractive flathub org.freedesktop.Sdk//$SDK_VER
+
+if [ "$FLATPAK_BRANCH" = "beta" ]; then
+    flatpak install --user -y flathub org.freedesktop.Sdk//$SDK_VER >/dev/null
     flatpak remote-add --user --if-not-exists flathub-beta \
         https://dl.flathub.org/beta-repo/flathub-beta.flatpakrepo
-    flatpak install --user -y --noninteractive flathub-beta org.opencpn.OpenCPN
+    flatpak install --user -y flathub-beta \
+        org.opencpn.OpenCPN >/dev/null
 else
-    flatpak install --user -y --noninteractive flathub org.freedesktop.Sdk//$SDK_VER
-    flatpak install --user -y --noninteractive flathub org.opencpn.OpenCPN
-    FLATPAK_BRANCH="stable"
+    flatpak install --user -y flathub org.freedesktop.Sdk//$SDK_VER >/dev/null
+    flatpak remote-add --user --if-not-exists flathub \
+        https://dl.flathub.org/repo/flathub.flatpakrepo
+    flatpak install --user -y flathub \
+        org.opencpn.OpenCPN >/dev/null
+    FLATPAK_BRANCH='stable'
 fi
 
-##############################################
-# 6. Build directory
-##############################################
 rm -rf build && mkdir build && cd build
-
-##############################################
-# 7. WX_VER optional
-##############################################
-if [[ -n "${WX_VER:-}" ]]; then
+if [ -n "$WX_VER" ]; then
     SET_WX_VER="-DWX_VER=$WX_VER"
 else
     SET_WX_VER=""
 fi
 
-##############################################
-# 8. CMake configure
-##############################################
-cmake \
-  -DOCPN_TARGET="$OCPN_TARGET" \
-  -DBUILD_ARCH="$BUILD_ARCH" \
-  -DOCPN_FLATPAK_CONFIG=ON \
-  -DSDK_VER="$SDK_VER" \
-  -DFLATPAK_BRANCH="$FLATPAK_BRANCH" \
-  $SET_WX_VER \
-  ..
+# Für Cross-Compilation: CMAKE_SYSTEM_PROCESSOR überschreiben
+if [ -n "$BUILD_ARCH" ]; then
+    echo "Setting CMAKE_SYSTEM_PROCESSOR to $BUILD_ARCH for cross-compilation"
+    export CMAKE_SYSTEM_PROCESSOR="$BUILD_ARCH"
+fi
 
-##############################################
-# 9. Build + Package
-##############################################
+if [ "$FLATPAK_BRANCH" = '' ]; then
+    cmake -DOCPN_TARGET=$OCPN_TARGET -DBUILD_ARCH=$BUILD_ARCH -DOCPN_FLATPAK_CONFIG=ON -DSDK_VER=$SDK_VER -DFLATPAK_BRANCH='beta' $SET_WX_VER ..
+else
+    cmake -DOCPN_TARGET=$OCPN_TARGET -DBUILD_ARCH=$BUILD_ARCH -DOCPN_FLATPAK_CONFIG=ON -DSDK_VER=$SDK_VER -DFLATPAK_BRANCH=$FLATPAK_BRANCH $SET_WX_VER ..
+fi
+
 make flatpak-build
 make flatpak-pkg
