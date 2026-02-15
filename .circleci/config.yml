@@ -461,17 +461,18 @@ jobs:
         - run: chmod a+x github/*.sh
         - run: github/github-build-ubuntu-docker.sh
         - deploy-code
+
 ## KEEP needed for OpenCPN v5.8 Jammy wx32 build
     build-ubuntu-x86_64-2204-jammy:
-    docker:
+      docker:
         - image: cimg/base:edge-22.04
-    environment:
+      environment:
         BUILD_GTK3: true
         OCPN_TARGET: jammy
         WX_VER: 32
         DEPLOY_USE_ORB: true
         BUILD_ENV: ubuntu
-    steps:
+      steps:
         - checkout
         - run:
             name: "Update apt sources"
@@ -483,6 +484,7 @@ jobs:
         - run: chmod a+x ci/*.sh
         - run: ci/circleci-build-debian.sh
         - deploy-code
+
 
 ## ---------------------
 ## OpenCPN 5.6.2 Plugins
