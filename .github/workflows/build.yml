@@ -375,90 +375,90 @@ jobs:
 # ---------------------------------------------------------
 # Debian 13 Trixie — x86_64
 # ---------------------------------------------------------
-# build-debian-x86_64-13-trixie:
-#   runs-on: ubuntu-latest
-#   env:
-#     OCPN_TARGET: trixie
-#     BUILD_ARCH: amd64
-#     BUILD_GTK3: true
-#     WX_VER: 32
-#     BUILD_ENV: debian
-#     DOCKER_IMAGE: debian:trixie
-#   steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
-#       with:
-#         submodules: recursive
-#
-#     - name: Build Debian Trixie x86_64
-#       run: |
-#         chmod a+x github/*.sh
-#         github/github-build-ubuntu-docker.sh
-#
-#     - name: Upload artifacts
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: debian-trixie-x86_64-package
-#         path: build/*.tar.gz
-#         if-no-files-found: warn
-#
-#     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
-#       env:
-#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y python3-pip jq
-#         python3 -m pip install --user cloudsmith-cli
-#         export PATH="$HOME/.local/bin:$PATH"
-#         bash ci/cloudsmith-upload.sh
-#
-# ---------------------------------------------------------
-# Debian 13 Trixie — ARM64
-# ---------------------------------------------------------
-  build-debian-arm64-13-trixie:
+  build-debian-x86_64-13-trixie:
     runs-on: ubuntu-latest
     env:
-      OCPN_TARGET: trixie-arm64
-      BUILD_ARCH: arm64
-      DOCKER_IMAGE: arm64v8/debian:trixie
-      BUILD_FLAGS: -j3
-      BUILD_ENV: debian
-      WX_VER: 32
+      OCPN_TARGET: trixie
+      BUILD_ARCH: amd64
       BUILD_GTK3: true
-      USE_UNSTABLE_REPO: ON
+      WX_VER: 32
+      BUILD_ENV: debian
+      DOCKER_IMAGE: debian:trixie
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: recursive  
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64  
-      - name: Build Debian Trixie ARM64
+          submodules: recursive
+ 
+      - name: Build Debian Trixie x86_64
         run: |
           chmod a+x github/*.sh
-          github/github-build-ubuntu-docker.sh  
+          github/github-build-ubuntu-docker.sh
+ 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: debian-trixie-arm64-package
+          name: debian-trixie-x86_64-package
           path: build/*.tar.gz
-          if-no-files-found: warn  
+          if-no-files-found: warn
+ 
       - name: Deploy to Cloudsmith
         if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BUILD_DIR: build 
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip jq
-          python3 -m pip install cloudsmith-cli
+          python3 -m pip install --user cloudsmith-cli
           export PATH="$HOME/.local/bin:$PATH"
           bash ci/cloudsmith-upload.sh
+ 
+# ---------------------------------------------------------
+# Debian 13 Trixie — ARM64
+# ---------------------------------------------------------
+#2  build-debian-arm64-13-trixie:
+#2    runs-on: ubuntu-latest
+#2    env:
+#2      OCPN_TARGET: trixie-arm64
+#2      BUILD_ARCH: arm64
+#2      DOCKER_IMAGE: arm64v8/debian:trixie
+#2      BUILD_FLAGS: -j3
+#2      BUILD_ENV: debian
+#2      WX_VER: 32
+#2      BUILD_GTK3: true
+#2      USE_UNSTABLE_REPO: ON
+#2    steps:
+#2      - name: Checkout code
+#2        uses: actions/checkout@v4
+#2        with:
+#2          submodules: recursive  
+#2      - name: Set up QEMU
+#2        uses: docker/setup-qemu-action@v3
+#2        with:
+#2          platforms: arm64  
+#2      - name: Build Debian Trixie ARM64
+#2        run: |
+#2          chmod a+x github/*.sh
+#2          github/github-build-ubuntu-docker.sh  
+#2      - name: Upload artifacts
+#2        uses: actions/upload-artifact@v4
+#2        with:
+#2          name: debian-trixie-arm64-package
+#2          path: build/*.tar.gz
+#2          if-no-files-found: warn  
+#2      - name: Deploy to Cloudsmith
+#2        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
+#2        env:
+#2          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#2          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#2          BUILD_DIR: build 
+#2        run: |
+#2          sudo apt-get update
+#2          sudo apt-get install -y python3-pip jq
+#2          python3 -m pip install cloudsmith-cli
+#2          export PATH="$HOME/.local/bin:$PATH"
+#2          bash ci/cloudsmith-upload.sh
 
 
 # ---------------------------------------------------------
