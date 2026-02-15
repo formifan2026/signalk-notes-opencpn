@@ -8,7 +8,7 @@ ls -la
 git submodule update --init opencpn-libs
 
 ##############################################
-# 1. OCPNAndroidCommon herunterladen
+# 1. CI-Erkennung
 ##############################################
 CI_SYSTEM="unknown"
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -23,6 +23,9 @@ fi
 
 echo "Detected CI system: $CI_SYSTEM"
 
+##############################################
+# 2. OCPNAndroidCommon herunterladen
+##############################################
 MASTER_LOC=$(pwd)
 
 if [[ "$CI_SYSTEM" == "circleci" && "${CIRCLECI_LOCAL,,}" == "true" && -d ~/circleci-cache ]]; then
@@ -42,7 +45,7 @@ echo "unzipping $MASTER_LOC/master.zip"
 unzip -qq -o "$MASTER_LOC/master.zip"
 
 ##############################################
-# 2. Dependencies installieren
+# 3. Dependencies installieren
 ##############################################
 case "$CI_SYSTEM" in
     github|circleci|travis)
@@ -73,7 +76,7 @@ for EXTRA in ./ci/extras/extra_libs.txt ./ci/extras/${ME}_extra_libs.txt; do
 done
 
 ##############################################
-# 3. Python/CMake Workarounds
+# 4. Python/CMake Workarounds
 ##############################################
 if [[ "$CI_SYSTEM" == "circleci" ]]; then
     python3 -m pip install --user --force-reinstall -q pip setuptools
@@ -86,7 +89,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 ##############################################
-# 4. NDK-Pfad setzen (universell)
+# 5. NDK-Pfad setzen (universell, robust)
 ##############################################
 NDK_CANDIDATES=(
     "/opt/android-ndk"                     # GitHub Actions (manuell installiert)
@@ -99,9 +102,14 @@ NDK_CANDIDATES=(
 last_ndk=""
 
 for base in "${NDK_CANDIDATES[@]}"; do
-    if ls -d "$base"/* >/dev/null 2>&1; then
-        last_ndk=$(ls -d "$base"/* | tail -1)
-        break
+    if [[ -d "$base" ]]; then
+        # Nur echte Unterverzeichnisse akzeptieren, keine Dateien wie wrap.sh
+        for d in "$base"/*; do
+            if [[ -d "$d" ]]; then
+                last_ndk="$d"
+            fi
+        done
+        [[ -n "$last_ndk" ]] && break
     fi
 done
 
@@ -111,7 +119,7 @@ if [[ -z "$last_ndk" ]]; then
 fi
 
 sudo mkdir -p /opt/android
-sudo ln -sf "$last_ndk" /opt/android/ndk
+sudo ln -sfn "$last_ndk" /opt/android/ndk
 
 export ANDROID_NDK_HOME="/opt/android/ndk"
 export ANDROID_NDK="/opt/android/ndk"
@@ -120,7 +128,7 @@ export ANDROID_NDK_ROOT="/opt/android/ndk"
 echo "Using NDK: $last_ndk"
 
 ##############################################
-# 5. Build vorbereiten
+# 6. Build vorbereiten
 ##############################################
 mkdir -p build
 cd build
@@ -140,7 +148,7 @@ fi
 echo "Using BUILD_TYPE=$BUILD_TYPE"
 
 ##############################################
-# 6. CMake + Build
+# 7. CMake + Build
 ##############################################
 cmake -DCMAKE_TOOLCHAIN_FILE=cmake/android-armhf-toolchain.cmake \
   -D_wx_selected_config=androideabi-qt-armhf \
