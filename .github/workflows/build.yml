@@ -448,7 +448,7 @@ jobs:
           path: build/*.tar.gz
           if-no-files-found: warn  
       - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'))
+        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
         working-directory: ${{ github.workspace }}
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
@@ -459,6 +459,7 @@ jobs:
           python3 -m pip install --user cloudsmith-cli
           export PATH="$HOME/.local/bin:$PATH"
           bash ci/cloudsmith-upload.sh
+
 
 
 
