@@ -22,31 +22,83 @@ jobs:
 # =============================================================================
 # Android Builds
 # =============================================================================
- build-android-arm64:
+#1 build-android-arm64:
+#1   runs-on: ubuntu-latest
+#1   container:
+#1     image: cimg/android:2023.12-ndk
+#1   env:
+#1     OCPN_TARGET: android-arm64
+#1   steps:
+#1     - name: Checkout code
+#1       uses: actions/checkout@v4
+#1       with:
+#1         submodules: recursive
+#1
+#1     - name: Build Android ARM64
+#1       shell: bash
+#1       run: |
+#1         chmod a+x github/*.sh
+#1         bash github/github-build-android-arm64.sh
+#1
+#1     - name: Upload artifacts
+#1       uses: actions/upload-artifact@v4
+#1       with:
+#1         name: android-arm64-package
+#1         path: build/*.tar.gz
+#1         if-no-files-found: warn
+#1
+#1     - name: Deploy to Cloudsmith
+#1       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
+#1       env:
+#1         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+#1         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#1       run: |
+#1         sudo apt-get update
+#1         sudo apt-get install -y python3-pip 
+#1         python3 -m pip install cloudsmith-cli
+#1         export PATH="$HOME/.local/bin:$PATH"
+#1         bash ci/cloudsmith-upload.sh
+
+ build-android-armhf:
    runs-on: ubuntu-latest
-   container:
-     image: cimg/android:2023.12-ndk
    env:
-     OCPN_TARGET: android-arm64
+     OCPN_TARGET: android-armhf
    steps:
      - name: Checkout code
        uses: actions/checkout@v4
        with:
          submodules: recursive
+ 
+     - name: Install dependencies
+       run: |
+         sudo apt-get update
+         sudo apt-get install -y unzip wget
+ 
+     - name: Install Android NDK r21e (required for ARMHF)
+       run: |
+         wget https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
+         unzip android-ndk-r21e-linux-x86_64.zip
+         sudo mv android-ndk-r21e /opt/android-ndk
+ 
+         sudo mkdir -p /opt/android
+         sudo ln -s /opt/android-ndk /opt/android/ndk
+ 
+         echo "ANDROID_NDK_HOME=/opt/android-ndk" >> $GITHUB_ENV
+         echo "ANDROID_NDK=/opt/android-ndk" >> $GITHUB_ENV
+         echo "ANDROID_NDK_ROOT=/opt/android-ndk" >> $GITHUB_ENV
 
-     - name: Build Android ARM64
-       shell: bash
+     - name: Build Android ARMHF
        run: |
          chmod a+x github/*.sh
-         bash github/github-build-android-arm64.sh
-
+         bash github/github-build-android-armhf.sh
+ 
      - name: Upload artifacts
        uses: actions/upload-artifact@v4
        with:
-         name: android-arm64-package
+         name: android-armhf-package
          path: build/*.tar.gz
          if-no-files-found: warn
-
+ 
      - name: Deploy to Cloudsmith
        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
        env:
@@ -58,58 +110,6 @@ jobs:
          python3 -m pip install cloudsmith-cli
          export PATH="$HOME/.local/bin:$PATH"
          bash ci/cloudsmith-upload.sh
-
-# build-android-armhf:
-#   runs-on: ubuntu-latest
-#   env:
-#     OCPN_TARGET: android-armhf
-#   steps:
-#     - name: Checkout code
-#       uses: actions/checkout@v4
-#       with:
-#         submodules: recursive
-# 
-#     - name: Install dependencies
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y unzip wget
-# 
-#     - name: Install Android NDK r21e (required for ARMHF)
-#       run: |
-#         wget https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
-#         unzip android-ndk-r21e-linux-x86_64.zip
-#         sudo mv android-ndk-r21e /opt/android-ndk
-# 
-#         sudo mkdir -p /opt/android
-#         sudo ln -s /opt/android-ndk /opt/android/ndk
-# 
-#         echo "ANDROID_NDK_HOME=/opt/android-ndk" >> $GITHUB_ENV
-#         echo "ANDROID_NDK=/opt/android-ndk" >> $GITHUB_ENV
-#         echo "ANDROID_NDK_ROOT=/opt/android-ndk" >> $GITHUB_ENV
-#
-#     - name: Build Android ARMHF
-#       run: |
-#         chmod a+x github/*.sh
-#         bash github/github-build-android-armhf.sh
-# 
-#     - name: Upload artifacts
-#       uses: actions/upload-artifact@v4
-#       with:
-#         name: android-armhf-package
-#         path: build/*.tar.gz
-#         if-no-files-found: warn
-# 
-#     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
-#       env:
-#         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
-#         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y python3-pip 
-#         python3 -m pip install cloudsmith-cli
-#         export PATH="$HOME/.local/bin:$PATH"
-#         bash ci/cloudsmith-upload.sh
 
 # =============================================================================
 # macOS Build

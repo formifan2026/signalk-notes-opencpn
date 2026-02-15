@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -xeuo pipefail
+set -xeo pipefail
 
 echo "Working dir:"
 pwd
@@ -10,23 +10,31 @@ git submodule update --init opencpn-libs
 ##############################################
 # 1. OCPNAndroidCommon herunterladen
 ##############################################
-if [[ "${CIRCLECI:-}" == "true" ]]; then
-    # CircleCI: optionaler Cache
-    if [[ "${CIRCLECI_LOCAL,,}" == "true" && -d ~/circleci-cache ]]; then
-        if [[ -f ~/circleci-cache/apt-proxy ]]; then
-            cat ~/circleci-cache/apt-proxy | sudo tee -a /etc/apt/apt.conf.d/00aptproxy
-        fi
-        if [[ ! -f ~/circleci-cache/master.zip ]]; then
-            sudo wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip -O ~/circleci-cache/master.zip
-        fi
-        MASTER_LOC=~/circleci-cache
-    else
-        MASTER_LOC=$(pwd)
-        wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
+CI_SYSTEM="unknown"
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    CI_SYSTEM="github"
+elif [[ "${CIRCLECI:-}" == "true" ]]; then
+    CI_SYSTEM="circleci"
+elif [[ "${TRAVIS:-}" == "true" ]]; then
+    CI_SYSTEM="travis"
+elif [[ "${APPVEYOR:-}" == "True" ]]; then
+    CI_SYSTEM="appveyor"
+fi
+
+echo "Detected CI system: $CI_SYSTEM"
+
+MASTER_LOC=$(pwd)
+
+if [[ "$CI_SYSTEM" == "circleci" && "${CIRCLECI_LOCAL,,}" == "true" && -d ~/circleci-cache ]]; then
+    if [[ -f ~/circleci-cache/apt-proxy ]]; then
+        sudo tee -a /etc/apt/apt.conf.d/00aptproxy < ~/circleci-cache/apt-proxy
     fi
+    if [[ ! -f ~/circleci-cache/master.zip ]]; then
+        sudo wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip \
+            -O ~/circleci-cache/master.zip
+    fi
+    MASTER_LOC=~/circleci-cache
 else
-    # GitHub Actions
-    MASTER_LOC=$(pwd)
     wget https://github.com/bdbcat/OCPNAndroidCommon/archive/master.zip
 fi
 
@@ -36,8 +44,15 @@ unzip -qq -o "$MASTER_LOC/master.zip"
 ##############################################
 # 2. Dependencies installieren
 ##############################################
-sudo apt-get update
-sudo apt-get install -y git cmake gettext unzip python3-pip
+case "$CI_SYSTEM" in
+    github|circleci|travis)
+        sudo apt-get update
+        sudo apt-get install -y git cmake gettext unzip python3-pip
+        ;;
+    appveyor)
+        pacman -Sy --noconfirm git cmake unzip python-pip
+        ;;
+esac
 
 # Extra libs
 ME=$(echo "${0##*/}" | sed 's/\.sh//g')
@@ -45,7 +60,14 @@ for EXTRA in ./ci/extras/extra_libs.txt ./ci/extras/${ME}_extra_libs.txt; do
     if [[ -f "$EXTRA" ]]; then
         while read -r line; do
             [[ -z "$line" ]] && continue
-            sudo apt-get install -y "$line"
+            case "$CI_SYSTEM" in
+                github|circleci|travis)
+                    sudo apt-get install -y "$line"
+                    ;;
+                appveyor)
+                    pacman -Sy --noconfirm "$line"
+                    ;;
+            esac
         done < "$EXTRA"
     fi
 done
@@ -53,12 +75,10 @@ done
 ##############################################
 # 3. Python/CMake Workarounds
 ##############################################
-if [[ "${CIRCLECI:-}" == "true" ]]; then
-    # Nur CircleCI braucht diese Workarounds
+if [[ "$CI_SYSTEM" == "circleci" ]]; then
     python3 -m pip install --user --force-reinstall -q pip setuptools
     sudo apt-get remove -y python3-six python3-colorama python3-urllib3 || true
 else
-    # GitHub Actions: einfach aktualisieren
     python3 -m pip install --user --upgrade pip setuptools cmake
 fi
 
@@ -66,22 +86,38 @@ export PATH="$HOME/.local/bin:$PATH"
 export LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 ##############################################
-# 4. NDK-Pfad setzen
+# 4. NDK-Pfad setzen (universell)
 ##############################################
-if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-    # GitHub Actions: NDK r21e wurde in build.yml installiert
-    export ANDROID_NDK_HOME="/opt/android-ndk"
-    export ANDROID_NDK="/opt/android-ndk"
-    export ANDROID_NDK_ROOT="/opt/android-ndk"
-else
-    # CircleCI: NDK aus Container verwenden
-    last_ndk=$(ls -d /home/circleci/android-sdk/ndk/* | tail -1)
-    sudo mkdir -p /opt/android
-    sudo ln -sf "$last_ndk" /opt/android/ndk
-    export ANDROID_NDK_HOME="/opt/android/ndk"
-    export ANDROID_NDK="/opt/android/ndk"
-    export ANDROID_NDK_ROOT="/opt/android/ndk"
+NDK_CANDIDATES=(
+    "/opt/android-ndk"                     # GitHub Actions (manuell installiert)
+    "/opt/android/sdk/ndk"                 # GitHub Actions Container
+    "/home/circleci/android-sdk/ndk"       # CircleCI
+    "/c/Android/ndk"                       # AppVeyor Windows
+    "/mingw64/android-ndk"                 # MSYS2
+)
+
+last_ndk=""
+
+for base in "${NDK_CANDIDATES[@]}"; do
+    if ls -d "$base"/* >/dev/null 2>&1; then
+        last_ndk=$(ls -d "$base"/* | tail -1)
+        break
+    fi
+done
+
+if [[ -z "$last_ndk" ]]; then
+    echo "ERROR: Could not find Android NDK directory"
+    exit 1
 fi
+
+sudo mkdir -p /opt/android
+sudo ln -sf "$last_ndk" /opt/android/ndk
+
+export ANDROID_NDK_HOME="/opt/android/ndk"
+export ANDROID_NDK="/opt/android/ndk"
+export ANDROID_NDK_ROOT="/opt/android/ndk"
+
+echo "Using NDK: $last_ndk"
 
 ##############################################
 # 5. Build vorbereiten
@@ -90,7 +126,7 @@ mkdir -p build
 cd build
 rm -f CMakeCache.txt
 
-# Build-Type bestimmen
+# Build-Type bestimmen (unverändert)
 if [[ -z "${BUILD_TYPE:-}" ]]; then
     tag=$(git tag --contains HEAD || true)
     branch=$(git branch --show-current || true)
