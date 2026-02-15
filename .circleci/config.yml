@@ -463,27 +463,27 @@ jobs:
         - deploy-code
 ## KEEP needed for OpenCPN v5.8 Jammy wx32 build
     build-ubuntu-x86_64-2204-jammy:
-        machine:
-          image: ubuntu-2204:current
-        environment:
-        - BUILD_GTK3: true
-        - OCPN_TARGET: jammy
-        - WX_VER: 32
-        - DEPLOY_USE_ORB: true
-        - BUILD_ENV: ubuntu
-        - DOCKER_IMAGE: opencpn/ci-ubuntu-jammy:latest
-        steps:
+    docker:
+        - image: cimg/base:edge-22.04
+    environment:
+        BUILD_GTK3: true
+        OCPN_TARGET: jammy
+        WX_VER: 32
+        DEPLOY_USE_ORB: true
+        BUILD_ENV: ubuntu
+    steps:
         - checkout
         - run:
             name: "Update apt sources"
             command: |
-              echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
-              echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
-              echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+            echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+            echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
+            echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
         - run: cat /etc/apt/sources.list
-        - run: chmod a+x github/*.sh
-        - run: github/github-build-ubuntu-docker.sh
+        - run: chmod a+x ci/*.sh
+        - run: ci/circleci-build-debian.sh
         - deploy-code
+
 ## ---------------------
 ## OpenCPN 5.6.2 Plugins
 ## ---------------------
