@@ -89,7 +89,7 @@ export PATH="$HOME/.local/bin:$PATH"
 export LC_ALL=C.UTF-8 LANG=C.UTF-8
 
 ##############################################
-# 5. NDK-Pfad setzen (universell, robust)
+# 5. NDK-Pfad setzen (universell, korrekt)
 ##############################################
 NDK_CANDIDATES=(
     "/opt/android-ndk"                     # GitHub Actions (manuell installiert)
@@ -102,10 +102,16 @@ NDK_CANDIDATES=(
 last_ndk=""
 
 for base in "${NDK_CANDIDATES[@]}"; do
+    # Fall 1: Basisordner ist direkt ein NDK (GitHub Actions)
+    if [[ -d "$base" && -f "$base/source.properties" ]]; then
+        last_ndk="$base"
+        break
+    fi
+
+    # Fall 2: Basisordner enthält Versionen (CircleCI, Windows)
     if [[ -d "$base" ]]; then
-        # Nur echte Unterverzeichnisse akzeptieren, keine Dateien wie wrap.sh
         for d in "$base"/*; do
-            if [[ -d "$d" ]]; then
+            if [[ -d "$d" && -f "$d/source.properties" ]]; then
                 last_ndk="$d"
             fi
         done
@@ -126,6 +132,7 @@ export ANDROID_NDK="/opt/android/ndk"
 export ANDROID_NDK_ROOT="/opt/android/ndk"
 
 echo "Using NDK: $last_ndk"
+
 
 ##############################################
 # 6. Build vorbereiten
