@@ -458,8 +458,8 @@ jobs:
             echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main"
             | sudo tee -a /etc/apt/sources.list
         - run: cat /etc/apt/sources.list
-        - run: chmod a+x github/*.sh
-        - run: github/github-build-ubuntu-docker.sh
+        - run: chmod a+x ci/*.sh
+        - run: ci/circleci-build-debian.sh
         - deploy-code
 
 ## KEEP needed for OpenCPN v5.8 Jammy wx32 build
