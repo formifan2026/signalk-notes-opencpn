@@ -82,20 +82,6 @@ message(
     "${CMLOC}OCPN_FLATPAK_CONFIG: ${OCPN_FLATPAK_CONFIG}, OCPN_FLATPAK_BUILD: ${OCPN_FLATPAK_BUILD}, UNIX: ${UNIX}"
 )
 
-#if (DEFINED ENV{WX_VER})
-#  message(STATUS "${CMLOC}WX_VER defined in circleci config: $ENV{WX_VER}")
-#else ()
-#  message(STATUS "${CMLOC}WX_VER not defined in circleci config")
-#  set(ENV{WX_VER} ${WX_VER})
-#endif ()
-#if (DEFINED ENV{WX_VER_PATCH})
-#  message(STATUS "${CMLOC}WX_VER_PATCH defined in circleci config: $ENV{WX_VER_PATCH}")
-#else()
-#  message(STATUS "${CMLOC}WX_VER_PATCH not defined in circleci config: $ENV{WX_VER_PATCH}")
-#  set(ENV{WX_VER_PATCH} ${WX_VER_PATCH})
-#endif ()
-#message(STATUS "${CMLOC}WX_VER: $ENV{WX_VER}, WX_VER_PATCH: $ENV{WX_VER_PATCH}")
-
 unset(PKG_TARGET_WX_VER)
 if (OCPN_FLATPAK_CONFIG OR OCPN_FLATPAK_BUILD)
   set(PKG_TARGET "flatpak")
@@ -118,7 +104,6 @@ elseif (MSVC)
   set(PKG_TARGET "msvc")
   message(STATUS "${CMLOC}WX_VER: $ENV{WX_VER}")
   if (NOT "$ENV{WX_VER}" STREQUAL "31")
-    # if( NOT "$ENV{WX_VER}" STREQUAL "" )
     set(PKG_TARGET_WX_VER "-wx$ENV{WX_VER}")
   else ()
     unset(PKG_TARGET_WX_VER)
@@ -203,7 +188,35 @@ if (NOT WIN32 AND NOT QT_ANDROID)
 
     message(STATUS "${CMLOC}*** Will install to ${CMAKE_INSTALL_PREFIX}  ***")
 
-    if (EXISTS /etc/debian_version)
+    # ========================================================================
+    # FLATPAK CHECK FIRST - before any distribution detection
+    # This prevents Ubuntu from being detected as OpenSUSE (due to /etc/os-release)
+    # and ensures correct ARCH for GitHub Actions cross-compilation
+    # ========================================================================
+    if ("$ENV{OCPN_TARGET}" MATCHES "flatpak")
+      message(STATUS "${CMLOC}*** Flatpak build detected ***")
+      set(PACKAGE_FORMAT "TGZ")
+      set(LIB_INSTALL_DIR "lib")
+      
+      # For GitHub Actions cross-compilation, use BUILD_ARCH directly
+      if (DEFINED ENV{GITHUB_ACTIONS} AND DEFINED BUILD_ARCH AND NOT "${BUILD_ARCH}" STREQUAL "")
+        message(STATUS "${CMLOC}*** GitHub Actions cross-compile: ARCH=${BUILD_ARCH} ***")
+        set(ARCH "${BUILD_ARCH}")
+      elseif ("$ENV{BUILD_ARCH}" MATCHES "aarch64")
+        set(ARCH "aarch64")
+      elseif (CMAKE_SIZEOF_VOID_P MATCHES "8")
+        set(ARCH "x86_64")
+      else()
+        set(ARCH "i386")
+      endif()
+      
+      message(STATUS "${CMLOC}*** Flatpak ARCH: ${ARCH} ***")
+    endif()
+    # ========================================================================
+    # END FLATPAK CHECK
+    # ========================================================================
+
+    iif (NOT DEFINED PACKAGE_FORMAT AND EXISTS /etc/debian_version)
       message(STATUS "${CMLOC}*** Debian detected  ***")
       set(PACKAGE_FORMAT "DEB")
       set(PACKAGE_DEPS
@@ -228,14 +241,15 @@ if (NOT WIN32 AND NOT QT_ANDROID)
           set(ARCH "armhf")
           add_definitions(-DOCPN_ARMHF)
         endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
-       else (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*" OR (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND DEFINED ENV{GITHUB_ACTIONS}))
+      else (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*" OR (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND DEFINED ENV{GITHUB_ACTIONS}))
         if (CMAKE_SIZEOF_VOID_P MATCHES "8")
           set(ARCH "x86_64")
         else (CMAKE_SIZEOF_VOID_P MATCHES "8")
           set(ARCH "i386")
         endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
-      endif (CMAKE_SYSTEM_PROCESSOR MATCHES "arm*")
-    endif (EXISTS /etc/debian_version)
+      endif (CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*" OR (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND DEFINED ENV{GITHUB_ACTIONS}))
+    endif (NOT DEFINED PACKAGE_FORMAT AND EXISTS /etc/debian_version)
+    
     if (NOT DEFINED PACKAGE_FORMAT)
       if ("$ENV{OCPN_TARGET}" MATCHES "flatpak")
         message(STATUS "*** Flatpak detected  ***")
@@ -278,10 +292,10 @@ if (NOT WIN32 AND NOT QT_ANDROID)
     endif (NOT DEFINED PACKAGE_FORMAT)
 
     if (NOT DEFINED PACKAGE_FORMAT)
-      if (EXISTS /etc/os-release
-          OR EXISTS /etc/sysconfig/SuSEfirewall2.d
-          OR EXISTS /etc/suse-release
-          OR EXISTS /etc/SuSE-release
+      if ((EXISTS /etc/sysconfig/SuSEfirewall2.d
+           OR EXISTS /etc/suse-release
+           OR EXISTS /etc/SuSE-release)
+          AND NOT EXISTS /etc/debian_version
       )
         message(STATUS "${CMLOC}*** OpenSUSE detected  ***")
         set(PACKAGE_FORMAT "RPM")
@@ -294,10 +308,10 @@ if (NOT WIN32 AND NOT QT_ANDROID)
           set(LIB_INSTALL_DIR "lib")
         endif (CMAKE_SIZEOF_VOID_P MATCHES "8")
       endif (
-        EXISTS /etc/os-release
-        OR EXISTS /etc/sysconfig/SuSEfirewall2.d
-        OR EXISTS /etc/suse-release
-        OR EXISTS /etc/SuSE-release
+        (EXISTS /etc/sysconfig/SuSEfirewall2.d
+         OR EXISTS /etc/suse-release
+         OR EXISTS /etc/SuSE-release)
+        AND NOT EXISTS /etc/debian_version
       )
     endif (NOT DEFINED PACKAGE_FORMAT)
 
