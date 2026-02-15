@@ -50,10 +50,11 @@ fi
 
 
 #D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
-# TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
-# TTY-Flag abhängig von DOCKER_EXEC_NO_TTY setzen
+# TTY nur deaktivieren, wenn wir in GitHub Actions laufen
 TTY_FLAG=""
-[ "$DOCKER_EXEC_NO_TTY" != "1" ] && TTY_FLAG="-ti"
+if [ "$GITHUB_ACTIONS" != "true" ]; then
+    TTY_FLAG="-ti"
+fi
 
 # Dynamisch ENV-Variablen sammeln
 ENV_ARGS=()
@@ -112,13 +113,49 @@ echo "Docker Container ID: $DOCKER_CONTAINER_ID"
 
 # >>>>> NEU: unstable-Repo direkt nach Containerstart aktivieren <<<<<
 #Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
+#if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
+#    echo "Enabling unstable repo inside container (EARLY)"
+#    docker exec "$DOCKER_CONTAINER_ID" bash -c "
+#        echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
+#        apt-get update
+#        apt-get -y --fix-broken --fix-missing install
+#    "
+#fi
 if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
-    echo "Enabling unstable repo inside container (EARLY)"
-    docker exec "$DOCKER_CONTAINER_ID" bash -c "
-        echo 'deb http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
-        apt-get update
-        apt-get -y --fix-broken --fix-missing install
-    "
+    echo "Checking for missing packages and installing from unstable if required..."
+
+    docker exec "$DOCKER_CONTAINER_ID" bash -c '
+        set -e
+
+        # Liste der kritischen Pakete
+        PKGS="libwxgtk3.2-dev wx-common gettext"
+
+        # Fehlende Pakete sammeln
+        MISSING=""
+        for P in $PKGS; do
+            if ! dpkg -s "$P" >/dev/null 2>&1; then
+                echo "Package missing: $P"
+                MISSING="$MISSING $P"
+            fi
+        done
+
+        if [ -n "$MISSING" ]; then
+            echo "Installing missing packages from unstable: $MISSING"
+
+            # unstable temporär aktivieren
+            echo "deb [trusted=yes] http://deb.debian.org/debian unstable main" > /etc/apt/sources.list.d/unstable.list
+            apt-get update
+
+            # gezielt aus unstable installieren
+            apt-get install -y -t unstable $MISSING
+
+            # unstable wieder entfernen
+            rm /etc/apt/sources.list.d/unstable.list
+            apt-get update
+        else
+            echo "All required packages already installed."
+        fi
+    '
 fi
 # >>>>> ENDE NEU <<<<<
 

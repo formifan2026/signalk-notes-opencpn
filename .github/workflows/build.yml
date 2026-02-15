@@ -384,7 +384,6 @@ jobs:
 #     WX_VER: 32
 #     BUILD_ENV: debian
 #     DOCKER_IMAGE: debian:trixie
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -404,7 +403,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -428,7 +427,6 @@ jobs:
       BUILD_ENV: debian
       WX_VER: 32
       BUILD_GTK3: true
-      DOCKER_EXEC_NO_TTY: 1
       USE_UNSTABLE_REPO: ON
     steps:
       - name: Checkout code
@@ -450,7 +448,7 @@ jobs:
           path: build/*.tar.gz
           if-no-files-found: warn  
       - name: Deploy to Cloudsmith
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
         env:
           CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -475,7 +473,6 @@ jobs:
 #     BUILD_ENV: debian
 #     WX_VER: 32
 #     BUILD_GTK3: true
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -500,7 +497,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -524,7 +521,6 @@ jobs:
 #     WX_VER: 32
 #     BUILD_ENV: debian
 #     DOCKER_IMAGE: debian:bookworm
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -544,7 +540,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -569,7 +565,6 @@ jobs:
 #     BUILD_ENV: debian
 #     WX_VER: 32
 #     BUILD_GTK3: true
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -594,7 +589,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -619,7 +614,6 @@ jobs:
 #     BUILD_ENV: debian
 #     WX_VER: 32
 #     BUILD_GTK3: true
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -644,7 +638,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -668,7 +662,6 @@ jobs:
 #     BUILD_ARCH: amd64
 #     BUILD_GTK3: true
 #     BUILD_ENV: debian
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -693,7 +686,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -717,7 +710,6 @@ jobs:
 #     BUILD_FLAGS: -j3
 #     BUILD_ENV: debian
 #     BUILD_GTK3: true
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -742,7 +734,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -766,7 +758,6 @@ jobs:
 #     BUILD_FLAGS: -j3
 #     BUILD_ENV: debian
 #     BUILD_GTK3: true
-#     DOCKER_EXEC_NO_TTY: 1
 #   steps:
 #     - name: Checkout code
 #       uses: actions/checkout@v4
@@ -791,7 +782,7 @@ jobs:
 #         if-no-files-found: warn
 #
 #     - name: Deploy to Cloudsmith
-#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')
+#       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
 #       env:
 #         CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
 #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
