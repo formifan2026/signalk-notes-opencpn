@@ -330,6 +330,8 @@ jobs:
         - MSVC_VERSION: 2022
         - WX_VER: 32
         - DEPLOY_USE_ORB: false
+        - APPVEYOR: 1 
+        - CI: ""
         steps:
         - checkout
         - run:
@@ -616,6 +618,8 @@ jobs:
 #        - WX_VER: 31
 #        - WX_VER_PATCH: 2
 #        - DEPLOY_USE_ORB: false
+#        - APPVEYOR: 1 
+#        - CI: ""
 #        steps:
 #        - checkout
 #        - run:
