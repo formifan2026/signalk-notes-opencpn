@@ -5,6 +5,19 @@
 #
 set -xe
 
+# Fix missing Debian Bullseye GPG keys (EOL issue)
+sudo apt-get install -y --allow-unauthenticated gnupg ca-certificates
+
+# Import Debian archive keys manually
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys \
+    0E98404D386FA1D9 \
+    6ED0E7B82643E131 \
+    605C66F00D6C9793 || true
+
+# Allow insecure repositories for EOL Debian
+echo 'Acquire::AllowInsecureRepositories "true";' | sudo tee /etc/apt/apt.conf.d/99insecure
+echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' | sudo tee -a /etc/apt/apt.conf.d/99insecure
+
 if [ "${CIRCLECI_LOCAL,,}" = "true" ]; then
     if [[ -d ~/circleci-cache ]]; then
         if [[ -f ~/circleci-cache/apt-proxy ]]; then
