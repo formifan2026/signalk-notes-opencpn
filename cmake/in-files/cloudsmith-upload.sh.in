@@ -271,28 +271,6 @@ echo "DEBUG: Condition 2: [[ -n \"${collab_users+1}\" && ! -z ${CIRCLE_USERNAME}
 #    Following statement does not work, if circleci is triggered by Github action:
 #    if [ "$CIRCLE_PROJECT_USERNAME" = "$CIRCLE_USERNAME" ] || [[ -n "${collab_users+1}"  && ! -z ${CIRCLE_USERNAME}  && "$collab_users" =~ "$git_user" ]]; then
     if true; then
-        # Function to delete existing artifact
-        delete_if_exists() {
-            local name="$1"
-
-            # Liste aller Pakete im Repo abrufen
-            local id=$(cloudsmith list packages "$REPO" --format json \
-                | jq -r ".[] | select(.name==\"$name\") | .identifier")
-
-            if [ -n "$id" ]; then
-                echo "Deleting existing artifact: $name (id: $id)"
-                cloudsmith delete package "$REPO" "$id"
-            fi
-        }
-
-
-        # Delete old artifacts
-        delete_if_exists "@PACKAGE_NAME@-@PACKAGE_VERSION@-${PKG_TARGET}-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-${PKG_TARGET_VERSION}-${OCPN_TARGET}-metadata"
-        delete_if_exists "$tarball_name"
-        if [ "${PKG_EXT}" != "gz" ] && [ "$pkg" != "" ]; then
-            delete_if_exists "opencpn-package-@PACKAGE@-@PACKAGE_VERSION@-${PKG_TARGET}-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-${PKG_TARGET_VERSION}-${OCPN_TARGET}.${PKG_EXT}"
-        fi
-
 
         cloudsmith push raw --republish --no-wait-for-sync \
             --name @PACKAGE_NAME@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}-metadata \
