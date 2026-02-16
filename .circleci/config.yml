@@ -83,79 +83,60 @@ std-filters: &std-filters
 
 workflows:
    build_all:
-       when: << pipeline.parameters.run_workflow_deploy >>
        jobs:
          - build-android-arm64:
              <<: *std-filters
-             when: << pipeline.parameters.build_android_arm64 >>
     
          - build-android-armhf:
              <<: *std-filters
-             when: << pipeline.parameters.build_android_armhf >>
     
          - build-flatpak-aarch64-2208:
              <<: *std-filters
-             when: << pipeline.parameters.build_flatpak_aarch64_2208 >>
     
          - build-flatpak-x86-2208:
              <<: *std-filters
-             when: << pipeline.parameters.build_flatpak_x86_2208 >>
     
          - build-flatpak-aarch64-2408:
              <<: *std-filters
-             when: << pipeline.parameters.build_flatpak_aarch64_2408 >>
     
          - build-flatpak-x86-2408:
              <<: *std-filters
-             when: << pipeline.parameters.build_flatpak_x86_2408 >>
     
          - build-msvc-wx32-2022:
              <<: *std-filters
-             when: << pipeline.parameters.build_msvc_wx32_2022 >>
     
          - build-debian-armhf-13-trixie:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_armhf_13_trixie >>
     
          - build-debian-arm64-13-trixie:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_arm64_13_trixie >>
     
          - build-debian-x86_64-13-trixie:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_x86_64_13_trixie >>
     
          - build-debian-arm64-12-bookworm:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_arm64_12_bookworm >>
     
          - build-debian-armhf-12-bookworm:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_armhf_12_bookworm >>
     
          - build-debian-x86_64-12-bookworm:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_x86_64_12_bookworm >>
     
          - build-debian-armhf-11-bullseye:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_armhf_11_bullseye >>
     
          - build-debian-arm64-11-bullseye:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_arm64_11_bullseye >>
     
          - build-debian-x86_64-11-bullseye:
              <<: *std-filters
-             when: << pipeline.parameters.build_debian_x86_64_11_bullseye >>
     
          - build-ubuntu-x86_64-2204-jammy:
              <<: *std-filters
-             when: << pipeline.parameters.build_ubuntu_x86_64_2204_jammy >>
     
          - build-macos-universal:
              <<: *std-filters
-             when: << pipeline.parameters.build_macos_universal >>
 
 ## -------------------------------------------
 ## OpenCPN 5.6.2 Plugins  Frozen - 28/05/2023
@@ -163,7 +144,6 @@ workflows:
 ## Circleci will not build for macos 11 so removed - 18/10/2023
 #         - build-msvc-2022:
 #             <<: *std-filters
-#             when: << pipeline.parameters.build_msvc_2022 >>
 
 
 orbs:
@@ -234,11 +214,14 @@ jobs:
         - DEPLOY_USE_ORB: true
         - INSTALL_PYTHON: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run: bash ci/circleci-build-android-arm64.sh
-        - deploy-code:
-            install_python: true
+        - when:
+            condition: << pipeline.parameters.build_android_arm64 >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run: bash ci/circleci-build-android-arm64.sh
+            - deploy-code:
+                install_python: true
     build-android-armhf:
         docker:
         - image: cimg/android:2022.12-ndk
@@ -248,11 +231,14 @@ jobs:
         - DEPLOY_USE_ORB: true
         - INSTALL_PYTHON: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run: bash ci/circleci-build-android-armhf.sh
-        - deploy-code:
-            install_python: true
+        - when:
+            condition: << pipeline.parameters.build_android_armhf >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run: bash ci/circleci-build-android-armhf.sh
+            - deploy-code:
+                install_python: true
     build-macos-universal:
         macos:
             xcode: 15.4.0
@@ -263,29 +249,32 @@ jobs:
             DEPLOY_USE_ORB: false
             INSTALL_PYTHON: false
         steps:
-        - checkout
-        - run: sudo chmod go+w /usr/local
-        - restore_cache:
-            key: "{{checksum \"build-deps/macos-cache-stamp\"}}\
-              -{{checksum \"cmake/MacosWxwidgets.cmake\"}}\
-              -{{checksum \"ci/circleci-build-macos-universal.sh\"}}"
-        - run: chmod a+x ci/*.sh
-        - run: chmod a+x cmake/*.sh
-        - run: ci/circleci-build-macos-universal.sh
-        - save_cache:
-            key: "{{checksum \"build-deps/macos-cache-stamp\"}}\
-              -{{checksum \"cmake/MacosWxwidgets.cmake\"}}\
-              -{{checksum \"ci/circleci-build-macos-universal.sh\"}}"
-            paths:
-              - /tmp/local.cache.tar
-              - /Users/distiller/project/cache
-        - run: >
-              sh -c "otool -L build/*.dylib"
-        - run: >
-              sh -c "cat build/*.xml"
-        - deploy-code:
-            deploy_use_orb: false
-            install_python: false
+        - when:
+            condition: << pipeline.parameters.build_macos_universal >>
+            steps:
+            - checkout
+            - run: sudo chmod go+w /usr/local
+            - restore_cache:
+                key: "{{checksum \"build-deps/macos-cache-stamp\"}}\
+                  -{{checksum \"cmake/MacosWxwidgets.cmake\"}}\
+                  -{{checksum \"ci/circleci-build-macos-universal.sh\"}}"
+            - run: chmod a+x ci/*.sh
+            - run: chmod a+x cmake/*.sh
+            - run: ci/circleci-build-macos-universal.sh
+            - save_cache:
+                key: "{{checksum \"build-deps/macos-cache-stamp\"}}\
+                  -{{checksum \"cmake/MacosWxwidgets.cmake\"}}\
+                  -{{checksum \"ci/circleci-build-macos-universal.sh\"}}"
+                paths:
+                  - /tmp/local.cache.tar
+                  - /Users/distiller/project/cache
+            - run: >
+                  sh -c "otool -L build/*.dylib"
+            - run: >
+                  sh -c "cat build/*.xml"
+            - deploy-code:
+                deploy_use_orb: false
+                install_python: false
     build-msvc-wx32-2022:
         executor:
             name: win/server-2022
@@ -296,13 +285,16 @@ jobs:
         - WX_VER: 32
         - DEPLOY_USE_ORB: false
         steps:
-        - checkout
-        - run:
-            privileged: False
-            shell: cmd.exe
-            command: ci\circleci-build-msvc.bat
-        - deploy-code:
-            deploy_use_orb: false
+        - when:
+            condition: << pipeline.parameters.build_msvc_wx32_2022 >>
+            steps:
+            - checkout
+            - run:
+                privileged: False
+                shell: cmd.exe
+                command: ci\circleci-build-msvc.bat
+            - deploy-code:
+                deploy_use_orb: false
 
     build-flatpak-aarch64-2208:
         machine:
@@ -316,11 +308,14 @@ jobs:
         - SDK_VER: 22.08
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run:
-            command: bash ci/circleci-build-flatpak.sh
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_flatpak_aarch64_2208 >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run:
+                command: bash ci/circleci-build-flatpak.sh
+            - deploy-code
     build-flatpak-x86-2208:
         machine:
             image: ubuntu-2404:current
@@ -332,12 +327,15 @@ jobs:
         - SDK_VER: 22.08
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run:
-            command: bash ci/circleci-build-flatpak.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_flatpak_x86_2208 >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run:
+                command: bash ci/circleci-build-flatpak.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-flatpak-aarch64-2408:
         machine:
             image: ubuntu-2404:current
@@ -350,11 +348,14 @@ jobs:
         - SDK_VER: 24.08
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run:
-            command: bash ci/circleci-build-flatpak.sh
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_flatpak_aarch64_2408 >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run:
+                command: bash ci/circleci-build-flatpak.sh
+            - deploy-code
     build-flatpak-x86-2408:
         machine:
             image: ubuntu-2404:current
@@ -366,12 +367,15 @@ jobs:
         - SDK_VER: 24.08
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ci/*.sh
-        - run:
-            command: bash ci/circleci-build-flatpak.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_flatpak_x86_2408 >>
+            steps:
+            - checkout
+            - run: chmod a+x ci/*.sh
+            - run:
+                command: bash ci/circleci-build-flatpak.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-arm64-13-trixie:
         machine:
             image: ubuntu-2204:current
@@ -385,12 +389,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_arm64_13_trixie >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-armhf-13-trixie:
         machine:
             image: ubuntu-2204:current
@@ -404,12 +411,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_armhf_13_trixie >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-x86_64-13-trixie:
         machine:
             image: ubuntu-2404:current
@@ -421,12 +431,15 @@ jobs:
         - BUILD_ENV: debian
         - DOCKER_IMAGE: debian:trixie
         steps:
-        - checkout
-        - run: chmod a+x github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_x86_64_13_trixie >>
+            steps:
+            - checkout
+            - run: chmod a+x github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-arm64-12-bookworm:
         machine:
             image: ubuntu-2204:current
@@ -440,12 +453,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_arm64_12_bookworm >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-armhf-12-bookworm:
         machine:
             image: ubuntu-2204:current
@@ -459,12 +475,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_armhf_12_bookworm >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-x86_64-12-bookworm:
         machine:
             image: ubuntu-2404:current
@@ -476,12 +495,15 @@ jobs:
         - BUILD_ENV: debian
         - DOCKER_IMAGE: debian:bookworm
         steps:
-        - checkout
-        - run: chmod a+x github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_x86_64_12_bookworm >>
+            steps:
+            - checkout
+            - run: chmod a+x github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-armhf-11-bullseye:
         machine:
             image: ubuntu-2204:current
@@ -494,12 +516,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_armhf_11_bullseye >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-arm64-11-bullseye:
         machine:
             image: ubuntu-2204:current
@@ -512,12 +537,15 @@ jobs:
         - BUILD_GTK3: true
         - DEPLOY_USE_ORB: true
         steps:
-        - checkout
-        - run: chmod a+x ./github/*.sh
-        - run:
-            command: github/github-build-ubuntu-docker.sh
-            no_output_timeout: 30m
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_arm64_11_bullseye >>
+            steps:
+            - checkout
+            - run: chmod a+x ./github/*.sh
+            - run:
+                command: github/github-build-ubuntu-docker.sh
+                no_output_timeout: 30m
+            - deploy-code
     build-debian-x86_64-11-bullseye:
         machine: 
           image: ubuntu-2004:current
@@ -528,17 +556,20 @@ jobs:
         - BUILD_ENV: debian
         - DOCKER_IMAGE: opencpn/ci-debian-bullseye-x86_64:latest
         steps:
-        - checkout
-        - run: >
-            echo "deb-src http://ftp.us.debian.org/debian bullseye main"
-            | sudo tee -a /etc/apt/sources.list
-        - run: >
-            echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main"
-            | sudo tee -a /etc/apt/sources.list
-        - run: cat /etc/apt/sources.list
-        - run: chmod a+x github/*.sh
-        - run: github/github-build-debian.sh
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_debian_x86_64_11_bullseye >>
+            steps:
+            - checkout
+            - run: >
+                echo "deb-src http://ftp.us.debian.org/debian bullseye main"
+                | sudo tee -a /etc/apt/sources.list
+            - run: >
+                echo "deb-src http://ftp.us.debian.org/debian bullseye-updates main"
+                | sudo tee -a /etc/apt/sources.list
+            - run: cat /etc/apt/sources.list
+            - run: chmod a+x github/*.sh
+            - run: github/github-build-debian.sh
+            - deploy-code
 
     build-ubuntu-x86_64-2204-jammy:
       docker:
@@ -550,17 +581,20 @@ jobs:
         DEPLOY_USE_ORB: true
         BUILD_ENV: ubuntu
       steps:
-        - checkout
-        - run:
-            name: "Update apt sources"
-            command: |
-              echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
-              echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
-              echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
-        - run: cat /etc/apt/sources.list
-        - run: chmod a+x ci/*.sh
-        - run: ci/circleci-build-debian.sh
-        - deploy-code
+        - when:
+            condition: << pipeline.parameters.build_ubuntu_x86_64_2204_jammy >>
+            steps:
+            - checkout
+            - run:
+                name: "Update apt sources"
+                command: |
+                  echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+                  echo "deb-src http://us.archive.ubuntu.com/ubuntu/ jammy-updates main" | sudo tee -a /etc/apt/sources.list
+                  echo "deb [trusted=yes] https://ppa.launchpadcontent.net/opencpn/opencpn/ubuntu/ jammy main" | sudo tee -a /etc/apt/sources.list
+            - run: cat /etc/apt/sources.list
+            - run: chmod a+x ci/*.sh
+            - run: ci/circleci-build-debian.sh
+            - deploy-code
 
 
 ## ---------------------
@@ -581,10 +615,13 @@ jobs:
 #        - WX_VER_PATCH: 2
 #        - DEPLOY_USE_ORB: false
 #        steps:
-#        - checkout
-#        - run:
-#            privileged: False
-#            shell: cmd.exe
-#            command: ci\circleci-build-msvc.bat
-#        - deploy-code:
-#            deploy_use_orb: false
+#        - when:
+#            condition: << pipeline.parameters.build_msvc_2022 >>
+#            steps:
+#            - checkout
+#            - run:
+#                privileged: False
+#                shell: cmd.exe
+#                command: ci\circleci-build-msvc.bat
+#            - deploy-code:
+#                deploy_use_orb: false
