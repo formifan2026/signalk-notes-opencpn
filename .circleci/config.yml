@@ -3,8 +3,74 @@ version: 2.1
 
 parameters:
     run_workflow_deploy:
-        type: boolean
-        default: true
+      type: boolean
+      default: true
+  
+    build_android_arm64:
+      type: boolean
+      default: false
+    build_android_armhf:
+      type: boolean
+      default: false
+  
+    build_flatpak_aarch64_2208:
+      type: boolean
+      default: false
+    build_flatpak_x86_2208:
+      type: boolean
+      default: false
+    build_flatpak_aarch64_2408:
+      type: boolean
+      default: false
+    build_flatpak_x86_2408:
+      type: boolean
+      default: false
+  
+    build_msvc_wx32_2022:
+      type: boolean
+      default: true
+  
+    build_debian_armhf_13_trixie:
+      type: boolean
+      default: false
+    build_debian_arm64_13_trixie:
+      type: boolean
+      default: false
+    build_debian_x86_64_13_trixie:
+      type: boolean
+      default: false
+  
+    build_debian_arm64_12_bookworm:
+      type: boolean
+      default: false
+    build_debian_armhf_12_bookworm:
+      type: boolean
+      default: false
+    build_debian_x86_64_12_bookworm:
+      type: boolean
+      default: false
+  
+    build_debian_armhf_11_bullseye:
+      type: boolean
+      default: false
+    build_debian_arm64_11_bullseye:
+      type: boolean
+      default: false
+    build_debian_x86_64_11_bullseye:
+      type: boolean
+      default: false
+  
+    build_ubuntu_x86_64_2204_jammy:
+      type: boolean
+      default: false
+  
+    build_macos_universal:
+      type: boolean
+      default: false
+
+    #build_msvc_2022:
+    #  type: boolean
+    #  default: false
 
 std-filters: &std-filters
     filters:
@@ -22,42 +88,80 @@ workflows:
 ## OpenCPN 5.8 Plugins
 ## ----------------------
           - build-android-arm64:
-              <<: *std-filters
-          - build-android-armhf:
-                <<: *std-filters
-          - build-flatpak-aarch64-2208:
-              <<: *std-filters
-          - build-flatpak-x86-2208:
-              <<: *std-filters
-          - build-flatpak-aarch64-2408:
-              <<: *std-filters
-          - build-flatpak-x86-2408:
-              <<: *std-filters
-          - build-msvc-wx32-2022:
-              <<: *std-filters
-          - build-debian-armhf-13-trixie:
-              <<: *std-filters
-          - build-debian-arm64-13-trixie:
-              <<: *std-filters
-          - build-debian-x86_64-13-trixie:
-              <<: *std-filters
-          - build-debian-arm64-12-bookworm:
-              <<: *std-filters
-          - build-debian-armhf-12-bookworm:
-              <<: *std-filters
-          - build-debian-x86_64-12-bookworm:
-              <<: *std-filters
-          - build-debian-armhf-11-bullseye:
-              <<: *std-filters
-          - build-debian-arm64-11-bullseye:
-              <<: *std-filters
-          - build-debian-x86_64-11-bullseye:
-             <<: *std-filters
-## KEEP needed for Jammy with wx32
-          - build-ubuntu-x86_64-2204-jammy:
-              <<: *std-filters
-          - build-macos-universal:
-              <<: *std-filters
+workflows:
+   build_all:
+     jobs:
+       - build-android-arm64:
+           <<: *std-filters
+           when: << pipeline.parameters.build_android_arm64 >>
+  
+       - build-android-armhf:
+           <<: *std-filters
+           when: << pipeline.parameters.build_android_armhf >>
+  
+       - build-flatpak-aarch64-2208:
+           <<: *std-filters
+           when: << pipeline.parameters.build_flatpak_aarch64_2208 >>
+  
+       - build-flatpak-x86-2208:
+           <<: *std-filters
+           when: << pipeline.parameters.build_flatpak_x86_2208 >>
+  
+       - build-flatpak-aarch64-2408:
+           <<: *std-filters
+           when: << pipeline.parameters.build_flatpak_aarch64_2408 >>
+  
+       - build-flatpak-x86-2408:
+           <<: *std-filters
+           when: << pipeline.parameters.build_flatpak_x86_2408 >>
+  
+       - build-msvc-wx32-2022:
+           <<: *std-filters
+           when: << pipeline.parameters.build_msvc_wx32_2022 >>
+  
+       - build-debian-armhf-13-trixie:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_armhf_13_trixie >>
+  
+       - build-debian-arm64-13-trixie:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_arm64_13_trixie >>
+  
+       - build-debian-x86_64-13-trixie:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_x86_64_13_trixie >>
+  
+       - build-debian-arm64-12-bookworm:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_arm64_12_bookworm >>
+  
+       - build-debian-armhf-12-bookworm:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_armhf_12_bookworm >>
+  
+       - build-debian-x86_64-12-bookworm:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_x86_64_12_bookworm >>
+  
+       - build-debian-armhf-11-bullseye:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_armhf_11_bullseye >>
+  
+       - build-debian-arm64-11-bullseye:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_arm64_11_bullseye >>
+  
+       - build-debian-x86_64-11-bullseye:
+           <<: *std-filters
+           when: << pipeline.parameters.build_debian_x86_64_11_bullseye >>
+  
+       - build-ubuntu-x86_64-2204-jammy:
+           <<: *std-filters
+           when: << pipeline.parameters.build_ubuntu_x86_64_2204_jammy >>
+  
+       - build-macos-universal:
+           <<: *std-filters
+           when: << pipeline.parameters.build_macos_universal >>
 
 ## -------------------------------------------
 ## OpenCPN 5.6.2 Plugins  Frozen - 28/05/2023
@@ -65,6 +169,8 @@ workflows:
 ## Circleci will not build for macos 11 so removed - 18/10/2023
 #          - build-msvc-2022:
 #              <<: *std-filters
+#              when: << pipeline.parameters.build_msvc_2022 >>
+
 
 orbs:
     cloudsmith: cloudsmith/cloudsmith@1.0.5
@@ -210,21 +316,8 @@ jobs:
             privileged: False
             shell: cmd.exe
             command: ci\circleci-build-msvc.bat
-        #- deploy-code:
-        #    deploy_use_orb: false
-        - run:
-            name: Upload to Cloudsmith (Windows)
-            shell: bash.exe
-            command: |
-              echo "Pretending to be APPVEYOR so Windows upload works"
-              unset CIRCLECI
-              export APPVEYOR=true
-
-              echo "Installing Cloudsmith CLI"
-              pip install cloudsmith-cli
-
-              echo "Running Windows-compatible upload script"
-              bash build/cloudsmith-upload.sh
+        - deploy-code:
+            deploy_use_orb: false
 
     build-flatpak-aarch64-2208:
         machine:
