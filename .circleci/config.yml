@@ -83,6 +83,7 @@ std-filters: &std-filters
 
 workflows:
    build_all:
+       when: << pipeline.parameters.run_workflow_deploy >>
        jobs:
          - build-android-arm64:
              <<: *std-filters
@@ -160,9 +161,9 @@ workflows:
 ## OpenCPN 5.6.2 Plugins  Frozen - 28/05/2023
 ## ------------------------------------------
 ## Circleci will not build for macos 11 so removed - 18/10/2023
-#          - build-msvc-2022:
-#              <<: *std-filters
-#              when: << pipeline.parameters.build_msvc_2022 >>
+#         - build-msvc-2022:
+#             <<: *std-filters
+#             when: << pipeline.parameters.build_msvc_2022 >>
 
 
 orbs:
@@ -223,16 +224,7 @@ commands:
         - get-collaborators
         - get-git-user
 
-# if you want to use a local proxy add Acquire::http::Proxy \"http://192.168.1.1:3142\"; to a file called circleci-cache/apt-proxy. This will require
-#    --volume {your local directory}/circleci-cache:/home/circleci/circleci-cache
-# on the circleci local command line so that the docker image script can have access to the directory
-# if you are on a slow or data limited internet link you can put a copy of master.zip here, or allow one to be downloaded by the script, as it is used by the android builds to
-# provide the wxWidgets QT information.
-
 jobs:
-## ---------------------
-## OpenCPN 5.8 Plugins
-## ---------------------
     build-android-arm64:
         docker:
         - image: cimg/android:2023.12-ndk
@@ -548,7 +540,6 @@ jobs:
         - run: github/github-build-debian.sh
         - deploy-code
 
-## KEEP needed for OpenCPN v5.8 Jammy wx32 build
     build-ubuntu-x86_64-2204-jammy:
       docker:
         - image: cimg/base:edge-22.04
@@ -597,5 +588,3 @@ jobs:
 #            command: ci\circleci-build-msvc.bat
 #        - deploy-code:
 #            deploy_use_orb: false
-
-
