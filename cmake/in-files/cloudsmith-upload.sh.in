@@ -271,7 +271,6 @@ echo "DEBUG: Condition 2: [[ -n \"${collab_users+1}\" && ! -z ${CIRCLE_USERNAME}
 #    Following statement does not work, if circleci is triggered by Github action:
 #    if [ "$CIRCLE_PROJECT_USERNAME" = "$CIRCLE_USERNAME" ] || [[ -n "${collab_users+1}"  && ! -z ${CIRCLE_USERNAME}  && "$collab_users" =~ "$git_user" ]]; then
     if true; then
-
         cloudsmith push raw --republish --no-wait-for-sync \
             --name @PACKAGE_NAME@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}-metadata \
             --version ${VERSION} \
