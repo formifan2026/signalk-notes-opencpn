@@ -18,7 +18,7 @@ env:
 
   # Whether a single build is started can be controlled via the repository variable BUILD_CONFIG, which must look like this:
   # {"BUILD_ANDROID_ARM64":true,"BUILD_ANDROID_ARMHF":true,"BUILD_MACOS_UNIVERSAL":true,"BUILD_MSVC_WX32_2022":true,"BUILD_FLATPAK_AARCH64_2208":true,"BUILD_FLATPAK_X86_2208":true,"BUILD_FLATPAK_AARCH64_2408":true,"BUILD_FLATPAK_X86_2408":true,"BUILD_DEBIAN_X86_64_13_TRIXIE":true,"BUILD_DEBIAN_ARM64_13_TRIXIE":true,"BUILD_DEBIAN_ARMHF_13_TRIXIE":true,"BUILD_DEBIAN_X86_64_12_BOOKWORM":true,"BUILD_DEBIAN_ARM64_12_BOOKWORM":true,"BUILD_DEBIAN_ARMHF_12_BOOKWORM":true,"BUILD_DEBIAN_X86_64_11_BULLSEYE":false,"BUILD_DEBIAN_ARM64_11_BULLSEYE":false,"BUILD_DEBIAN_ARMHF_11_BULLSEYE":false,"BUILD_UBUNTU_X86_64_2204_JAMMY":true}
-  # If the repository variable does not exist all builds will be executed.
+  # If the repository variable does not exist all builds will be executed. 
 
 jobs:
 # =============================================================================
