@@ -33,23 +33,23 @@ parameters:
   
     build_debian_armhf_13_trixie:
       type: boolean
-      default: false
+      default: true
     build_debian_arm64_13_trixie:
       type: boolean
-      default: false
+      default: true
     build_debian_x86_64_13_trixie:
       type: boolean
-      default: false
+      default: true
   
     build_debian_arm64_12_bookworm:
       type: boolean
-      default: true
+      default: false
     build_debian_armhf_12_bookworm:
       type: boolean
-      default: true
+      default: false
     build_debian_x86_64_12_bookworm:
       type: boolean
-      default: true
+      default: false
   
     build_debian_armhf_11_bullseye:
       type: boolean
@@ -425,9 +425,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./github/*.sh
+        - run: chmod a+x ./ci/*.sh
         - run:
-            command: github/github-build-ubuntu-docker.sh
+            command: ci/circleci-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-armhf-13-trixie:
@@ -444,9 +444,9 @@ jobs:
         - DEPLOY_USE_ORB: true
         steps:
         - checkout
-        - run: chmod a+x ./github/*.sh
+        - run: chmod a+x ./ci/*.sh
         - run:
-            command: github/github-build-ubuntu-docker.sh
+            command: ci/circleci-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-x86_64-13-trixie:
@@ -461,9 +461,9 @@ jobs:
         - DOCKER_IMAGE: debian:trixie
         steps:
         - checkout
-        - run: chmod a+x github/*.sh
+        - run: chmod a+x ci/*.sh
         - run:
-            command: github/github-build-ubuntu-docker.sh
+            command: ci/circleci-build-ubuntu-docker.sh
             no_output_timeout: 30m
         - deploy-code
     build-debian-arm64-12-bookworm:
