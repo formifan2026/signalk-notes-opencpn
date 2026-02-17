@@ -8,11 +8,11 @@ runs:
       shell: bash
       run: |
         if [[ "${{ github.event_name }}" == "push" ]] && \
-           ([[ "${{ github.ref }}" == refs/tags/* ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]); then
+           ([[ "${{ github.ref }}" == refs/tags/* ]] || [[ "${{ github.ref }}" == "refs/heads/master" ]]); then
           echo "should_deploy=true" >> $GITHUB_OUTPUT
         else
           echo "should_deploy=false" >> $GITHUB_OUTPUT
-          echo "Skipping deployment (not a push to main or tag)"
+          echo "Skipping deployment (not a push to master or tag)"
         fi
     
     - name: Setup and Deploy to Cloudsmith
