@@ -51,6 +51,9 @@ runs:
             # Convert using pwd (we're already in the workspace)
             export GITHUB_WORKSPACE=$(pwd)
           fi
+          
+          # Windows hat kein sudo - erstelle einen dummy alias
+          alias sudo=''
         fi
         
         echo "Deploying to Cloudsmith..."
