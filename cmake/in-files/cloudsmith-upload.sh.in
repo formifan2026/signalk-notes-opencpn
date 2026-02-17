@@ -270,26 +270,53 @@ echo "DEBUG: Condition 2: [[ -n \"${collab_users+1}\" && ! -z ${CIRCLE_USERNAME}
 
 #    Following statement does not work, if circleci is triggered by Github action:
 #    if [ "$CIRCLE_PROJECT_USERNAME" = "$CIRCLE_USERNAME" ] || [[ -n "${collab_users+1}"  && ! -z ${CIRCLE_USERNAME}  && "$collab_users" =~ "$git_user" ]]; then
-    if true; then
-    
-        cloudsmith push raw --republish --no-wait-for-sync \
-            --name @PACKAGE_NAME@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}-metadata \
-            --version ${VERSION} \
-            --summary "@PACKAGE@ opencpn plugin metadata for automatic installation" \
-            $REPO $xml
 
-        cloudsmith push raw --republish --no-wait-for-sync \
-            --name $tarball_name \
-            --version ${VERSION} \
-            --summary "@PACKAGE@ opencpn plugin tarball for automatic installation" \
-            $REPO $tarball
-
-        if [ "${PKG_EXT}" != "gz" ] && [ "$pkg" != "" ]; then
-            cloudsmith push raw --republish --no-wait-for-sync \
-                --name opencpn-package-@PACKAGE@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}.${PKG_EXT} \
-                --version ${VERSION} \
-                --summary "@PACKAGE@ .${PKG_EXT} installation package" \
-                $REPO $pkg
-        fi
-    fi
+     # Funktion: vorhandenes Paket löschen
+     delete_if_exists() {
+         local name="$1"
+         # Prüfen, ob ein Paket mit exakt diesem Namen existiert
+         if cloudsmith list raw "$REPO" --format json | grep -F "\"name\": \"$name\"" >/dev/null; then
+             echo "Deleting existing artifact: $name"
+             cloudsmith delete raw "$REPO" "$name"
+         fi
+     }
+     #
+     # 1) METADATA XML
+     #
+     xml_name="@PACKAGE_NAME@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}-metadata"
+     if [ -f "$xml" ]; then
+         echo "Checking Cloudsmith for existing metadata package: $xml_name"
+         delete_if_exists "$xml_name"
+         cloudsmith push raw --republish --no-wait-for-sync \
+             --name "$xml_name" \
+             --version "${VERSION}" \
+             --summary "@PACKAGE@ opencpn plugin metadata for automatic installation" \
+             "$REPO" "$xml"
+     fi
+     #
+     # 2) TARBALL
+     #
+     tar_name="$tarball_name"
+     if [ -f "$tarball" ]; then
+         echo "Checking Cloudsmith for existing tarball: $tar_name"
+         delete_if_exists "$tar_name"
+         cloudsmith push raw --republish --no-wait-for-sync \
+             --name "$tar_name" \
+             --version "${VERSION}" \
+             --summary "@PACKAGE@ opencpn plugin tarball for automatic installation" \
+             "$REPO" "$tarball"
+     fi
+     #
+     # 3) INSTALLATION PACKAGE (.deb, .apk, .zip, etc.)
+     #
+     pkg_name="opencpn-package-@PACKAGE@-@PACKAGE_VERSION@-@PKG_TARGET@-@COMPOUND_ARCH_DASH@@PKG_TARGET_WX_VER@@PKG_BUILD_GTK@-@PKG_TARGET_VERSION@-${OCPN_TARGET}.${PKG_EXT}"
+     if [ "${PKG_EXT}" != "gz" ] && [ -f "$pkg" ]; then
+         echo "Checking Cloudsmith for existing install package: $pkg_name"
+         delete_if_exists "$pkg_name"
+         cloudsmith push raw --republish --no-wait-for-sync \
+             --name "$pkg_name" \
+             --version "${VERSION}" \
+             --summary "@PACKAGE@ .${PKG_EXT} installation package" \
+             "$REPO" "$pkg"
+     fi
 fi

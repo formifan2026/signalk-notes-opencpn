@@ -6,6 +6,7 @@ parameters:
       type: boolean
       default: true
   
+    # Every build below can be activated by setting default to true (or deactivated by setting default: false)
     build_android_arm64:
       type: boolean
       default: false
