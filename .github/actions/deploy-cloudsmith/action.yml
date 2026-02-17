@@ -43,6 +43,14 @@ runs:
         # Windows (nur 1 Build: build-msvc-wx32-2022)
         elif [ "$RUNNER_OS" = "Windows" ]; then
           pip install cloudsmith-cli
+          
+          # Fix: Convert GITHUB_WORKSPACE to Unix path for Git Bash
+          # Windows: D:\a\signalk-notes-opencpn\signalk-notes-opencpn
+          # Unix:    /d/a/signalk-notes-opencpn/signalk-notes-opencpn
+          if [ -n "$GITHUB_WORKSPACE" ]; then
+            # Convert using pwd (we're already in the workspace)
+            export GITHUB_WORKSPACE=$(pwd)
+          fi
         fi
         
         echo "Deploying to Cloudsmith..."
