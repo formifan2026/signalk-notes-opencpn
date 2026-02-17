@@ -9,10 +9,10 @@ parameters:
     # Every build below can be activated by setting default to true (or deactivated by setting default: false)
     build_android_arm64:
       type: boolean
-      default: false
+      default: true
     build_android_armhf:
       type: boolean
-      default: false
+      default: true
   
     build_flatpak_aarch64_2208:
       type: boolean
@@ -33,13 +33,13 @@ parameters:
   
     build_debian_armhf_13_trixie:
       type: boolean
-      default: true
+      default: false
     build_debian_arm64_13_trixie:
       type: boolean
-      default: true
+      default: false
     build_debian_x86_64_13_trixie:
       type: boolean
-      default: true
+      default: false
   
     build_debian_arm64_12_bookworm:
       type: boolean
