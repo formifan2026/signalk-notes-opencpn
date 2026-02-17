@@ -1,0 +1,52 @@
+name: 'Deploy to Cloudsmith'
+description: 'Deploy to Cloudsmith with automatic platform detection and condition checking'
+runs:
+  using: "composite"
+  steps:
+    - name: Check deployment conditions
+      id: check
+      shell: bash
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]] && \
+           ([[ "${{ github.ref }}" == refs/tags/* ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]]); then
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+        else
+          echo "should_deploy=false" >> $GITHUB_OUTPUT
+          echo "Skipping deployment (not a push to main or tag)"
+        fi
+    
+    - name: Setup and Deploy to Cloudsmith
+      if: steps.check.outputs.should_deploy == 'true'
+      shell: bash
+      run: |
+        echo "Setting up Cloudsmith CLI..."
+        
+        # Linux (alle Linux-Builds verwenden diesen Weg)
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          if command -v sudo &> /dev/null; then
+            sudo apt-get update || true
+            sudo apt-get install -y python3-pip jq || true
+          else
+            # Container ohne sudo (Debian Bullseye)
+            apt-get update || true
+            apt-get install -y python3-pip jq || true
+          fi
+          python3 -m pip install --user cloudsmith-cli
+          export PATH="$HOME/.local/bin:$PATH"
+          
+        # macOS (nur 1 Build: build-macos-universal)
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          python3 -m venv $HOME/cs-venv
+          source $HOME/cs-venv/bin/activate
+          pip install cloudsmith-cli
+          
+        # Windows (nur 1 Build: build-msvc-wx32-2022)
+        elif [ "$RUNNER_OS" = "Windows" ]; then
+          pip install cloudsmith-cli
+        fi
+        
+        echo "Deploying to Cloudsmith..."
+        bash ci/cloudsmith-upload.sh
+      env:
+        CLOUDSMITH_API_KEY: ${{ env.CLOUDSMITH_API_KEY }}
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}

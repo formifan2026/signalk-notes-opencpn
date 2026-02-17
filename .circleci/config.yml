@@ -63,7 +63,7 @@ parameters:
   
     build_ubuntu_x86_64_2204_jammy:
       type: boolean
-      default: true
+      default: false
   
     build_macos_universal:
       type: boolean
