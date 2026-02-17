@@ -274,13 +274,29 @@ echo "DEBUG: Condition 2: [[ -n \"${collab_users+1}\" && ! -z ${CIRCLE_USERNAME}
      # Funktion: vorhandenes Paket löschen
      delete_if_exists() {
          local name="$1"
- 
-         # Alle Pakete im Repo listen und nach exaktem Namen filtern
-         if cloudsmith list packages "$REPO" --format json \
-            | grep -F "\"name\": \"$name\"" >/dev/null; then
-            echo "Deleting existing artifact: $name"
-            cloudsmith delete package "$REPO" "$name"
+         echo "Searching for existing packages with name: $name"
+         
+         # Hole alle Packages mit diesem Namen über die API
+         local packages=$(curl -s \
+        -H "X-Api-Key: ${CLOUDSMITH_API_KEY}" \
+        -H "Accept: application/json" \
+        "https://api.cloudsmith.io/v1/packages/${REPO}/?query=name:${name}" \
+        | jq -r '.[] | select(.name == "'"$name"'") | .slug_perm')
+    
+         if [ -z "$packages" ]; then
+             echo "No existing packages found with name: $name"
+             return 0
          fi
+         
+         # Lösche jedes gefundene Package
+         echo "$packages" | while read -r slug; do
+             if [ -n "$slug" ]; then
+                 echo "Deleting package with slug: $slug"
+                 cloudsmith delete "${REPO}/${slug}" --yes 2>/dev/null || echo "Failed to delete $slug (may already be gone)"
+             fi
+         done
+         
+         echo "Cleanup complete for: $name"
      }
 
      #
