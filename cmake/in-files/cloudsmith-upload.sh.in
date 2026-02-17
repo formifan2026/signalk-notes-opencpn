@@ -274,12 +274,15 @@ echo "DEBUG: Condition 2: [[ -n \"${collab_users+1}\" && ! -z ${CIRCLE_USERNAME}
      # Funktion: vorhandenes Paket löschen
      delete_if_exists() {
          local name="$1"
-         # Prüfen, ob ein Paket mit exakt diesem Namen existiert
-         if cloudsmith list raw "$REPO" --format json | grep -F "\"name\": \"$name\"" >/dev/null; then
-             echo "Deleting existing artifact: $name"
-             cloudsmith delete raw "$REPO" "$name"
+ 
+         # Alle Pakete im Repo listen und nach exaktem Namen filtern
+         if cloudsmith list packages "$REPO" --format json \
+            | grep -F "\"name\": \"$name\"" >/dev/null; then
+            echo "Deleting existing artifact: $name"
+            cloudsmith delete package "$REPO" "$name"
          fi
      }
+
      #
      # 1) METADATA XML
      #
