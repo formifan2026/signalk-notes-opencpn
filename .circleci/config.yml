@@ -29,7 +29,7 @@ parameters:
   
     build_msvc_wx32_2022:
       type: boolean
-      default: true
+      default: false
   
     build_debian_armhf_13_trixie:
       type: boolean
@@ -63,7 +63,7 @@ parameters:
   
     build_ubuntu_x86_64_2204_jammy:
       type: boolean
-      default: false
+      default: true
   
     build_macos_universal:
       type: boolean
