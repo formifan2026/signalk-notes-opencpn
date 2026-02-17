@@ -45,13 +45,6 @@ jobs:
           chmod a+x github/*.sh
           bash github/github-build-android-arm64.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -89,13 +82,6 @@ jobs:
           chmod a+x github/*.sh
           bash github/github-build-android-armhf.sh
   
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -135,16 +121,6 @@ jobs:
           chmod a+x cmake/*.sh
           ci/circleci-build-macos-universal.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-universal-package
-          path: |
-            build/*.pkg
-            build/*.dmg
-            build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -170,15 +146,6 @@ jobs:
       - name: Build MSVC
         shell: cmd
         run: ci\circleci-build-msvc.bat
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: msvc-wx32-2022-package
-          path: |
-            build/*.exe
-            build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -212,13 +179,6 @@ jobs:
         run: |
           chmod a+x ci/*.sh
           bash ci/circleci-build-flatpak.sh
- 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-aarch64-2208-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -251,13 +211,6 @@ jobs:
           chmod a+x ci/*.sh
           bash ci/circleci-build-flatpak.sh
   
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-x86-2208-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -288,13 +241,6 @@ jobs:
           chmod a+x ci/*.sh
           bash ci/circleci-build-flatpak.sh
   
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-aarch64-2408-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -319,13 +265,6 @@ jobs:
         run: |
           chmod a+x ci/*.sh
           bash ci/circleci-build-flatpak.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: flatpak-x86-2408-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -356,13 +295,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
  
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-trixie-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
  
@@ -396,13 +328,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
           
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-trixie-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -435,13 +360,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-trixie-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -467,13 +385,6 @@ jobs:
         run: |
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -507,13 +418,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -546,13 +450,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bookworm-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -583,13 +480,6 @@ jobs:
         run: |
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -622,13 +512,6 @@ jobs:
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-arm64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
-
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
 
@@ -659,13 +542,6 @@ jobs:
         run: |
           chmod a+x github/*.sh
           github/github-build-ubuntu-docker.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debian-bullseye-armhf-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
@@ -700,13 +576,6 @@ jobs:
         run: |
           chmod a+x ci/*.sh
           ci/circleci-build-debian.sh
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ubuntu-jammy-x86_64-package
-          path: build/*.tar.gz
-          if-no-files-found: warn
 
       - name: Deploy to Cloudsmith
         uses: ./.github/actions/deploy-cloudsmith
