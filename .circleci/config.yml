@@ -16,16 +16,16 @@ parameters:
   
     build_flatpak_aarch64_2208:
       type: boolean
-      default: true
+      default: false
     build_flatpak_x86_2208:
       type: boolean
-      default: true
+      default: false
     build_flatpak_aarch64_2408:
       type: boolean
-      default: true
+      default: false
     build_flatpak_x86_2408:
       type: boolean
-      default: true
+      default: false
   
     build_msvc_wx32_2022:
       type: boolean
@@ -67,7 +67,7 @@ parameters:
   
     build_macos_universal:
       type: boolean
-      default: false
+      default: true
 
     #build_msvc_2022:
     #  type: boolean

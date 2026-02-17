@@ -97,3 +97,17 @@ Some icons are based on or derived from OpenCPN’s standard icon set, which is 
 
 Because GPLv2 is the stricter license, it governs the overall plugin.  
 All included assets are compatible with GPLv2, and the plugin complies with the redistribution requirements of both licenses.
+
+### Hosting
+[![Hosted By: Cloudsmith](https://img.shields.io/badge/OSS%20hosting%20by-cloudsmith-blue?logo=cloudsmith&style=flat-square)](https://cloudsmith.com)
+
+#### 📦 Cloudsmith Repositories
+
+🔧 **Alpha**  
+https://app.cloudsmith.com/formifan2002/r/signalk-notes-opencpn-alpha
+
+🧪 **Beta**  
+https://app.cloudsmith.com/formifan2002/r/signalk-notes-opencpn-beta
+
+🚀 **Stable**  
+https://app.cloudsmith.com/formifan2002/r/signalk-notes-opencpn-prod
