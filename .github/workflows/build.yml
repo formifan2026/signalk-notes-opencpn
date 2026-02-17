@@ -11,109 +11,37 @@ on:
   pull_request:
     branches:
       - '*'
-  workflow_dispatch:
-    inputs:
-      build_android_arm64:
-        description: 'Build Android ARM64'
-        required: false
-        type: boolean
-        default: true
-      build_android_armhf:
-        description: 'Build Android ARMHF'
-        required: false
-        type: boolean
-        default: true
-      build_macos_universal:
-        description: 'Build macOS Universal'
-        required: false
-        type: boolean
-        default: true
-      build_msvc_wx32_2022:
-        description: 'Build Windows MSVC WX32 2022'
-        required: false
-        type: boolean
-        default: true
-      build_flatpak_aarch64_2208:
-        description: 'Build Flatpak ARM64 22.08'
-        required: false
-        type: boolean
-        default: true
-      build_flatpak_x86_2208:
-        description: 'Build Flatpak x86_64 22.08'
-        required: false
-        type: boolean
-        default: true
-      build_flatpak_aarch64_2408:
-        description: 'Build Flatpak ARM64 24.08'
-        required: false
-        type: boolean
-        default: true
-      build_flatpak_x86_2408:
-        description: 'Build Flatpak x86_64 24.08'
-        required: false
-        type: boolean
-        default: true
-      build_debian_x86_64_13_trixie:
-        description: 'Build Debian 13 Trixie x86_64'
-        required: false
-        type: boolean
-        default: true
-      build_debian_arm64_13_trixie:
-        description: 'Build Debian 13 Trixie ARM64'
-        required: false
-        type: boolean
-        default: true
-      build_debian_armhf_13_trixie:
-        description: 'Build Debian 13 Trixie ARMHF'
-        required: false
-        type: boolean
-        default: true
-      build_debian_x86_64_12_bookworm:
-        description: 'Build Debian 12 Bookworm x86_64'
-        required: false
-        type: boolean
-        default: true
-      build_debian_arm64_12_bookworm:
-        description: 'Build Debian 12 Bookworm ARM64'
-        required: false
-        type: boolean
-        default: true
-      build_debian_armhf_12_bookworm:
-        description: 'Build Debian 12 Bookworm ARMHF'
-        required: false
-        type: boolean
-        default: true
-      build_debian_x86_64_11_bullseye:
-        description: 'Build Debian 11 Bullseye x86_64'
-        required: false
-        type: boolean
-        default: false
-      build_debian_arm64_11_bullseye:
-        description: 'Build Debian 11 Bullseye ARM64'
-        required: false
-        type: boolean
-        default: false
-      build_debian_armhf_11_bullseye:
-        description: 'Build Debian 11 Bullseye ARMHF'
-        required: false
-        type: boolean
-        default: false
-      build_ubuntu_x86_64_2204_jammy:
-        description: 'Build Ubuntu 22.04 Jammy x86_64'
-        required: false
-        type: boolean
-        default: true
 
 env:
   CLOUDSMITH_USER: opencpn
   USE_UNSTABLE_REPO: OFF
+
+  # Global build switches (build will be started, if set to true)
+  BUILD_ANDROID_ARM64: true
+  BUILD_ANDROID_ARMHF: true
+  BUILD_MACOS_UNIVERSAL: true
+  BUILD_MSVC_WX32_2022: true
+  BUILD_FLATPAK_AARCH64_2208: true
+  BUILD_FLATPAK_X86_2208: true
+  BUILD_FLATPAK_AARCH64_2408: true
+  BUILD_FLATPAK_X86_2408: true
+  BUILD_DEBIAN_X86_64_13_TRIXIE: true
+  BUILD_DEBIAN_ARM64_13_TRIXIE: true
+  BUILD_DEBIAN_ARMHF_13_TRIXIE: true
+  BUILD_DEBIAN_X86_64_12_BOOKWORM: true
+  BUILD_DEBIAN_ARM64_12_BOOKWORM: true
+  BUILD_DEBIAN_ARMHF_12_BOOKWORM: true
+  BUILD_DEBIAN_X86_64_11_BULLSEYE: false
+  BUILD_DEBIAN_ARM64_11_BULLSEYE: false
+  BUILD_DEBIAN_ARMHF_11_BULLSEYE: false
+  BUILD_UBUNTU_X86_64_2204_JAMMY: true
 
 jobs:
 # =============================================================================
 # Android Builds
 # =============================================================================
   build-android-arm64:
-    if: github.event.inputs.build_android_arm64 == 'true'
+    if: env.BUILD_ANDROID_ARM64 == 'true'
     runs-on: ubuntu-latest
     container:
       image: cimg/android:2023.12-ndk
@@ -144,7 +72,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-android-armhf:
-    if: github.event.inputs.build_android_armhf == 'true'
+    if: env.BUILD_ANDROID_ARMHF == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: android-armhf
@@ -191,7 +119,7 @@ jobs:
 # macOS Build
 # =============================================================================
   build-macos-universal:
-    if: github.event.inputs.build_macos_universal == 'true'
+    if: env.BUILD_MACOS_UNIVERSAL == 'true'
     runs-on: macos-14
     env:
       OCPN_TARGET: macos
@@ -240,7 +168,7 @@ jobs:
 # Windows MSVC Build
 # =============================================================================
   build-msvc-wx32-2022:
-    if: github.event.inputs.build_msvc_wx32_2022 == 'true'
+    if: env.BUILD_MSVC_WX32_2022 == 'true'
     runs-on: windows-2022
     env:
       OCPN_TARGET: MSVC
@@ -275,7 +203,7 @@ jobs:
 # Flatpak Builds
 # =============================================================================
   build-flatpak-aarch64-2208:
-    if: github.event.inputs.build_flatpak_aarch64_2208 == 'true'
+    if: env.BUILD_FLATPAK_AARCH64_2208 == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak
@@ -312,7 +240,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-flatpak-x86-2208:
-    if: github.event.inputs.build_flatpak_x86_2208 == 'true'
+    if: env.BUILD_FLATPAK_X86_2208 == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak
@@ -350,7 +278,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-flatpak-aarch64-2408:
-    if: github.event.inputs.build_flatpak_aarch64_2408 == 'true'
+    if: env.BUILD_FLATPAK_AARCH64_2408 == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak
@@ -387,7 +315,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-flatpak-x86-2408:
-    if: github.event.inputs.build_flatpak_x86_2408 == 'true'
+    if: env.BUILD_FLATPAK_X86_2408 == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: flatpak
@@ -422,7 +350,7 @@ jobs:
 # Debian Builds
 # =============================================================================
   build-debian-x86_64-13-trixie:
-    if: github.event.inputs.build_debian_x86_64_13_trixie == 'true'
+    if: env.BUILD_DEBIAN_X86_64_13_TRIXIE == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: trixie
@@ -455,7 +383,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
  
   build-debian-arm64-13-trixie:
-    if: github.event.inputs.build_debian_arm64_13_trixie == 'true'
+    if: env.BUILD_DEBIAN_ARM64_13_TRIXIE == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: trixie-arm64
@@ -495,7 +423,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-armhf-13-trixie:
-    if: github.event.inputs.build_debian_armhf_13_trixie == 'true'
+    if: env.BUILD_DEBIAN_ARMHF_13_TRIXIE == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: trixie-armhf
@@ -534,7 +462,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-x86_64-12-bookworm:
-    if: github.event.inputs.build_debian_x86_64_12_bookworm == 'true'
+    if: env.BUILD_DEBIAN_X86_64_12_BOOKWORM == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bookworm
@@ -567,7 +495,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-arm64-12-bookworm:
-    if: github.event.inputs.build_debian_arm64_12_bookworm == 'true'
+    if: env.BUILD_DEBIAN_ARM64_12_BOOKWORM == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bookworm-arm64
@@ -606,7 +534,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-armhf-12-bookworm:
-    if: github.event.inputs.build_debian_armhf_12_bookworm == 'true'
+    if: env.BUILD_DEBIAN_ARMHF_12_BOOKWORM == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bookworm-armhf
@@ -645,7 +573,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-x86_64-11-bullseye:
-    if: github.event.inputs.build_debian_x86_64_11_bullseye == 'true'
+    if: env.BUILD_DEBIAN_X86_64_11_BULLSEYE == 'true'
     runs-on: ubuntu-22.04
     container:
       image: buildpack-deps:bullseye-scm
@@ -683,7 +611,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-arm64-11-bullseye:
-    if: github.event.inputs.build_debian_arm64_11_bullseye == 'true'
+    if: env.BUILD_DEBIAN_ARM64_11_BULLSEYE == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bullseye-arm64
@@ -721,7 +649,7 @@ jobs:
         uses: ./.github/actions/deploy-cloudsmith
 
   build-debian-armhf-11-bullseye:
-    if: github.event.inputs.build_debian_armhf_11_bullseye == 'true'
+    if: env.BUILD_DEBIAN_ARMHF_11_BULLSEYE == 'true'
     runs-on: ubuntu-latest
     env:
       OCPN_TARGET: bullseye-armhf
@@ -762,7 +690,7 @@ jobs:
 # Ubuntu Builds
 # =============================================================================
   build-ubuntu-x86_64-2204-jammy:
-    if: github.event.inputs.build_ubuntu_x86_64_2204_jammy == 'true'
+    if: env.BUILD_UBUNTU_X86_64_2204_JAMMY == 'true'
     runs-on: ubuntu-22.04
     env:
       BUILD_GTK3: true
