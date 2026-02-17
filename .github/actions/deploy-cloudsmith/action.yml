@@ -52,8 +52,9 @@ runs:
             export GITHUB_WORKSPACE=$(pwd)
           fi
           
-          # Windows hat kein sudo - erstelle einen dummy alias
-          alias sudo=''
+          # Windows hat kein sudo - erstelle eine Funktion die an Subscripts vererbt wird
+          sudo() { "$@"; }
+          export -f sudo
         fi
         
         echo "Deploying to Cloudsmith..."
