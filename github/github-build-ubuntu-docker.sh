@@ -105,6 +105,22 @@ if [ -z "$DOCKER_CONTAINER_ID" ]; then
     exit 1
 fi
 echo "Docker Container ID: $DOCKER_CONTAINER_ID"
+# >>>>> ARM64 Stabilitätsfix: Python Bytecode deaktivieren + Swap aktivieren <<<<<
+if [[ "$OCPN_TARGET" == *"arm64"* ]]; then
+    echo "Applying ARM64 stability fixes (no bytecode + swap)"
+
+    # Python Bytecode ausschalten (verhindert QEMU-BrokenPipe bei python3)
+    docker exec "$DOCKER_CONTAINER_ID" bash -c "echo 'PYTHONDONTWRITEBYTECODE=1' >> /etc/environment"
+
+    # Swap aktivieren (verhindert QEMU-Speicherfehler)
+    docker exec "$DOCKER_CONTAINER_ID" bash -c "
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+    "
+fi
+# >>>>> ENDE ARM64 Stabilitätsfix <<<<<
 
 # >>>>> NEU: unstable-Repo direkt nach Containerstart aktivieren <<<<<
 if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
