@@ -67,7 +67,7 @@ set(TITLE_NAME "signalk_notes_opencpn")
 set(PACKAGE_CONTACT "Dirk Behrendt")
 set(PACKAGE "signalk_notes_opencpn")
 set(SHORT_DESCRIPTION
-    "Plugin to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' or 'EuRIS (European River Information Services) on the map"
+    "Plugin to show notes created by SignalK plugins on the map"
 )
 set(LONG_DESCRIPTION
     "signalk_notes_opencpn Plugin is used to show notes from SignalK created by SignalK plugins like 'Garmin Active Captain Resource' or 'EuRIS (European River Information Services)' on the map"

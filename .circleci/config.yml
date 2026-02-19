@@ -33,7 +33,7 @@ parameters:
   
     build_debian_armhf_13_trixie:
       type: boolean
-      default: true
+      default: false
     build_debian_arm64_13_trixie:
       type: boolean
       default: false
@@ -43,7 +43,7 @@ parameters:
   
     build_debian_arm64_12_bookworm:
       type: boolean
-      default: true
+      default: false
     build_debian_armhf_12_bookworm:
       type: boolean
       default: false
@@ -63,7 +63,7 @@ parameters:
   
     build_ubuntu_x86_64_2204_jammy:
       type: boolean
-      default: true
+      default: false
   
     build_macos_universal:
       type: boolean
