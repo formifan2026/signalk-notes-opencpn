@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #
-# Upload the .tar.gz and .xml artifacts to cloudsmith
+# Upload the .tar.gz and .xml artifacts to cloudsmith 
 #
 # Builds are uploaded to one of PROD, BETA or ALPHA repositories
 # The repository depends on the branch and use of tag to determine which repo.
