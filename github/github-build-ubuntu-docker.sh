@@ -287,9 +287,15 @@ cat build.sh
 set -x
 echo "Build script --- end ---"
 
-if type nproc &> /dev/null
-then
-    BUILD_FLAGS="-j"$(nproc)
+if type nproc &> /dev/null; then
+    # ARM64 unter QEMU → nur 1 Job, sonst ICE
+    if [[ "$OCPN_TARGET" == *"arm64"* ]]; then
+        BUILD_FLAGS="-j1"
+    else
+        BUILD_FLAGS="-j$(nproc)"
+    fi
+else
+    BUILD_FLAGS="-j1"
 fi
 
 VERBOSE_FLAG=${CMAKE_DETAILLED_LOG:-ON}
