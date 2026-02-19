@@ -153,44 +153,38 @@ fi
 echo $BUILD_BRANCH
 echo $BUILD_TAG
 echo ${#BUILD_TAG}
-if [ "$BUILD_TAG" = "" ] && [ "$tag" != "" ]; then
-    BUILD_TAG=$tag
-    echo "Build tag: $BUILD_TAG"
-fi
-if [ "$BUILD_BRANCH" = "" ]; then
-    build_commit=$(git show -s --format=%d $BUILD_TAG)
-    is_master=$(echo $build_commit | awk '/\/master/ {print}')
-    if [ "$is_master" != "" ] || [ "$TRAVIS" ]; then
-        BUILD_BRANCH="master"
+# Normalize branch name
+BUILD_BRANCH_LOWER=$(echo "$BUILD_BRANCH" | tr 'A-Z' 'a-z')
+
+echo "Branch: $BUILD_BRANCH_LOWER"
+echo "Tag: $BUILD_TAG"
+
+#
+# 1) TAGGED BUILDS
+#
+if [ -n "$BUILD_TAG" ]; then
+    VERSION="$BUILD_TAG"
+
+    # Beta-Tags enthalten das Wort "beta"
+    if [[ "$BUILD_TAG" == *beta* ]]; then
+        echo "Detected beta tag → uploading to BETA repo"
+        REPO="$BETA_REPO"
+    else
+        echo "Detected production tag → uploading to PROD repo"
+        REPO="$PROD_REPO"
     fi
+
+#
+# 2) UNTAGGED BUILDS → ALPHA
+#
+else
+    echo "No tag detected → uploading to ALPHA repo"
+    VERSION="@PROJECT_VERSION@+${BUILD_ID}.${commit}"
+    REPO="$ALPHA_REPO"
 fi
 
-BUILD_BRANCH_LOWER=`echo $BUILD_BRANCH | tr '[A-Z]' '[a-z]'`
-if [ "$BUILD_BRANCH_LOWER" = "master" ]; then
-    echo "In master branch "
-    if [ -n "$BUILD_TAG"  ]; then
-        echo "building with tag"
-        VERSION=$BUILD_TAG
-        REPO="$PROD_REPO"
-    else
-        VERSION="@PROJECT_VERSION@+${BUILD_ID}.${commit}"
-        echo "building without tag"
-        REPO="$BETA_REPO"
-    fi
-else
-    echo "In non master branch " $BUILD_BRANCH
-    if [ -n "$BUILD_TAG" ]; then
-        echo "building with tag"
-        VERSION=$BUILD_TAG
-        REPO="$BETA_REPO"
-    else
-        echo "building without tag"
-        VERSION="@PROJECT_VERSION@+${BUILD_ID}.${commit}"
-        REPO="$ALPHA_REPO"
-    fi
-fi
-echo $VERSION
-echo $REPO
+echo "VERSION=$VERSION"
+echo "REPO=$REPO"
 
 if [ "$APPVEYOR" ] || [ "$LOCAL_BUILD" = "true" ]; then
     echo 'substituting xml file variables for windows build'

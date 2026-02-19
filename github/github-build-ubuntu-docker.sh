@@ -23,7 +23,6 @@ echo "OCPN_TARGET='$OCPN_TARGET'"
 echo "GITHUB_ACTIONS='$GITHUB_ACTIONS'"
 echo "USE_UNSTABLE_REPO='$USE_UNSTABLE_REPO'"
 
-
 if [ "$API_MINOR" -lt 20 ] && [[ "$OCPN_TARGET" == *"trixie-arm64"* ]]; then
     echo "Applying <cstdint> patch for API < 20 on Trixie ARM64"
     sed -i 's/#include <unordered_map>/#include <unordered_map>\n#include <cstdint>/' \
@@ -47,9 +46,6 @@ else
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 fi
 
-
-
-#D.B.: start - changed added if else statement and setting of DOCKER_CONTAINER_ID in the statements
 # TTY nur deaktivieren, wenn wir in GitHub Actions laufen
 TTY_FLAG=""
 if [ "$GITHUB_ACTIONS" != "true" ]; then
@@ -109,10 +105,8 @@ if [ -z "$DOCKER_CONTAINER_ID" ]; then
     exit 1
 fi
 echo "Docker Container ID: $DOCKER_CONTAINER_ID"
-#D.B.: end - changed assignment of DOCKER_CONTAINER_ID
 
 # >>>>> NEU: unstable-Repo direkt nach Containerstart aktivieren <<<<<
-#Conditional unstable‑repo activation (if GitHub actions are used and APT_ALLOW_UNSTABLE=ON in build.yml is set)
 if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
     echo "Enabling unstable repo inside container (EARLY)"
     docker exec "$DOCKER_CONTAINER_ID" bash -c "
@@ -123,9 +117,7 @@ if [ "$GITHUB_ACTIONS" = "true" ] && [ "$USE_UNSTABLE_REPO" = "ON" ]; then
 fi
 # >>>>> ENDE NEU <<<<<
 
-
 echo "Target build: $OCPN_TARGET"
-# Construct and run build script
 rm -f build.sh
 
 delimstrnum=1
@@ -150,14 +142,14 @@ EOF$delimstrnum
         curl http://mirrordirector.raspbian.org/raspbian.public.key  | apt-key add -
         curl http://archive.raspbian.org/raspbian.public.key  | apt-key add -
         sudo apt -q --allow-unauthenticated update
-        sudo apt --allow-unauthenticated install devscripts equivs wget git lsb-release
+        sudo apt --allow-unauthenticated install equivs wget git lsb-release
         sudo mk-build-deps -ir ci-source/ci/control
         sudo apt-get --allow-unauthenticated install -f
 EOF$delimstrnum
         ((delimstrnum++))
     else
         cat >> build.sh << EOF$delimstrnum
-        install_packages git build-essential devscripts equivs gettext wx-common libgtk2.0-dev libwxbase3.0-dev libwxgtk3.0-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev libcairo2-dev libarchive-dev liblzma-dev libexif-dev lsb-release
+        install_packages git build-essential equivs gettext wx-common libgtk2.0-dev libwxbase3.0-dev libwxgtk3.0-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev libcairo2-dev libarchive-dev liblzma-dev libexif-dev lsb-release
 EOF$delimstrnum
         ((delimstrnum++))
     fi
@@ -178,7 +170,7 @@ else
         echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
         apt-get -qq --allow-unauthenticated update && DEBIAN_FRONTEND='noninteractive' TZ='America/New_York' apt-get -y --no-install-recommends --allow-change-held-packages install tzdata
         apt-get -y --fix-missing install --allow-change-held-packages --allow-unauthenticated  \
-        devscripts equivs wget git build-essential gettext wx-common libgtk2.0-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev libcairo2-dev libarchive-dev liblzma-dev libexif-dev lsb-release openssl libssl-dev
+        equivs wget git build-essential gettext wx-common libgtk2.0-dev libbz2-dev libcurl4-openssl-dev libexpat1-dev libcairo2-dev libarchive-dev liblzma-dev libexif-dev lsb-release openssl libssl-dev
 EOF$delimstrnum
         ((delimstrnum++))
 
@@ -269,7 +261,6 @@ fi
 # Install extra build libs
 ME=$(echo ${0##*/} | sed 's/\.sh//g')
 
-# Add extra libs installation to build.sh
 cat >> build.sh <<EOF$delimstrnum
 # Install extra build libs
 if [ -f "ci-source/github/extras/extra_libs.txt" ]; then
@@ -296,14 +287,11 @@ cat build.sh
 set -x
 echo "Build script --- end ---"
 
-
 if type nproc &> /dev/null
 then
     BUILD_FLAGS="-j"$(nproc)
 fi
 
-#D.B.: start - new environment variable to steer the log output of cmake
-# CMake-Verbose-Flag aus Env, Default ON
 VERBOSE_FLAG=${CMAKE_DETAILLED_LOG:-ON}
 docker exec $TTY_FLAG \
     "$DOCKER_CONTAINER_ID" /bin/bash -xec "
@@ -316,7 +304,6 @@ docker exec $TTY_FLAG \
         make package;
         chmod -R a+rw ../build;
     "
-#D.B.: end - changed added if else statement (original statement is in else)
 
 echo "Stopping"
 docker ps -a
