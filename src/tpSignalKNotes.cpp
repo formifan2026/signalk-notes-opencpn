@@ -135,10 +135,11 @@ wxString HttpGet(const wxString& url, const wxString& authHeader)
 
     // Authorization Header
     if (!authHeader.IsEmpty()) {
-        wxString hdr = authHeader;
-        WinHttpAddRequestHeaders(hRequest, hdr.wc_str(), -1,
-                                 WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        std::wstring hdr = L"Authorization: Bearer " + std::wstring(m_authToken.wc_str());
+        WinHttpAddRequestHeaders(hRequest, hdr.c_str(), (DWORD)-1,
+                                WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
     }
+
 
     if (!WinHttpSendRequest(hRequest,
                             WINHTTP_NO_ADDITIONAL_HEADERS, 0,
