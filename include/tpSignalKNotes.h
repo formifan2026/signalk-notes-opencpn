@@ -122,7 +122,8 @@ public:
 
   bool LoadIconSmart(const wxString& basePathWithoutExt, int size, wxBitmap& outBmp);
   wxDateTime GetAuthRequestTime() const { return m_authRequestTime; }
-  
+  wxDateTime GetAuthTokenReceivedTime() const { return m_authTokenReceivedTime; }
+
 private:
   signalk_notes_opencpn_pi* m_parent = nullptr;
 
@@ -149,6 +150,7 @@ private:
   wxString m_authToken;
   bool m_authPending = false;
   wxDateTime m_authRequestTime;
+  wxDateTime m_authTokenReceivedTime;
 
   // Notes
   std::map<wxString, SignalKNote> m_notes;

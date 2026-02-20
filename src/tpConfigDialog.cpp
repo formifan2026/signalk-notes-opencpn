@@ -502,7 +502,8 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
     return;
   }
 
-  wxTimeSpan tokenAge = wxDateTime::Now() - mgr->GetAuthRequestTime();
+  wxTimeSpan tokenAge = wxDateTime::Now() - mgr->GetAuthTokenReceivedTime();
+  
   if (tokenAge.GetSeconds() < 10) {
     SKN_LOG(m_parent, "Token just received (%lld sec ago), skipping validation",
             tokenAge.GetSeconds());

@@ -348,24 +348,32 @@ wxString tpSignalKNotesManager::MakeHTTPRequest(const wxString& path) {
   wxString urlStr;
   urlStr.Printf(wxT("http://%s:%d%s"), m_serverHost, m_serverPort, path);
   SKN_LOG(m_parent, _("SignalKNotes: fetching data with URL: %s"), urlStr);
-  wxURL url(urlStr);
-  if (!url.IsOk()) {
-    SKN_LOG(m_parent, _("Invalid URL: %s"), urlStr);
+
+  wxHTTP http;
+  http.SetTimeout(10);
+
+  if (!http.Connect(m_serverHost, m_serverPort)) {
+    SKN_LOG(m_parent, _("Failed to connect to: %s"), urlStr);
     return wxEmptyString;
   }
 
-  wxInputStream* in_stream = url.GetInputStream();
-  if (!in_stream || !in_stream->IsOk()) {
-    SKN_LOG(m_parent, _("Failed to connect to: %s"), urlStr);
-    if (in_stream) delete in_stream;
+  wxInputStream* in = http.GetInputStream(path);
+  if (!in || !in->IsOk()) {
+    delete in;
+    SKN_LOG(m_parent, _("Failed to get stream from: %s"), urlStr);
     return wxEmptyString;
   }
 
   wxString response;
-  wxStringOutputStream out_stream(&response);
-  in_stream->Read(out_stream);
+  char buf[4096];
+  while (true) {
+    in->Read(buf, sizeof(buf));
+    size_t read = in->LastRead();
+    if (read == 0) break;
+    response += wxString::FromUTF8(buf, read);
+  }
 
-  delete in_stream;
+  delete in;
   return response;
 }
 
@@ -687,12 +695,14 @@ bool tpSignalKNotesManager::RequestAuthorization() {
     return false;
   }
 
+// Chunk-weises Lesen bis wirklich nichts mehr kommt
   wxString response;
   char buf[4096];
-  while (!in->Eof()) {
+  while (true) {
     in->Read(buf, sizeof(buf));
     size_t read = in->LastRead();
-    if (read > 0) response += wxString::FromUTF8(buf, read);
+    if (read == 0) break;
+    response += wxString::FromUTF8(buf, read);
   }
   delete in;
 
@@ -806,13 +816,14 @@ bool tpSignalKNotesManager::ValidateToken() {
 
   int responseCode = http.GetResponse();
 
-  // Chunk-weises Lesen
+// Chunk-weises Lesen bis wirklich nichts mehr kommt
   wxString response;
   char buf[4096];
-  while (!in->Eof()) {
+  while (true) {
     in->Read(buf, sizeof(buf));
     size_t read = in->LastRead();
-    if (read > 0) response += wxString::FromUTF8(buf, read);
+    if (read == 0) break;
+    response += wxString::FromUTF8(buf, read);
   }
   delete in;
 
@@ -993,6 +1004,9 @@ tpSignalKNotesManager::GetProviderInfos() const {
 
 void tpSignalKNotesManager::SetAuthToken(const wxString& token) {
   m_authToken = token;
+  if (!token.IsEmpty()) {
+    m_authTokenReceivedTime = wxDateTime::Now();
+  }
   if (m_parent) {
     m_parent->SaveConfig();
   }
