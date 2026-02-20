@@ -910,7 +910,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   }
 
   if (access.HasMember("token")) {
-    m_authToken = access["token"].AsString();
+    SetAuthToken(access["token"].AsString());  // statt m_authToken = ...
     SKN_LOG(m_parent, "AuthStatus - token received");
     ClearAuthRequest();
     return true;
@@ -930,7 +930,7 @@ bool tpSignalKNotesManager::ValidateToken() {
   wxString url =
       wxString::Format("http://%s:%d/plugins/", m_serverHost, m_serverPort);
 
-  wxString response = HttpGet(url, "Bearer " + m_authToken);
+  wxString response = HttpGet(url, "Authorization: Bearer " + m_authToken);
 
   if (response.IsEmpty()) {
     SKN_LOG(m_parent, "ValidateToken - empty or failed HTTP response");
@@ -957,7 +957,7 @@ bool tpSignalKNotesManager::ValidateToken() {
 }
 
 static wxString HttpGetAuth(const wxString& url, const wxString& token) {
-  return HttpGet(url, "Bearer " + token);
+  return HttpGet(url, "Authorization: Bearer " + token);
 }
 
 bool tpSignalKNotesManager::FetchInstalledPlugins(
