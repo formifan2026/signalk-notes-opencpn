@@ -123,7 +123,7 @@ wxString HttpGet(const wxString& url, const wxString& authHeader) {
     return "";
   }
 
-  // Authorization Header
+  // Authorization Header 
   if (!authHeader.IsEmpty()) {
     std::wstring hdr = std::wstring(authHeader.wc_str());
     WinHttpAddRequestHeaders(
