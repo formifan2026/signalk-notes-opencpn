@@ -81,6 +81,7 @@ void tpConfigDialog::CreateControls() {
   // Auth-Status-Anzeige
   wxBoxSizer* authStatusSizer = new wxBoxSizer(wxHORIZONTAL);
   m_authStatusIcon = new wxStaticBitmap(providerPanel, wxID_ANY, wxNullBitmap);
+  m_authStatusLabel->SetMinSize(wxSize(-1, 45));
   authStatusSizer->Add(m_authStatusIcon, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
   m_authStatusLabel =
@@ -89,7 +90,6 @@ void tpConfigDialog::CreateControls() {
                        5);
 
   providerSizer->Add(authStatusSizer, 0, wxALL, 5);
-  providerSizer->SetItemMinSize(authStatusSizer->GetItem((size_t)0), -1, 45);
 
   providerPanel->SetSizer(providerSizer);
   m_notebook->AddPage(providerPanel, _("Provider"));
@@ -638,7 +638,7 @@ void tpConfigDialog::ShowInitialState() {
   m_authStatusLabel->SetForegroundColour(*wxRED);
   m_authStatusLabel->SetLabel(_("SignalK Verbindung"));
   m_authStatusLabel->Wrap(-1);
-  
+
   // Auth-Button aktiv
   m_authButton->SetLabel(_("SignalK Authentifizierung"));
   m_authButton->Enable(true);
