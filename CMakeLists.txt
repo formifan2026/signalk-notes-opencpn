@@ -178,6 +178,11 @@ include("PluginConfigure")
 
 add_definitions(-DUSE_S57)
 
+
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 # ---- Section Below - Add your project SET(SRCS and SET(HDRS  etc..
 
 set(SRCS

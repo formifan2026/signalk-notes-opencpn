@@ -444,7 +444,7 @@ void tpConfigDialog::OnCancel(wxCommandEvent& event) {
 }
 
 void tpConfigDialog::OnIconMappingChanged(wxCommandEvent& event) {
-  // Wird aufgerufen wenn User eine Zuordnung ändert
+  // Wird aufgerufen wenn User eine Zuordnung ändert 
   // Mappings werden beim OK-Klick aus den Combos ausgelesen
 }
 
