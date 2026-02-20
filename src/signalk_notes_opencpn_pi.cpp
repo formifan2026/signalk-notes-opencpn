@@ -63,7 +63,7 @@
 #include "wx/jsonwriter.h"
 
 #ifndef DECL_EXP
-  #ifdef __WXMSW__
+  #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__)
     #define DECL_EXP __declspec(dllexport)
   #else
     #define DECL_EXP
