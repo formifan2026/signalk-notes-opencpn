@@ -864,7 +864,10 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus()
 
     SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);
 
-    wxString response = HttpGet(m_authRequestHref);
+    wxString url;
+    url.Printf("http://%s:%d%s", m_serverHost, m_serverPort, m_authRequestHref);
+
+    wxString response = HttpGet(url);
 
     if (response.IsEmpty()) {
         SKN_LOG(m_parent, "CheckAuthorizationStatus - empty response");
@@ -917,6 +920,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus()
     ClearAuthRequest();
     return false;
 }
+
 
 
 bool tpSignalKNotesManager::ValidateToken()
