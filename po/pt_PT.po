@@ -5,15 +5,15 @@ msgstr ""
 "POT-Creation-Date: 2026-02-01 00:55+0100\n"
 "PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
-"Language-Team: Portuguese\n"
-"Language: pt_PT\n"
+"Language-Team: English, United Kingdom\n"
+"Language: en_GB\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Crowdin-Project: opencpn\n"
 "X-Crowdin-Project-ID: 49843\n"
-"X-Crowdin-Language: pt-PT\n"
+"X-Crowdin-Language: en-GB\n"
 "X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/"
 "signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
@@ -41,8 +41,8 @@ msgid ""
 "Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
 "Admin und 'Authentication Timeout' NEVER bestätigen."
 msgstr ""
-"In SignalK, please confirm the request in the menu item 'Access Requests' "
-"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+"In SignalK, please confirm the request in the menu item 'Access Requests' with 'Permission' "
+"Admin and 'Authentication Timeout' NEVER."
 
 #: src/tpConfigDialog.cpp:727
 msgid "Cluster Einstellungen"
@@ -77,8 +77,7 @@ msgstr "Failed to connect to: %s"
 msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
-"Falha ao carregar todos os ícones signalk_notes_opencpn_pi, verifique o log "
-"OCPN para obter detalhes"
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 
 #: src/tpSignalKNotes.cpp:409
 msgid "Failed to parse note details JSON"
@@ -93,8 +92,8 @@ msgid "Fehler"
 msgstr "Error"
 
 #: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung"
-msgstr "Error requesting authentication"
+msgid "Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."
+msgstr "Error requesting authentication. Are there still 'access requests' in SignalK? If yes, delete/reject them."
 
 #: src/tpConfigDialog.cpp:761
 msgid "Font-Größe:"
@@ -105,7 +104,8 @@ msgid ""
 "Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
 "Provider zu entdecken."
 msgstr ""
-"Note: No providers configured yet. Move the map to Providers to discover."
+"Note: No providers configured yet. Move the map to "
+"Providers to discover."
 
 #: src/tpConfigDialog.cpp:49
 msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
@@ -142,7 +142,7 @@ msgstr "OK"
 
 #: src/tpicons.cpp:85
 msgid "OpenCPN Alert"
-msgstr "Alerta OpenCPN"
+msgstr "OpenCPN Alert"
 
 #: src/tpConfigDialog.cpp:89
 msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
@@ -185,7 +185,7 @@ msgid "SignalKNotes: fetching data with URL: %s"
 msgstr "SignalKNotes: fetching data with URL: %s"
 
 #: src/tpConfigDialog.cpp:755
-msgid "Text-Farbe:"
+msgid "Text color:"
 msgstr ""
 
 #: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
@@ -196,40 +196,36 @@ msgstr "Preview:"
 msgid "Wählen Sie die anzuzeigenden Provider:"
 msgstr "Select the providers to display:"
 
-#: src/tpConfigDialog.cpp:755
-msgid "Text color:"
-msgstr ""
-
 #, fuzzy
 #~ msgid "Circle Color:"
-#~ msgstr "Cor da linha"
+#~ msgstr "Line Colour"
 
 #, fuzzy
 #~ msgid "Text Color:"
-#~ msgstr "Cor do texto"
+#~ msgstr "Text Colour"
 
 #~ msgid "Test Plugin Control Dialog"
-#~ msgstr "Testar diálogo de Controle de Plugin"
+#~ msgstr "Test Plugin Control Dialogue"
 
 #~ msgid "Test Plugin"
-#~ msgstr "Plugin de teste"
+#~ msgstr "Test Plugin"
 
 #~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-#~ msgstr "signalk_notes_opencpn PlugIn para OpenCPN"
+#~ msgstr "signalk_notes_opencpn PlugIn for OpenCPN"
 
 #~ msgid ""
 #~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
 #~ "demonstrates PlugIn processing of NMEA messages."
 #~ msgstr ""
-#~ "signalk_notes_opencpn PlugIn para OpenCPN\n"
-#~ "demonstra o processamento PlugIn de mensagens NMEA."
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
 
 #, c-format
 #~ msgid ""
 #~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
 #~ "Minor: %i\n"
 #~ msgstr ""
-#~ "Versão OD: Maior: %i, Menor: %i, Patch: %i, ODAPI Versão: Major: %i, "
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
 #~ "Minor: %i\n"
 
 #~ msgid "OD_FindPointInAnyBoundary\n"
@@ -257,100 +253,100 @@ msgstr ""
 #~ msgstr "OD_DeletePointIcon\n"
 
 #~ msgid "The following ODAPI's are available: \n"
-#~ msgstr "Estão disponíveis as seguintes ODAPIs:\n"
+#~ msgstr "The following ODAPI's are available: \n"
 
 #~ msgid "The following ODAPI's are not available:\n"
-#~ msgstr "Não estão disponíveis as seguintes ODAPIs:\n"
+#~ msgstr "The following ODAPI's are not available:\n"
 
 #~ msgid "SIGNALK_NOTES_OPENCPN"
 #~ msgstr "SIGNALK_NOTES_OPENCPN"
 
 #~ msgid "File not found"
-#~ msgstr "Ficheiro não encontrado"
+#~ msgstr "File not found"
 
 #~ msgid "Save JSON on startup"
-#~ msgstr "Guardar JSON ao iniciar"
+#~ msgstr "Save JSON on startup"
 
 #~ msgid ""
 #~ "Delete config from conf\n"
 #~ "on shutdown"
 #~ msgstr ""
-#~ "Apagar configuração de conf\n"
-#~ "ao terminar"
+#~ "Delete config from conf\n"
+#~ "on shutdown"
 
 #~ msgid "General"
-#~ msgstr "Geral"
+#~ msgstr "General"
 
 #~ msgid "Select JSON file to import"
-#~ msgstr "Selecione ficheiro JSON a importar"
+#~ msgstr "Select JSON file to import"
 
 #~ msgid "*.*"
 #~ msgstr "*.*"
 
 #~ msgid "Select a JSON file"
-#~ msgstr "Selecione um ficheiro JSON"
+#~ msgstr "Select a JSON file"
 
 #~ msgid ""
 #~ "Save incoming JSON\n"
 #~ "messages"
 #~ msgstr ""
-#~ "Salvar mensagens JSON\n"
-#~ "recebidas"
+#~ "Save incoming JSON\n"
+#~ "messages"
 
 #~ msgid "Select a file"
-#~ msgstr "Selecione um ficheiro"
+#~ msgstr "Select a file"
 
 #~ msgid ""
 #~ "Close save file after\n"
 #~ "each write"
 #~ msgstr ""
-#~ "Fechar arquivo de gravação após\n"
-#~ "cada escrita"
+#~ "Close save file after\n"
+#~ "each write"
 
 #~ msgid "Append to file"
-#~ msgstr "Acrescentar ao ficheiro"
+#~ msgstr "Append to file"
 
 #~ msgid "Import JSON"
-#~ msgstr "Importar JSON"
+#~ msgstr "Import JSON"
 
 #~ msgid "File Input"
-#~ msgstr "Entrada de ficheiro"
+#~ msgstr "File Input"
 
 #~ msgid "Name"
-#~ msgstr "Nome"
+#~ msgstr "Name"
 
 #~ msgid "Type"
-#~ msgstr "Tipo"
+#~ msgstr "Type"
 
 #~ msgid "Exclusion"
-#~ msgstr "Exclusão"
+#~ msgstr "Exclusion"
 
 #~ msgid "Inclusion"
-#~ msgstr "Inclusão"
+#~ msgstr "Inclusion"
 
 #~ msgid "Neither"
-#~ msgstr "Nem"
+#~ msgstr "Neither"
 
 #~ msgid "Active"
-#~ msgstr "Ativo"
+#~ msgstr "Active"
 
 #~ msgid "Visible"
-#~ msgstr "Visível"
+#~ msgstr "Visible"
 
 #~ msgid "Fill Colour"
-#~ msgstr "Cor de enchimento"
+#~ msgstr "Fill Colour"
 
 #~ msgid "Boundary Points"
-#~ msgstr "Ponto de limite"
+#~ msgstr "Boundary Points"
 
 #~ msgid "Corner Lat"
-#~ msgstr "Lat do Canto"
+#~ msgstr "Corner Lat"
 
 #~ msgid "Corner Lon"
-#~ msgstr "Lon do Canto"
+#~ msgstr "Corner Lon"
 
 #~ msgid "Number of Points"
-#~ msgstr "Número de pontos"
+#~ msgstr "Number of Points"
 
 #~ msgid "2"
 #~ msgstr "2"
@@ -368,17 +364,17 @@ msgstr ""
 #~ msgstr "6"
 
 #~ msgid "Boundary Point Visible"
-#~ msgstr "Ponto Limite Visível"
+#~ msgstr "Boundary Point Visible"
 
 #~ msgid ""
 #~ "Boundary Point\n"
 #~ "Range Rings Visible"
 #~ msgstr ""
-#~ "Ponto Limite\n"
-#~ "Anéis de Alcance Visíveis"
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
 
 #~ msgid "Number of Rings"
-#~ msgstr "Número de anéis"
+#~ msgstr "Number of Rings"
 
 #~ msgid "0"
 #~ msgstr "0"
@@ -399,43 +395,43 @@ msgstr ""
 #~ msgstr "9"
 
 #~ msgid "Rings Step"
-#~ msgstr "Passo dos Anéis"
+#~ msgstr "Rings Step"
 
 #~ msgid "0.5"
 #~ msgstr "0.5"
 
 #~ msgid "Ring Colour"
-#~ msgstr "Cor do anel"
+#~ msgstr "Ring Colour"
 
 #~ msgid "Kilometers"
-#~ msgstr "Kilómetros"
+#~ msgstr "Kilometres"
 
 #~ msgid "Nautical Miles"
-#~ msgstr "Milhas náuticas"
+#~ msgstr "Nautical Miles"
 
 #~ msgid "Create ODAPI"
-#~ msgstr "Criar ODAPI"
+#~ msgstr "Create ODAPI"
 
 #~ msgid "Create JSON"
-#~ msgstr "Criar JSON"
+#~ msgstr "Create JSON"
 
 #~ msgid "Create Boundary"
-#~ msgstr "Criar limite"
+#~ msgstr "Create Boundary"
 
 #~ msgid "GUID"
 #~ msgstr "GUID"
 
 #~ msgid "Delete ODAPI"
-#~ msgstr "Eliminar ODAPI"
+#~ msgstr "Delete ODAPI"
 
 #~ msgid "Delete JSON"
-#~ msgstr "Eliminar JSON"
+#~ msgstr "Delete JSON"
 
 #~ msgid "Delete Boundary"
-#~ msgstr "Eliminar limite"
+#~ msgstr "Delete Boundary"
 
 #~ msgid "Icon Name"
-#~ msgstr "Nome do Ícone"
+#~ msgstr "Icon Name"
 
 #~ msgid "Lat"
 #~ msgstr "Lat"
@@ -444,82 +440,82 @@ msgstr ""
 #~ msgstr "Lon"
 
 #~ msgid "Rings Visible"
-#~ msgstr "Anéis Visíveis"
+#~ msgstr "Rings Visible"
 
 #~ msgid "Step Units"
-#~ msgstr "Unidade de passo"
+#~ msgstr "Step Units"
 
 #~ msgid "Create Boundary Point"
-#~ msgstr "Criar ponto de limite"
+#~ msgstr "Create Boundary Point"
 
 #~ msgid "Delete Boundary Point"
-#~ msgstr "Eliminar ponto de limite"
+#~ msgstr "Delete Boundary Point"
 
 #~ msgid "Text to Display with Point"
-#~ msgstr "Texto a apresentar com o ponto"
+#~ msgstr "Text to Display with Point"
 
 #~ msgid "Text position relative to point"
-#~ msgstr "Posição do texto em relação ao ponto"
+#~ msgstr "Text position relative to point"
 
 #~ msgid "Bottom"
-#~ msgstr "Em baixo"
+#~ msgstr "Bottom"
 
 #~ msgid "Bottom Centre"
-#~ msgstr "Inferior Central"
+#~ msgstr "Bottom Centre"
 
 #~ msgid "Centre"
-#~ msgstr "Centro"
+#~ msgstr "Centre"
 
 #~ msgid "Left"
-#~ msgstr "Esquerda"
+#~ msgstr "Left"
 
 #~ msgid "Right"
-#~ msgstr "Direita"
+#~ msgstr "Right"
 
 #~ msgid "Top"
-#~ msgstr "Topo"
+#~ msgstr "Top"
 
 #~ msgid "Top Centre"
-#~ msgstr "Centro no topo"
+#~ msgstr "Top Centre"
 
 #~ msgid "Background Colour"
-#~ msgstr "Cor do fundo"
+#~ msgstr "Background Colour"
 
 #~ msgid "Background Transparancy"
-#~ msgstr "Transparência do fundo"
+#~ msgstr "Background Transparancy"
 
 #~ msgid "Text Font"
-#~ msgstr "Fonte do texto"
+#~ msgstr "Text Font"
 
 #~ msgid "Example"
-#~ msgstr "Exemplo"
+#~ msgstr "Example"
 
 #~ msgid "Fonts"
-#~ msgstr "Fontes"
+#~ msgstr "Fonts"
 
 #~ msgid "Always"
-#~ msgstr "Sempre"
+#~ msgstr "Always"
 
 #~ msgid "Never"
-#~ msgstr "Nunca"
+#~ msgstr "Never"
 
 #~ msgid "On Rollover Only"
-#~ msgstr "Apenas no arrastamento"
+#~ msgstr "On Rollover Only"
 
 #~ msgid "Show Display Text"
-#~ msgstr "Apresentar Texto"
+#~ msgstr "Show Display Text"
 
 #~ msgid "Create Text Point"
-#~ msgstr "Criar ponto de texto"
+#~ msgstr "Create Text Point"
 
 #~ msgid "Delete Text Point"
-#~ msgstr "Eliminar ponto de texto"
+#~ msgstr "Delete Text Point"
 
 #~ msgid "Delete"
-#~ msgstr "Apagar"
+#~ msgstr "Delete"
 
 #~ msgid "add"
-#~ msgstr "adicionar"
+#~ msgstr "add"
 
 #~ msgid "ODAPI"
 #~ msgstr "ODAPI"
@@ -528,16 +524,16 @@ msgstr ""
 #~ msgstr "JSON"
 
 #~ msgid "Point Icon"
-#~ msgstr "Ícone de ponto"
+#~ msgstr "Point Icon"
 
 #~ msgid "User Input"
-#~ msgstr "Entrada de utilizador"
+#~ msgstr "User Input"
 
 #~ msgid "&Close"
-#~ msgstr "&Fechar"
+#~ msgstr "&Close"
 
 #~ msgid "Blue Anchor"
-#~ msgstr "Âncora Azul"
+#~ msgstr "Blue Anchor"
 
 #~ msgid "Test Link"
 #~ msgstr "Test Link"
@@ -549,10 +545,10 @@ msgstr ""
 #~ msgstr "Test Link 2"
 
 #~ msgid "No file specified for output"
-#~ msgstr "Nenhum ficheiro especificado para a saída"
+#~ msgstr "No file specified for output"
 
 #~ msgid "No file specified for input"
-#~ msgstr "Nenhum ficheiro especificado para a entrada"
+#~ msgstr "No file specified for input"
 
 #~ msgid "signalk_notes_opencpn_pi data location"
-#~ msgstr "localização de dados signalk_notes_opencpn_pi"
+#~ msgstr "signalk_notes_opencpn_pi data location"

@@ -598,6 +598,8 @@ void signalk_notes_opencpn_pi::SaveConfig() {
 
   wxFileConfig* pConf = m_pTPConfig;
   if (!pConf) return;
+  SKN_LOG(this, "SaveConfig called, token='%s'",  // ← NEU
+          m_pSignalKNotesManager->GetAuthToken().Left(20));
 
   pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
 
@@ -648,6 +650,7 @@ void signalk_notes_opencpn_pi::SaveConfig() {
   }
   // Write changes to disk
   pConf->Flush();
+  SKN_LOG(this, "SaveConfig Flush done");  // ← NEU
 }
 
 void signalk_notes_opencpn_pi::LoadConfig() {

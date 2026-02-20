@@ -92,8 +92,8 @@ msgid "Fehler"
 msgstr "Error"
 
 #: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung"
-msgstr "Error requesting authentication"
+msgid "Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."
+msgstr "Error requesting authentication. Are there still 'access requests' in SignalK? If yes, delete/reject them."
 
 #: src/tpConfigDialog.cpp:761
 msgid "Font-Größe:"

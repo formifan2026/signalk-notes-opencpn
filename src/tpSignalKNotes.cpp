@@ -1004,6 +1004,7 @@ tpSignalKNotesManager::GetProviderInfos() const {
 
 void tpSignalKNotesManager::SetAuthToken(const wxString& token) {
   m_authToken = token;
+  SKN_LOG(m_parent, "SetAuthToken called, token='%s'",token.Left(20));
   if (!token.IsEmpty()) {
     m_authTokenReceivedTime = wxDateTime::Now();
   }

@@ -5,15 +5,15 @@ msgstr ""
 "POT-Creation-Date: 2026-02-01 00:55+0100\n"
 "PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
-"Language-Team: Greek\n"
-"Language: el_GR\n"
+"Language-Team: English, United Kingdom\n"
+"Language: en_GB\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Crowdin-Project: opencpn\n"
 "X-Crowdin-Project-ID: 49843\n"
-"X-Crowdin-Language: el\n"
+"X-Crowdin-Language: en-GB\n"
 "X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/"
 "signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
@@ -41,8 +41,8 @@ msgid ""
 "Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
 "Admin und 'Authentication Timeout' NEVER bestätigen."
 msgstr ""
-"In SignalK, please confirm the request in the menu item 'Access Requests' "
-"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+"In SignalK, please confirm the request in the menu item 'Access Requests' with 'Permission' "
+"Admin and 'Authentication Timeout' NEVER."
 
 #: src/tpConfigDialog.cpp:727
 msgid "Cluster Einstellungen"
@@ -77,8 +77,7 @@ msgstr "Failed to connect to: %s"
 msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
-"Αποτυχία φόρτωσης όλων των εικόνων του signalk_notes_opencpn_pi, κοιτάξτε το "
-"OCPN log για λεπτομέρειες"
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 
 #: src/tpSignalKNotes.cpp:409
 msgid "Failed to parse note details JSON"
@@ -93,8 +92,8 @@ msgid "Fehler"
 msgstr "Error"
 
 #: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung"
-msgstr "Error requesting authentication"
+msgid "Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."
+msgstr "Error requesting authentication. Are there still 'access requests' in SignalK? If yes, delete/reject them."
 
 #: src/tpConfigDialog.cpp:761
 msgid "Font-Größe:"
@@ -105,7 +104,8 @@ msgid ""
 "Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
 "Provider zu entdecken."
 msgstr ""
-"Note: No providers configured yet. Move the map to Providers to discover."
+"Note: No providers configured yet. Move the map to "
+"Providers to discover."
 
 #: src/tpConfigDialog.cpp:49
 msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
@@ -142,7 +142,7 @@ msgstr "OK"
 
 #: src/tpicons.cpp:85
 msgid "OpenCPN Alert"
-msgstr "OpenCPN: Συναγερμός"
+msgstr "OpenCPN Alert"
 
 #: src/tpConfigDialog.cpp:89
 msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
@@ -185,7 +185,7 @@ msgid "SignalKNotes: fetching data with URL: %s"
 msgstr "SignalKNotes: fetching data with URL: %s"
 
 #: src/tpConfigDialog.cpp:755
-msgid "Text-Farbe:"
+msgid "Text color:"
 msgstr ""
 
 #: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
@@ -196,41 +196,37 @@ msgstr "Preview:"
 msgid "Wählen Sie die anzuzeigenden Provider:"
 msgstr "Select the providers to display:"
 
-#: src/tpConfigDialog.cpp:755
-msgid "Text color:"
-msgstr ""
-
 #, fuzzy
 #~ msgid "Circle Color:"
-#~ msgstr "Χρώμα γραμμής"
+#~ msgstr "Line Colour"
 
 #, fuzzy
 #~ msgid "Text Color:"
-#~ msgstr "Χρώμα κειμένου"
+#~ msgstr "Text Colour"
 
 #~ msgid "Test Plugin Control Dialog"
-#~ msgstr "Διάλογος ελέγχου του πρόσθετου Test"
+#~ msgstr "Test Plugin Control Dialogue"
 
 #~ msgid "Test Plugin"
-#~ msgstr "Πρόσθετο Test"
+#~ msgstr "Test Plugin"
 
 #~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-#~ msgstr "πρόσθετο Test για το OCPN"
+#~ msgstr "signalk_notes_opencpn PlugIn for OpenCPN"
 
 #~ msgid ""
 #~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
 #~ "demonstrates PlugIn processing of NMEA messages."
 #~ msgstr ""
-#~ "πρόσθετο Test για το OCPN\n"
-#~ "επιδεικνύει την επεξεργασία μηνυμάτων NMEA"
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
 
 #, c-format
 #~ msgid ""
 #~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
 #~ "Minor: %i\n"
 #~ msgstr ""
-#~ "Έκδοση OD: Μείζον: %i,  Έλασσον: %i, Διόρθωση: %i, Έκδοση ODAPI: : "
-#~ "Μείζον: %i,  Έλασσον: %i\n"
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
+#~ "Minor: %i\n"
 
 #~ msgid "OD_FindPointInAnyBoundary\n"
 #~ msgstr "OD_FindPointInAnyBoundary\n"
@@ -257,94 +253,100 @@ msgstr ""
 #~ msgstr "OD_DeletePointIcon\n"
 
 #~ msgid "The following ODAPI's are available: \n"
-#~ msgstr "Τα ακόλουθα ODAPI είναι διαθέσιμα:\n"
+#~ msgstr "The following ODAPI's are available: \n"
 
 #~ msgid "The following ODAPI's are not available:\n"
-#~ msgstr "Τα ακόλουθα ODAPI δεν είναι διαθέσιμα:\n"
+#~ msgstr "The following ODAPI's are not available:\n"
 
 #~ msgid "SIGNALK_NOTES_OPENCPN"
 #~ msgstr "SIGNALK_NOTES_OPENCPN"
 
 #~ msgid "File not found"
-#~ msgstr "Το αρχείο δεν βρέθηκε"
+#~ msgstr "File not found"
 
 #~ msgid "Save JSON on startup"
-#~ msgstr "Αποθήκευση του JSON στην εκκίνηση"
+#~ msgstr "Save JSON on startup"
 
 #~ msgid ""
 #~ "Delete config from conf\n"
 #~ "on shutdown"
-#~ msgstr "Διαγραφή του config κατά το κλείσιμο"
+#~ msgstr ""
+#~ "Delete config from conf\n"
+#~ "on shutdown"
 
 #~ msgid "General"
-#~ msgstr "Γενικά"
+#~ msgstr "General"
 
 #~ msgid "Select JSON file to import"
-#~ msgstr "Επιλέξτε αρχείο JSON για εισαγωγή"
+#~ msgstr "Select JSON file to import"
 
 #~ msgid "*.*"
 #~ msgstr "*.*"
 
 #~ msgid "Select a JSON file"
-#~ msgstr "Επιλέξτε ένα αρχείο JSON"
+#~ msgstr "Select a JSON file"
 
 #~ msgid ""
 #~ "Save incoming JSON\n"
 #~ "messages"
-#~ msgstr "Αποθήκευση εισερχομένων μηνυμάτων JSON"
+#~ msgstr ""
+#~ "Save incoming JSON\n"
+#~ "messages"
 
 #~ msgid "Select a file"
-#~ msgstr "Επιλέξτε αρχείο"
+#~ msgstr "Select a file"
 
 #~ msgid ""
 #~ "Close save file after\n"
 #~ "each write"
-#~ msgstr "Κλείσιμο του αρχείου μετά από κάθε εγγραφή"
+#~ msgstr ""
+#~ "Close save file after\n"
+#~ "each write"
 
 #~ msgid "Append to file"
-#~ msgstr "Προσάρτηση στο αρχείο"
+#~ msgstr "Append to file"
 
 #~ msgid "Import JSON"
-#~ msgstr "Εισαγωγή JSON"
+#~ msgstr "Import JSON"
 
 #~ msgid "File Input"
-#~ msgstr "Είσοδος αρχείου"
+#~ msgstr "File Input"
 
 #~ msgid "Name"
-#~ msgstr "Όνομα"
+#~ msgstr "Name"
 
 #~ msgid "Type"
-#~ msgstr "Είδος"
+#~ msgstr "Type"
 
 #~ msgid "Exclusion"
-#~ msgstr "Αποκλεισμός"
+#~ msgstr "Exclusion"
 
 #~ msgid "Inclusion"
-#~ msgstr "Περίλαμβάνεται"
+#~ msgstr "Inclusion"
 
 #~ msgid "Neither"
-#~ msgstr "Κανένα"
+#~ msgstr "Neither"
 
 #~ msgid "Active"
-#~ msgstr "Ενεργό"
+#~ msgstr "Active"
 
 #~ msgid "Visible"
-#~ msgstr "Ορατό"
+#~ msgstr "Visible"
 
 #~ msgid "Fill Colour"
-#~ msgstr "Εσωτερικό χρώμα"
+#~ msgstr "Fill Colour"
 
 #~ msgid "Boundary Points"
-#~ msgstr "Σημεία ορίου"
+#~ msgstr "Boundary Points"
 
 #~ msgid "Corner Lat"
-#~ msgstr "Πλάτος γωνίας"
+#~ msgstr "Corner Lat"
 
 #~ msgid "Corner Lon"
-#~ msgstr "Μήκος γωνίας"
+#~ msgstr "Corner Lon"
 
 #~ msgid "Number of Points"
-#~ msgstr "Αριθμός σημείων"
+#~ msgstr "Number of Points"
 
 #~ msgid "2"
 #~ msgstr "2"
@@ -362,15 +364,17 @@ msgstr ""
 #~ msgstr "6"
 
 #~ msgid "Boundary Point Visible"
-#~ msgstr "Ορατό σημείο ορίου"
+#~ msgstr "Boundary Point Visible"
 
 #~ msgid ""
 #~ "Boundary Point\n"
 #~ "Range Rings Visible"
-#~ msgstr "Ορατοί δακτύλιοι σημείου ορίου"
+#~ msgstr ""
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
 
 #~ msgid "Number of Rings"
-#~ msgstr "Αριθμός δακτυλίων"
+#~ msgstr "Number of Rings"
 
 #~ msgid "0"
 #~ msgstr "0"
@@ -391,127 +395,127 @@ msgstr ""
 #~ msgstr "9"
 
 #~ msgid "Rings Step"
-#~ msgstr "Απόσταση δακτυλίων"
+#~ msgstr "Rings Step"
 
 #~ msgid "0.5"
 #~ msgstr "0.5"
 
 #~ msgid "Ring Colour"
-#~ msgstr "Χρώμα δακτυλίων"
+#~ msgstr "Ring Colour"
 
 #~ msgid "Kilometers"
-#~ msgstr "Χιλιόμετρα"
+#~ msgstr "Kilometres"
 
 #~ msgid "Nautical Miles"
-#~ msgstr "Ναυτικά μίλια"
+#~ msgstr "Nautical Miles"
 
 #~ msgid "Create ODAPI"
-#~ msgstr "Δημιουργία ODAPI"
+#~ msgstr "Create ODAPI"
 
 #~ msgid "Create JSON"
-#~ msgstr "Δημιουργία JSON"
+#~ msgstr "Create JSON"
 
 #~ msgid "Create Boundary"
-#~ msgstr "Δημιουργία ορίου"
+#~ msgstr "Create Boundary"
 
 #~ msgid "GUID"
 #~ msgstr "GUID"
 
 #~ msgid "Delete ODAPI"
-#~ msgstr "Διαγραφή ODAPI"
+#~ msgstr "Delete ODAPI"
 
 #~ msgid "Delete JSON"
-#~ msgstr "Διαγραφή JSON"
+#~ msgstr "Delete JSON"
 
 #~ msgid "Delete Boundary"
-#~ msgstr "Διαγραφή ορίου"
+#~ msgstr "Delete Boundary"
 
 #~ msgid "Icon Name"
-#~ msgstr "Όνομα εικονιδίου"
+#~ msgstr "Icon Name"
 
 #~ msgid "Lat"
-#~ msgstr "πλάτος"
+#~ msgstr "Lat"
 
 #~ msgid "Lon"
-#~ msgstr "μήκος"
+#~ msgstr "Lon"
 
 #~ msgid "Rings Visible"
-#~ msgstr "Ορατοί δακτύλιοι"
+#~ msgstr "Rings Visible"
 
 #~ msgid "Step Units"
-#~ msgstr "Μονάδες"
+#~ msgstr "Step Units"
 
 #~ msgid "Create Boundary Point"
-#~ msgstr "Δημιουργία σημείου ορίου"
+#~ msgstr "Create Boundary Point"
 
 #~ msgid "Delete Boundary Point"
-#~ msgstr "Διαγραφή σημείου ορίου"
+#~ msgstr "Delete Boundary Point"
 
 #~ msgid "Text to Display with Point"
-#~ msgstr "Κείμενο προς εμφάνιση στο σημείο"
+#~ msgstr "Text to Display with Point"
 
 #~ msgid "Text position relative to point"
-#~ msgstr "Θέση κειμένου σε σχέση με το σημείο"
+#~ msgstr "Text position relative to point"
 
 #~ msgid "Bottom"
-#~ msgstr "Κάτω"
+#~ msgstr "Bottom"
 
 #~ msgid "Bottom Centre"
-#~ msgstr "Κάτω κέντρο"
+#~ msgstr "Bottom Centre"
 
 #~ msgid "Centre"
-#~ msgstr "Κέντρο"
+#~ msgstr "Centre"
 
 #~ msgid "Left"
-#~ msgstr "Αριστερά"
+#~ msgstr "Left"
 
 #~ msgid "Right"
-#~ msgstr "Δεξιά"
+#~ msgstr "Right"
 
 #~ msgid "Top"
-#~ msgstr "Πάνω"
+#~ msgstr "Top"
 
 #~ msgid "Top Centre"
-#~ msgstr "Επάνω κέντρο"
+#~ msgstr "Top Centre"
 
 #~ msgid "Background Colour"
-#~ msgstr "Χρώμα φόντου"
+#~ msgstr "Background Colour"
 
 #~ msgid "Background Transparancy"
-#~ msgstr "Διαφάνεια φόντου"
+#~ msgstr "Background Transparancy"
 
 #~ msgid "Text Font"
-#~ msgstr "Γραμματοσειρά κειμένου"
+#~ msgstr "Text Font"
 
 #~ msgid "Example"
-#~ msgstr "Παράδειγμα"
+#~ msgstr "Example"
 
 #~ msgid "Fonts"
-#~ msgstr "Γραμματοσειρές"
+#~ msgstr "Fonts"
 
 #~ msgid "Always"
-#~ msgstr "Πάντοτε"
+#~ msgstr "Always"
 
 #~ msgid "Never"
-#~ msgstr "Ποτέ"
+#~ msgstr "Never"
 
 #~ msgid "On Rollover Only"
-#~ msgstr "Στο Rollover μόνο"
+#~ msgstr "On Rollover Only"
 
 #~ msgid "Show Display Text"
-#~ msgstr "Εμφάνιση κειμένου"
+#~ msgstr "Show Display Text"
 
 #~ msgid "Create Text Point"
-#~ msgstr "Δημιουργία σημείου κειμένου"
+#~ msgstr "Create Text Point"
 
 #~ msgid "Delete Text Point"
-#~ msgstr "Διαγραφή σημείου κειμένου"
+#~ msgstr "Delete Text Point"
 
 #~ msgid "Delete"
-#~ msgstr "Διαγραφή"
+#~ msgstr "Delete"
 
 #~ msgid "add"
-#~ msgstr "προσθήκη"
+#~ msgstr "add"
 
 #~ msgid "ODAPI"
 #~ msgstr "ODAPI"
@@ -520,31 +524,31 @@ msgstr ""
 #~ msgstr "JSON"
 
 #~ msgid "Point Icon"
-#~ msgstr "Εικονίδιο σημείου"
+#~ msgstr "Point Icon"
 
 #~ msgid "User Input"
-#~ msgstr "Εισαγωγή από χρήστη"
+#~ msgstr "User Input"
 
 #~ msgid "&Close"
-#~ msgstr "&Κλείσιμο"
+#~ msgstr "&Close"
 
 #~ msgid "Blue Anchor"
-#~ msgstr "Μπλε άγκυρα"
+#~ msgstr "Blue Anchor"
 
 #~ msgid "Test Link"
-#~ msgstr "Δοκ. σύνδεσμος"
+#~ msgstr "Test Link"
 
 #~ msgid "Test Link 1"
-#~ msgstr "Δοκ. σύνδεσμος 1"
+#~ msgstr "Test Link 1"
 
 #~ msgid "Test Link 2"
-#~ msgstr "Δοκ. σύνδεσμος 2"
+#~ msgstr "Test Link 2"
 
 #~ msgid "No file specified for output"
-#~ msgstr "Δεν καθορίστηκε αρχείο εξόδου"
+#~ msgstr "No file specified for output"
 
 #~ msgid "No file specified for input"
-#~ msgstr "Δεν καθορίστηκε αρχείο εισόδου"
+#~ msgstr "No file specified for input"
 
 #~ msgid "signalk_notes_opencpn_pi data location"
-#~ msgstr "θέση δεδομένων για το signalk_notes_opencpn_pi"
+#~ msgstr "signalk_notes_opencpn_pi data location"

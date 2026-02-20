@@ -468,7 +468,7 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
     m_authStatusLabel->SetForegroundColour(*wxRED); 
     Layout();
   } else {
-    wxMessageBox(_("Fehler beim Anfordern der Authentifizierung"), _("Fehler"),
+    wxMessageBox(_("Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."), _("Fehler"),
                  wxOK | wxICON_ERROR);
   }
 }

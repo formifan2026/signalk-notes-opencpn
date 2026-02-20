@@ -3,17 +3,17 @@ msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-02-01 00:55+0100\n"
-"PO-Revision-Date: 2023-10-19 09:18\n"
+"PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
-"Language-Team: Spanish\n"
-"Language: es_ES\n"
+"Language-Team: English, United Kingdom\n"
+"Language: en_GB\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Crowdin-Project: opencpn\n"
 "X-Crowdin-Project-ID: 49843\n"
-"X-Crowdin-Language: es-ES\n"
+"X-Crowdin-Language: en-GB\n"
 "X-Crowdin-File: /plugins/signalk_notes_opencpn_pi/po/"
 "signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
@@ -41,8 +41,8 @@ msgid ""
 "Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
 "Admin und 'Authentication Timeout' NEVER bestätigen."
 msgstr ""
-"In SignalK, please confirm the request in the menu item 'Access Requests' "
-"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+"In SignalK, please confirm the request in the menu item 'Access Requests' with 'Permission' "
+"Admin and 'Authentication Timeout' NEVER."
 
 #: src/tpConfigDialog.cpp:727
 msgid "Cluster Einstellungen"
@@ -77,8 +77,7 @@ msgstr "Failed to connect to: %s"
 msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
-"Error al cargar todos los iconos de signalk_notes_opencpn_pi, compruebe el "
-"registro OCPN para más detalles"
+"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 
 #: src/tpSignalKNotes.cpp:409
 msgid "Failed to parse note details JSON"
@@ -93,8 +92,8 @@ msgid "Fehler"
 msgstr "Error"
 
 #: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung"
-msgstr "Error requesting authentication"
+msgid "Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."
+msgstr "Error requesting authentication. Are there still 'access requests' in SignalK? If yes, delete/reject them."
 
 #: src/tpConfigDialog.cpp:761
 msgid "Font-Größe:"
@@ -105,7 +104,8 @@ msgid ""
 "Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
 "Provider zu entdecken."
 msgstr ""
-"Note: No providers configured yet. Move the map to Providers to discover."
+"Note: No providers configured yet. Move the map to "
+"Providers to discover."
 
 #: src/tpConfigDialog.cpp:49
 msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
@@ -142,7 +142,7 @@ msgstr "OK"
 
 #: src/tpicons.cpp:85
 msgid "OpenCPN Alert"
-msgstr "Alerta OpenCPN "
+msgstr "OpenCPN Alert"
 
 #: src/tpConfigDialog.cpp:89
 msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
@@ -185,7 +185,7 @@ msgid "SignalKNotes: fetching data with URL: %s"
 msgstr "SignalKNotes: fetching data with URL: %s"
 
 #: src/tpConfigDialog.cpp:755
-msgid "Text-Farbe:"
+msgid "Text color:"
 msgstr ""
 
 #: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
@@ -196,159 +196,157 @@ msgstr "Preview:"
 msgid "Wählen Sie die anzuzeigenden Provider:"
 msgstr "Select the providers to display:"
 
-#: src/tpConfigDialog.cpp:755
-msgid "Text color:"
-msgstr ""
-
 #, fuzzy
 #~ msgid "Circle Color:"
-#~ msgstr "Color de línea"
+#~ msgstr "Line Colour"
 
 #, fuzzy
 #~ msgid "Text Color:"
-#~ msgstr "Color del texto"
+#~ msgstr "Text Colour"
 
 #~ msgid "Test Plugin Control Dialog"
-#~ msgstr "Diálogo de Control del Plugin de prueba"
+#~ msgstr "Test Plugin Control Dialogue"
 
 #~ msgid "Test Plugin"
-#~ msgstr "Plugin de prueba"
+#~ msgstr "Test Plugin"
 
 #~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-#~ msgstr "Plugin  de prueba para OpenCPN"
+#~ msgstr "signalk_notes_opencpn PlugIn for OpenCPN"
 
 #~ msgid ""
 #~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
 #~ "demonstrates PlugIn processing of NMEA messages."
 #~ msgstr ""
-#~ "PlugIn de prueba para OpenCPN\n"
-#~ "demuestra el procesamiento de mensajes NMEA por el plugin."
+#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
+#~ "demonstrates PlugIn processing of NMEA messages."
 
 #, c-format
 #~ msgid ""
 #~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
 #~ "Minor: %i\n"
 #~ msgstr ""
-#~ "Versión OD: mayor: %i, menor: %i, parche: %i, versión ODAPI: mayor: %i, "
-#~ "menor: %i\n"
+#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
+#~ "Minor: %i\n"
 
 #~ msgid "OD_FindPointInAnyBoundary\n"
-#~ msgstr "OD_FindPointInAnylimit\n"
+#~ msgstr "OD_FindPointInAnyBoundary\n"
 
 #~ msgid "OD_FindClosestBoundaryLineCrossing\n"
 #~ msgstr "OD_FindClosestBoundaryLineCrossing\n"
 
 #~ msgid "OD_FindFirstBoundaryLineCrossing\n"
-#~ msgstr "OD_FindFirstLineeCrossing\n"
+#~ msgstr "OD_FindFirstBoundaryLineCrossing\n"
 
 #~ msgid "OD_CreateBoundary\n"
-#~ msgstr "Crear perímetro\n"
+#~ msgstr "OD_CreateBoundary\n"
 
 #~ msgid "OD_CreateBoundaryPoint\n"
-#~ msgstr "Crear punto perimetral\n"
+#~ msgstr "OD_CreateBoundaryPoint\n"
 
 #~ msgid "OD_CreateTextPoint\n"
-#~ msgstr "Crear punto de texto\n"
+#~ msgstr "OD_CreateTextPoint\n"
 
 #~ msgid "OD_AddPointIcon\n"
-#~ msgstr "Añadir icono de punto de OD\n"
+#~ msgstr "OD_AddPointIcon\n"
 
 #~ msgid "OD_DeletePointIcon\n"
-#~ msgstr "Eliminar el icono de PointIcono\n"
+#~ msgstr "OD_DeletePointIcon\n"
 
 #~ msgid "The following ODAPI's are available: \n"
-#~ msgstr "Los siguientes ODAPI están disponibles: \n"
+#~ msgstr "The following ODAPI's are available: \n"
 
 #~ msgid "The following ODAPI's are not available:\n"
-#~ msgstr "Los siguientes ODAPI no están disponibles:\n"
+#~ msgstr "The following ODAPI's are not available:\n"
 
 #~ msgid "SIGNALK_NOTES_OPENCPN"
 #~ msgstr "SIGNALK_NOTES_OPENCPN"
 
 #~ msgid "File not found"
-#~ msgstr "Archivo no encontrado"
+#~ msgstr "File not found"
 
 #~ msgid "Save JSON on startup"
-#~ msgstr "Guardar JSON al iniciar"
+#~ msgstr "Save JSON on startup"
 
 #~ msgid ""
 #~ "Delete config from conf\n"
 #~ "on shutdown"
 #~ msgstr ""
-#~ "Eliminar configuración de conf\n"
-#~ "al apagar"
+#~ "Delete config from conf\n"
+#~ "on shutdown"
 
 #~ msgid "General"
 #~ msgstr "General"
 
 #~ msgid "Select JSON file to import"
-#~ msgstr "Seleccione el archivo JSON a importar"
+#~ msgstr "Select JSON file to import"
 
 #~ msgid "*.*"
 #~ msgstr "*.*"
 
 #~ msgid "Select a JSON file"
-#~ msgstr "Seleccione un archivo JSON"
+#~ msgstr "Select a JSON file"
 
 #~ msgid ""
 #~ "Save incoming JSON\n"
 #~ "messages"
-#~ msgstr "Guardar mensajes entrantes JSON"
+#~ msgstr ""
+#~ "Save incoming JSON\n"
+#~ "messages"
 
 #~ msgid "Select a file"
-#~ msgstr "Elija un archivo"
+#~ msgstr "Select a file"
 
 #~ msgid ""
 #~ "Close save file after\n"
 #~ "each write"
 #~ msgstr ""
-#~ "Cerrar archivo de guardado después de\n"
-#~ "cada escritura"
+#~ "Close save file after\n"
+#~ "each write"
 
 #~ msgid "Append to file"
-#~ msgstr "Añadir al archivo"
+#~ msgstr "Append to file"
 
 #~ msgid "Import JSON"
-#~ msgstr "Importar JSON"
+#~ msgstr "Import JSON"
 
 #~ msgid "File Input"
-#~ msgstr "Entrada de archivo"
+#~ msgstr "File Input"
 
 #~ msgid "Name"
-#~ msgstr "Nombre"
+#~ msgstr "Name"
 
 #~ msgid "Type"
-#~ msgstr "Tipo"
+#~ msgstr "Type"
 
 #~ msgid "Exclusion"
-#~ msgstr "Exclusión"
+#~ msgstr "Exclusion"
 
 #~ msgid "Inclusion"
-#~ msgstr "Inclusión"
+#~ msgstr "Inclusion"
 
 #~ msgid "Neither"
-#~ msgstr "Ni"
+#~ msgstr "Neither"
 
 #~ msgid "Active"
-#~ msgstr "Activo"
+#~ msgstr "Active"
 
 #~ msgid "Visible"
 #~ msgstr "Visible"
 
 #~ msgid "Fill Colour"
-#~ msgstr "Color de relleno"
+#~ msgstr "Fill Colour"
 
 #~ msgid "Boundary Points"
-#~ msgstr "Puntos límite"
+#~ msgstr "Boundary Points"
 
 #~ msgid "Corner Lat"
-#~ msgstr "Lat Esquina"
+#~ msgstr "Corner Lat"
 
 #~ msgid "Corner Lon"
-#~ msgstr "Lon Esquina"
+#~ msgstr "Corner Lon"
 
 #~ msgid "Number of Points"
-#~ msgstr "Número de puntos"
+#~ msgstr "Number of Points"
 
 #~ msgid "2"
 #~ msgstr "2"
@@ -366,17 +364,17 @@ msgstr ""
 #~ msgstr "6"
 
 #~ msgid "Boundary Point Visible"
-#~ msgstr "Punto límite visible"
+#~ msgstr "Boundary Point Visible"
 
 #~ msgid ""
 #~ "Boundary Point\n"
 #~ "Range Rings Visible"
 #~ msgstr ""
-#~ "Punto límite\n"
-#~ "Anillos de rango visibles"
+#~ "Boundary Point\n"
+#~ "Range Rings Visible"
 
 #~ msgid "Number of Rings"
-#~ msgstr "Número de anillos"
+#~ msgstr "Number of Rings"
 
 #~ msgid "0"
 #~ msgstr "0"
@@ -397,43 +395,43 @@ msgstr ""
 #~ msgstr "9"
 
 #~ msgid "Rings Step"
-#~ msgstr "Paso de anillos"
+#~ msgstr "Rings Step"
 
 #~ msgid "0.5"
 #~ msgstr "0.5"
 
 #~ msgid "Ring Colour"
-#~ msgstr "Color de anillo"
+#~ msgstr "Ring Colour"
 
 #~ msgid "Kilometers"
-#~ msgstr "Kilómetros"
+#~ msgstr "Kilometres"
 
 #~ msgid "Nautical Miles"
-#~ msgstr "Millas náuticas"
+#~ msgstr "Nautical Miles"
 
 #~ msgid "Create ODAPI"
-#~ msgstr "Crear ODAPI"
+#~ msgstr "Create ODAPI"
 
 #~ msgid "Create JSON"
-#~ msgstr "Crear JSON"
+#~ msgstr "Create JSON"
 
 #~ msgid "Create Boundary"
-#~ msgstr "Crear límite"
+#~ msgstr "Create Boundary"
 
 #~ msgid "GUID"
 #~ msgstr "GUID"
 
 #~ msgid "Delete ODAPI"
-#~ msgstr "Eliminar ODAPI"
+#~ msgstr "Delete ODAPI"
 
 #~ msgid "Delete JSON"
-#~ msgstr "Eliminar JSON"
+#~ msgstr "Delete JSON"
 
 #~ msgid "Delete Boundary"
-#~ msgstr "Eliminar límite"
+#~ msgstr "Delete Boundary"
 
 #~ msgid "Icon Name"
-#~ msgstr "Nombre del icono"
+#~ msgstr "Icon Name"
 
 #~ msgid "Lat"
 #~ msgstr "Lat"
@@ -442,82 +440,82 @@ msgstr ""
 #~ msgstr "Lon"
 
 #~ msgid "Rings Visible"
-#~ msgstr "Anillos visibles"
+#~ msgstr "Rings Visible"
 
 #~ msgid "Step Units"
-#~ msgstr "Unidades de paso"
+#~ msgstr "Step Units"
 
 #~ msgid "Create Boundary Point"
-#~ msgstr "Crear punto límite"
+#~ msgstr "Create Boundary Point"
 
 #~ msgid "Delete Boundary Point"
-#~ msgstr "Eliminar punto límite"
+#~ msgstr "Delete Boundary Point"
 
 #~ msgid "Text to Display with Point"
-#~ msgstr "Texto a mostrar con el punto"
+#~ msgstr "Text to Display with Point"
 
 #~ msgid "Text position relative to point"
-#~ msgstr "Posicion relativa de texto respecto a punto"
+#~ msgstr "Text position relative to point"
 
 #~ msgid "Bottom"
-#~ msgstr "Abajo"
+#~ msgstr "Bottom"
 
 #~ msgid "Bottom Centre"
-#~ msgstr "Centro inferior"
+#~ msgstr "Bottom Centre"
 
 #~ msgid "Centre"
-#~ msgstr "Centro"
+#~ msgstr "Centre"
 
 #~ msgid "Left"
-#~ msgstr "Izquierda"
+#~ msgstr "Left"
 
 #~ msgid "Right"
-#~ msgstr "Derecha"
+#~ msgstr "Right"
 
 #~ msgid "Top"
-#~ msgstr "Arriba"
+#~ msgstr "Top"
 
 #~ msgid "Top Centre"
-#~ msgstr "Centro superior"
+#~ msgstr "Top Centre"
 
 #~ msgid "Background Colour"
-#~ msgstr "Color de fondo"
+#~ msgstr "Background Colour"
 
 #~ msgid "Background Transparancy"
-#~ msgstr "Transparencia del fondo"
+#~ msgstr "Background Transparancy"
 
 #~ msgid "Text Font"
-#~ msgstr "Fuente del texto"
+#~ msgstr "Text Font"
 
 #~ msgid "Example"
-#~ msgstr "Ejemplo"
+#~ msgstr "Example"
 
 #~ msgid "Fonts"
-#~ msgstr "Fuentes"
+#~ msgstr "Fonts"
 
 #~ msgid "Always"
-#~ msgstr "Siempre"
+#~ msgstr "Always"
 
 #~ msgid "Never"
-#~ msgstr "Nunca"
+#~ msgstr "Never"
 
 #~ msgid "On Rollover Only"
-#~ msgstr "Solo cuando señale"
+#~ msgstr "On Rollover Only"
 
 #~ msgid "Show Display Text"
-#~ msgstr "Mostrar texto en pantalla"
+#~ msgstr "Show Display Text"
 
 #~ msgid "Create Text Point"
-#~ msgstr "Crear punto de texto"
+#~ msgstr "Create Text Point"
 
 #~ msgid "Delete Text Point"
-#~ msgstr "Eliminar punto de texto"
+#~ msgstr "Delete Text Point"
 
 #~ msgid "Delete"
-#~ msgstr "Borrar"
+#~ msgstr "Delete"
 
 #~ msgid "add"
-#~ msgstr "añadir"
+#~ msgstr "add"
 
 #~ msgid "ODAPI"
 #~ msgstr "ODAPI"
@@ -526,31 +524,31 @@ msgstr ""
 #~ msgstr "JSON"
 
 #~ msgid "Point Icon"
-#~ msgstr "Icono de punto"
+#~ msgstr "Point Icon"
 
 #~ msgid "User Input"
-#~ msgstr "Entrada de usuario"
+#~ msgstr "User Input"
 
 #~ msgid "&Close"
-#~ msgstr "&Cerrar"
+#~ msgstr "&Close"
 
 #~ msgid "Blue Anchor"
-#~ msgstr "Ancla azul"
+#~ msgstr "Blue Anchor"
 
 #~ msgid "Test Link"
-#~ msgstr "Enlace de prueba"
+#~ msgstr "Test Link"
 
 #~ msgid "Test Link 1"
-#~ msgstr "Enlace de prueba 1"
+#~ msgstr "Test Link 1"
 
 #~ msgid "Test Link 2"
-#~ msgstr "Enlace de prueba 2"
+#~ msgstr "Test Link 2"
 
 #~ msgid "No file specified for output"
-#~ msgstr "Ningún archivo especificado para la salida"
+#~ msgstr "No file specified for output"
 
 #~ msgid "No file specified for input"
-#~ msgstr "Ningún archivo especificado para la entrada"
+#~ msgstr "No file specified for input"
 
 #~ msgid "signalk_notes_opencpn_pi data location"
-#~ msgstr "ubicación de datos signalk_notes_opencpn_pi"
+#~ msgstr "signalk_notes_opencpn_pi data location"
