@@ -473,16 +473,13 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
 
 void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
   auto* mgr = m_parent->m_pSignalKNotesManager;
-  SKN_LOG(m_parent, "OnAuthCheckTimer fired, IsAuthPending=%d", (int)mgr->IsAuthPending());  // NEU
+  SKN_LOG(m_parent, "OnAuthCheckTimer fired, IsAuthPending=%d", (int)mgr->IsAuthPending());
 
-  // 1. Wenn noch eine Auth-Anfrage läuft → alten Flow benutzen
   if (mgr->IsAuthPending()) {
     if (mgr->CheckAuthorizationStatus()) {
-      // Token erhalten
       m_parent->SaveConfig();
       ShowAuthenticatedState();
 
-      // Provider laden und Liste aktualisieren
       std::map<wxString, bool> plugins;
       mgr->FetchInstalledPlugins(plugins);
 
@@ -495,24 +492,26 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
       SKN_LOG(m_parent, "ProviderInfos available → updating provider list");
       UpdateProviders(mgr->GetDiscoveredProviders());
     }
-
-    // Wenn noch pending und kein Token → einfach auf nächsten Tick warten
     return;
   }
 
-  // 2. Keine Auth-Anfrage mehr pending → Token-Laufzeit überwachen
   wxString token = mgr->GetAuthToken();
 
   if (token.IsEmpty()) {
-    // Kein Token → Initialzustand
     ShowInitialState();
     return;
   }
 
-  // Token vorhanden → validieren
+  wxTimeSpan tokenAge = wxDateTime::Now() - mgr->GetAuthRequestTime();
+  if (tokenAge.GetSeconds() < 10) {
+    SKN_LOG(m_parent, "Token just received (%lld sec ago), skipping validation",
+            tokenAge.GetSeconds());
+    ShowAuthenticatedState();
+    return;
+  }
+
   if (!mgr->ValidateToken()) {
-    SKN_LOG(m_parent,
-            "OnAuthCheckTimer: token became invalid → resetting auth");
+    SKN_LOG(m_parent, "OnAuthCheckTimer: token became invalid → resetting auth");
     mgr->SetAuthToken("");
     mgr->ClearAuthRequest();
     m_parent->SaveConfig();
@@ -520,7 +519,6 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
     return;
   }
 
-  // Token ist gültig → sicherstellen, dass UI im Auth-Status ist
   ShowAuthenticatedState();
 }
 

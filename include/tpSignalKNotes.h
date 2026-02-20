@@ -121,6 +121,7 @@ public:
   std::vector<ProviderInfo> GetProviderInfos() const;
 
   bool LoadIconSmart(const wxString& basePathWithoutExt, int size, wxBitmap& outBmp);
+  wxDateTime GetAuthRequestTime() const { return m_authRequestTime; }
   
 private:
   signalk_notes_opencpn_pi* m_parent = nullptr;
