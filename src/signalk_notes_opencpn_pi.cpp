@@ -646,6 +646,7 @@ void signalk_notes_opencpn_pi::SaveConfig() {
 
     m_pTPConfig->Write("DisplaySettings/DebugMode", (long)m_debugMode);
   }
+  // Write changes to disk
   pConf->Flush();
 }
 
