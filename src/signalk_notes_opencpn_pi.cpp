@@ -94,6 +94,14 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p) {
   delete p;
 }
 
+extern "C" DECL_EXP int get_api_major_version() {
+  return OCPN_API_VERSION_MAJOR;
+}
+
+extern "C" DECL_EXP int get_api_minor_version() {
+  return OCPN_API_VERSION_MINOR;
+}
+
 // -----------------------------------------------------------------------------
 // Constructor / Destructor
 // -----------------------------------------------------------------------------
