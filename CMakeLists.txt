@@ -253,6 +253,13 @@ include_directories(BEFORE ${PROJECT_SOURCE_DIR}/ocpninclude)
 
 target_sources(${PACKAGE_NAME} PUBLIC ${SRC})
 
+
+# Windows: Add DEF file for exports
+if(WIN32)
+  set(DEF_FILE "${CMAKE_CURRENT_SOURCE_DIR}/signalk_notes_opencpn_pi.def")
+  target_sources(${PACKAGE_NAME} PRIVATE ${DEF_FILE})
+endif()
+
 # ==============================================================
 
 if (NOT OCPN_FLATPAK_CONFIG)

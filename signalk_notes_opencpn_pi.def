@@ -1,0 +1,6 @@
+LIBRARY signalk_notes_opencpn_pi
+EXPORTS
+    create_pi
+    destroy_pi
+    get_api_major_version
+    get_api_minor_version
