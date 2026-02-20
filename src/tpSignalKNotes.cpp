@@ -26,11 +26,16 @@
 #include <wx/datetime.h>
 #include <wx/artprov.h>
 #include <cstring>
-#include <curl/curl.h>
 
 #ifndef __OCPN__ANDROID__
 #include <wx/bmpbndl.h>
 #endif
+
+wxString HttpGet(const wxString& url, const wxString& authHeader = "");
+
+#if defined(__linux__) || defined(__APPLE__)
+
+#include <curl/curl.h>
 
 static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
@@ -40,7 +45,7 @@ static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb, void*
     return total;
 }
 
-wxString HttpGet(const wxString& url, const wxString& authHeader = "")
+wxString HttpGet(const wxString& url, const wxString& authHeader)
 {
     CURL* curl = curl_easy_init();
     if (!curl)
@@ -50,7 +55,7 @@ wxString HttpGet(const wxString& url, const wxString& authHeader = "")
     struct curl_slist* headers = NULL;
 
     if (!authHeader.IsEmpty()) {
-        wxString hdr = "Authorization: " + authHeader;
+        wxString hdr = authHeader;
         headers = curl_slist_append(headers, hdr.mb_str().data());
     }
 
@@ -71,14 +76,115 @@ wxString HttpGet(const wxString& url, const wxString& authHeader = "")
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
 
-    if (res != CURLE_OK)
-        return "";
-
-    if (httpCode != 200)
+    if (res != CURLE_OK || httpCode != 200)
         return "";
 
     return wxString::FromUTF8(response.c_str());
 }
+
+#endif
+
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+
+wxString HttpGet(const wxString& url, const wxString& authHeader)
+{
+    // URL parsen
+    URL_COMPONENTS uc = {0};
+    uc.dwStructSize = sizeof(uc);
+
+    wchar_t host[256];
+    wchar_t path[1024];
+
+    uc.lpszHostName = host;
+    uc.dwHostNameLength = 256;
+    uc.lpszUrlPath = path;
+    uc.dwUrlPathLength = 1024;
+
+    if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc))
+        return "";
+
+    HINTERNET hSession = WinHttpOpen(L"SignalKNotes/1.0",
+                                     WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                     WINHTTP_NO_PROXY_NAME,
+                                     WINHTTP_NO_PROXY_BYPASS, 0);
+
+    if (!hSession)
+        return "";
+
+    HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
+    if (!hConnect) {
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    HINTERNET hRequest = WinHttpOpenRequest(
+        hConnect, L"GET", uc.lpszUrlPath,
+        NULL, WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+
+    if (!hRequest) {
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    // Authorization Header
+    if (!authHeader.IsEmpty()) {
+        wxString hdr = authHeader;
+        WinHttpAddRequestHeaders(hRequest, hdr.wc_str(), -1,
+                                 WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+    }
+
+    if (!WinHttpSendRequest(hRequest,
+                            WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                            WINHTTP_NO_REQUEST_DATA, 0,
+                            0, 0)) {
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    if (!WinHttpReceiveResponse(hRequest, NULL)) {
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    std::string response;
+    DWORD bytesAvailable = 0;
+
+    do {
+        if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable))
+            break;
+
+        if (bytesAvailable == 0)
+            break;
+
+        std::vector<char> buffer(bytesAvailable);
+        DWORD bytesRead = 0;
+
+        if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
+            break;
+
+        response.append(buffer.data(), bytesRead);
+
+    } while (bytesAvailable > 0);
+
+    WinHttpCloseHandle(hRequest);
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+
+    return wxString::FromUTF8(response.c_str());
+}
+
+#endif
 
 // ---------------------------------------------------------------------------
 // Helper: strip extension and return base path (without .svg/.png)
