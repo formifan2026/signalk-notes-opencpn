@@ -37,152 +37,138 @@ wxString HttpGet(const wxString& url, const wxString& authHeader = "");
 
 #include <curl/curl.h>
 
-static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
-{
-    size_t total = size * nmemb;
-    std::string* s = static_cast<std::string*>(userp);
-    s->append(static_cast<char*>(contents), total);
-    return total;
+static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb,
+                                void* userp) {
+  size_t total = size * nmemb;
+  std::string* s = static_cast<std::string*>(userp);
+  s->append(static_cast<char*>(contents), total);
+  return total;
 }
 
-wxString HttpGet(const wxString& url, const wxString& authHeader)
-{
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return "";
+wxString HttpGet(const wxString& url, const wxString& authHeader) {
+  CURL* curl = curl_easy_init();
+  if (!curl) return "";
 
-    std::string response;
-    struct curl_slist* headers = NULL;
+  std::string response;
+  struct curl_slist* headers = NULL;
 
-    if (!authHeader.IsEmpty()) {
-        wxString hdr = authHeader;
-        headers = curl_slist_append(headers, hdr.mb_str().data());
-    }
+  if (!authHeader.IsEmpty()) {
+    wxString hdr = authHeader;
+    headers = curl_slist_append(headers, hdr.mb_str().data());
+  }
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.mb_str().data());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_URL, url.mb_str().data());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-    if (headers)
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  if (headers) curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-    CURLcode res = curl_easy_perform(curl);
+  CURLcode res = curl_easy_perform(curl);
 
-    long httpCode = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+  long httpCode = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
 
-    if (res != CURLE_OK || httpCode != 200)
-        return "";
+  if (res != CURLE_OK || httpCode != 200) return "";
 
-    return wxString::FromUTF8(response.c_str());
+  return wxString::FromUTF8(response.c_str());
 }
 
 #endif
-
 
 #ifdef _WIN32
 #include <windows.h>
 #include <winhttp.h>
 #pragma comment(lib, "winhttp.lib")
 
-wxString HttpGet(const wxString& url, const wxString& authHeader)
-{
-    // URL parsen
-    URL_COMPONENTS uc = {0};
-    uc.dwStructSize = sizeof(uc);
+wxString HttpGet(const wxString& url, const wxString& authHeader) {
+  // URL parsen
+  URL_COMPONENTS uc = {0};
+  uc.dwStructSize = sizeof(uc);
 
-    wchar_t host[256];
-    wchar_t path[1024];
+  wchar_t host[256];
+  wchar_t path[1024];
 
-    uc.lpszHostName = host;
-    uc.dwHostNameLength = 256;
-    uc.lpszUrlPath = path;
-    uc.dwUrlPathLength = 1024;
+  uc.lpszHostName = host;
+  uc.dwHostNameLength = 256;
+  uc.lpszUrlPath = path;
+  uc.dwUrlPathLength = 1024;
 
-    if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc))
-        return "";
+  if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc)) return "";
 
-    HINTERNET hSession = WinHttpOpen(L"SignalKNotes/1.0",
-                                     WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                                     WINHTTP_NO_PROXY_NAME,
-                                     WINHTTP_NO_PROXY_BYPASS, 0);
+  HINTERNET hSession =
+      WinHttpOpen(L"SignalKNotes/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 
-    if (!hSession)
-        return "";
+  if (!hSession) return "";
 
-    HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
-    if (!hConnect) {
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
+  HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
+  if (!hConnect) {
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    HINTERNET hRequest = WinHttpOpenRequest(
-        hConnect, L"GET", uc.lpszUrlPath,
-        NULL, WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
-        (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+  HINTERNET hRequest = WinHttpOpenRequest(
+      hConnect, L"GET", uc.lpszUrlPath, NULL, WINHTTP_NO_REFERER,
+      WINHTTP_DEFAULT_ACCEPT_TYPES,
+      (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
 
-    if (!hRequest) {
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
+  if (!hRequest) {
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    // Authorization Header
-    if (!authHeader.IsEmpty()) {
-        std::wstring hdr = L"Authorization: Bearer " + std::wstring(m_authToken.wc_str());
-        WinHttpAddRequestHeaders(hRequest, hdr.c_str(), (DWORD)-1,
-                                WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
-    }
+  // Authorization Header
+  if (!authHeader.IsEmpty()) {
+    std::wstring hdr = std::wstring(authHeader.wc_str());
+    WinHttpAddRequestHeaders(
+        hRequest, hdr.c_str(), (DWORD)-1,
+        WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+  }
 
-
-    if (!WinHttpSendRequest(hRequest,
-                            WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                            WINHTTP_NO_REQUEST_DATA, 0,
-                            0, 0)) {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
-
-    if (!WinHttpReceiveResponse(hRequest, NULL)) {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
-
-    std::string response;
-    DWORD bytesAvailable = 0;
-
-    do {
-        if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable))
-            break;
-
-        if (bytesAvailable == 0)
-            break;
-
-        std::vector<char> buffer(bytesAvailable);
-        DWORD bytesRead = 0;
-
-        if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
-            break;
-
-        response.append(buffer.data(), bytesRead);
-
-    } while (bytesAvailable > 0);
-
+  if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                          WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
     WinHttpCloseHandle(hRequest);
     WinHttpCloseHandle(hConnect);
     WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    return wxString::FromUTF8(response.c_str());
+  if (!WinHttpReceiveResponse(hRequest, NULL)) {
+    WinHttpCloseHandle(hRequest);
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
+
+  std::string response;
+  DWORD bytesAvailable = 0;
+
+  do {
+    if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable)) break;
+
+    if (bytesAvailable == 0) break;
+
+    std::vector<char> buffer(bytesAvailable);
+    DWORD bytesRead = 0;
+
+    if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
+      break;
+
+    response.append(buffer.data(), bytesRead);
+
+  } while (bytesAvailable > 0);
+
+  WinHttpCloseHandle(hRequest);
+  WinHttpCloseHandle(hConnect);
+  WinHttpCloseHandle(hSession);
+
+  return wxString::FromUTF8(response.c_str());
 }
 
 #endif
@@ -466,47 +452,42 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
 }
 
 bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
-                                           double maxDistance)
-{
-    wxString path;
-    path.Printf(
-        wxT("http://%s:%d/signalk/v2/api/resources/notes?position=[%f,%f]&distance=%.0f"),
-        m_serverHost, m_serverPort,
-        centerLon, centerLat, maxDistance);
+                                           double maxDistance) {
+  wxString path;
+  path.Printf(wxT("http://%s:%d/signalk/v2/api/resources/"
+                  "notes?position=[%f,%f]&distance=%.0f"),
+              m_serverHost, m_serverPort, centerLon, centerLat, maxDistance);
 
-    wxString response = HttpGet(path);
+  wxString response = HttpGet(path);
 
-    if (response.IsEmpty()) {
-        SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
-        return false;
-    }
+  if (response.IsEmpty()) {
+    SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
+    return false;
+  }
 
-    bool ok = ParseNotesListJSON(response);
+  bool ok = ParseNotesListJSON(response);
 
-    if (!ok) {
-        SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
-    }
+  if (!ok) {
+    SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
+  }
 
-    return ok;
+  return ok;
 }
 
-
 bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
-                                             SignalKNote& note)
-{
-    wxString path;
-    path.Printf(
-        wxT("http://%s:%d/signalk/v2/api/resources/notes/%s"),
-        m_serverHost, m_serverPort, noteId);
+                                             SignalKNote& note) {
+  wxString path;
+  path.Printf(wxT("http://%s:%d/signalk/v2/api/resources/notes/%s"),
+              m_serverHost, m_serverPort, noteId);
 
-    wxString response = HttpGet(path);
+  wxString response = HttpGet(path);
 
-    if (response.IsEmpty()) {
-        SKN_LOG(m_parent, "FetchNoteDetails FAILED - empty response");
-        return false;
-    }
+  if (response.IsEmpty()) {
+    SKN_LOG(m_parent, "FetchNoteDetails FAILED - empty response");
+    return false;
+  }
 
-    return ParseNoteDetailsJSON(response, note);
+  return ParseNoteDetailsJSON(response, note);
 }
 
 bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
@@ -827,7 +808,7 @@ bool tpSignalKNotesManager::RequestAuthorization() {
     return false;
   }
 
-// Chunk-weises Lesen bis wirklich nichts mehr kommt
+  // Chunk-weises Lesen bis wirklich nichts mehr kommt
   wxString response;
   char buf[4096];
   while (true) {
@@ -858,171 +839,161 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   return false;
 }
 
-bool tpSignalKNotesManager::CheckAuthorizationStatus()
-{
-    if (m_authRequestHref.IsEmpty())
-        return false;
+bool tpSignalKNotesManager::CheckAuthorizationStatus() {
+  if (m_authRequestHref.IsEmpty()) return false;
 
-    SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);
+  SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);
 
-    wxString url;
-    url.Printf("http://%s:%d%s", m_serverHost, m_serverPort, m_authRequestHref);
+  wxString url;
+  url.Printf("http://%s:%d%s", m_serverHost, m_serverPort, m_authRequestHref);
 
-    wxString response = HttpGet(url);
+  wxString response = HttpGet(url);
 
-    if (response.IsEmpty()) {
-        SKN_LOG(m_parent, "CheckAuthorizationStatus - empty response");
-        return false;
-    }
+  if (response.IsEmpty()) {
+    SKN_LOG(m_parent, "CheckAuthorizationStatus - empty response");
+    return false;
+  }
 
-    SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'",
-            response.Left(200));
+  SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'",
+          response.Left(200));
 
-    wxJSONReader reader;
-    wxJSONValue root;
+  wxJSONReader reader;
+  wxJSONValue root;
 
-    if (reader.Parse(response, &root) != 0) {
-        SKN_LOG(m_parent, "CheckAuthorizationStatus - invalid JSON");
-        return false;
-    }
+  if (reader.Parse(response, &root) != 0) {
+    SKN_LOG(m_parent, "CheckAuthorizationStatus - invalid JSON");
+    return false;
+  }
 
-    wxString state;
-    if (root.HasMember("state"))
-        state = root["state"].AsString();
-    else if (root.HasMember("status"))
-        state = root["status"].AsString();
+  wxString state;
+  if (root.HasMember("state"))
+    state = root["state"].AsString();
+  else if (root.HasMember("status"))
+    state = root["status"].AsString();
 
-    if (state == "PENDING")
-        return false;
+  if (state == "PENDING") return false;
 
-    if (!root.HasMember("accessRequest")) {
-        SKN_LOG(m_parent, "AuthStatus - no accessRequest → failed");
-        ClearAuthRequest();
-        return false;
-    }
-
-    wxJSONValue access = root["accessRequest"];
-
-    if (access.HasMember("permission") &&
-        access["permission"].AsString() == "DENIED") {
-        SKN_LOG(m_parent, "AuthStatus - denied");
-        ClearAuthRequest();
-        return false;
-    }
-
-    if (access.HasMember("token")) {
-        m_authToken = access["token"].AsString();
-        SKN_LOG(m_parent, "AuthStatus - token received");
-        ClearAuthRequest();
-        return true;
-    }
-
-    SKN_LOG(m_parent, "AuthStatus - completed without token");
+  if (!root.HasMember("accessRequest")) {
+    SKN_LOG(m_parent, "AuthStatus - no accessRequest → failed");
     ClearAuthRequest();
     return false;
-}
+  }
 
+  wxJSONValue access = root["accessRequest"];
 
+  if (access.HasMember("permission") &&
+      access["permission"].AsString() == "DENIED") {
+    SKN_LOG(m_parent, "AuthStatus - denied");
+    ClearAuthRequest();
+    return false;
+  }
 
-bool tpSignalKNotesManager::ValidateToken()
-{
-    if (m_authToken.IsEmpty()) {
-        SKN_LOG(m_parent, "ValidateToken - token is empty");
-        return false;
-    }
-
-    wxString url = wxString::Format("http://%s:%d/plugins/",
-                                    m_serverHost, m_serverPort);
-
-    wxString response = HttpGet(url, "Bearer " + m_authToken);
-
-    if (response.IsEmpty()) {
-        SKN_LOG(m_parent, "ValidateToken - empty or failed HTTP response");
-        return false;
-    }
-
-    SKN_LOG(m_parent, "ValidateToken: response='%s'", response.Left(200));
-
-    wxJSONReader reader;
-    wxJSONValue root;
-
-    if (reader.Parse(response, &root) != 0) {
-        SKN_LOG(m_parent, "ValidateToken - invalid JSON");
-        return false;
-    }
-
-    if (!root.IsArray()) {
-        SKN_LOG(m_parent, "ValidateToken - JSON is not an array");
-        return false;
-    }
-
-    SKN_LOG(m_parent, "ValidateToken - token valid");
+  if (access.HasMember("token")) {
+    m_authToken = access["token"].AsString();
+    SKN_LOG(m_parent, "AuthStatus - token received");
+    ClearAuthRequest();
     return true;
+  }
+
+  SKN_LOG(m_parent, "AuthStatus - completed without token");
+  ClearAuthRequest();
+  return false;
 }
 
-static wxString HttpGetAuth(const wxString& url, const wxString& token)
-{
-    return HttpGet(url, "Bearer " + token);
+bool tpSignalKNotesManager::ValidateToken() {
+  if (m_authToken.IsEmpty()) {
+    SKN_LOG(m_parent, "ValidateToken - token is empty");
+    return false;
+  }
+
+  wxString url =
+      wxString::Format("http://%s:%d/plugins/", m_serverHost, m_serverPort);
+
+  wxString response = HttpGet(url, "Bearer " + m_authToken);
+
+  if (response.IsEmpty()) {
+    SKN_LOG(m_parent, "ValidateToken - empty or failed HTTP response");
+    return false;
+  }
+
+  SKN_LOG(m_parent, "ValidateToken: response='%s'", response.Left(200));
+
+  wxJSONReader reader;
+  wxJSONValue root;
+
+  if (reader.Parse(response, &root) != 0) {
+    SKN_LOG(m_parent, "ValidateToken - invalid JSON");
+    return false;
+  }
+
+  if (!root.IsArray()) {
+    SKN_LOG(m_parent, "ValidateToken - JSON is not an array");
+    return false;
+  }
+
+  SKN_LOG(m_parent, "ValidateToken - token valid");
+  return true;
 }
 
+static wxString HttpGetAuth(const wxString& url, const wxString& token) {
+  return HttpGet(url, "Bearer " + token);
+}
 
 bool tpSignalKNotesManager::FetchInstalledPlugins(
-    std::map<wxString, bool>& plugins)
-{
-    wxString url;
-    url.Printf("http://%s:%d/plugins/", m_serverHost, m_serverPort);
+    std::map<wxString, bool>& plugins) {
+  wxString url;
+  url.Printf("http://%s:%d/plugins/", m_serverHost, m_serverPort);
 
-    wxString response = HttpGetAuth(url, m_authToken);
+  wxString response = HttpGetAuth(url, m_authToken);
 
-    if (response.IsEmpty()) {
-        SKN_LOG(m_parent, "Failed to fetch installed plugins");
-        return false;
-    }
+  if (response.IsEmpty()) {
+    SKN_LOG(m_parent, "Failed to fetch installed plugins");
+    return false;
+  }
 
-    wxJSONReader reader;
-    wxJSONValue root;
+  wxJSONReader reader;
+  wxJSONValue root;
 
-    if (reader.Parse(response, &root) > 0) {
-        SKN_LOG(m_parent, "Failed to parse plugins JSON");
-        return false;
-    }
+  if (reader.Parse(response, &root) > 0) {
+    SKN_LOG(m_parent, "Failed to parse plugins JSON");
+    return false;
+  }
 
-    if (!root.IsArray()) {
-        SKN_LOG(m_parent, "Expected array in plugins response");
-        return false;
-    }
+  if (!root.IsArray()) {
+    SKN_LOG(m_parent, "Expected array in plugins response");
+    return false;
+  }
 
-    plugins.clear();
-    m_providerDetails.clear();
+  plugins.clear();
+  m_providerDetails.clear();
 
-    for (int i = 0; i < root.Size(); i++) {
-        wxJSONValue plugin = root[i];
+  for (int i = 0; i < root.Size(); i++) {
+    wxJSONValue plugin = root[i];
 
-        if (plugin.HasMember("id")) {
-            wxString id = plugin["id"].AsString();
+    if (plugin.HasMember("id")) {
+      wxString id = plugin["id"].AsString();
 
-            ProviderDetails details;
-            details.id = id;
-            details.name = plugin.Get("name", id).AsString();
-            details.description = plugin.Get("description", "").AsString();
+      ProviderDetails details;
+      details.id = id;
+      details.name = plugin.Get("name", id).AsString();
+      details.description = plugin.Get("description", "").AsString();
 
-            bool enabled = false;
-            if (plugin.HasMember("data")) {
-                wxJSONValue data = plugin["data"];
-                if (data.HasMember("enabled")) {
-                    enabled = data["enabled"].AsBool();
-                }
-            }
-
-            details.enabled = enabled;
-            plugins[id] = enabled;
-            m_providerDetails[id] = details;
+      bool enabled = false;
+      if (plugin.HasMember("data")) {
+        wxJSONValue data = plugin["data"];
+        if (data.HasMember("enabled")) {
+          enabled = data["enabled"].AsBool();
         }
+      }
+
+      details.enabled = enabled;
+      plugins[id] = enabled;
+      m_providerDetails[id] = details;
     }
+  }
 
-    return true;
+  return true;
 }
-
 
 void tpSignalKNotesManager::CleanupDisabledProviders() {
   std::map<wxString, bool> installedPlugins;
@@ -1076,7 +1047,7 @@ tpSignalKNotesManager::GetProviderInfos() const {
 
 void tpSignalKNotesManager::SetAuthToken(const wxString& token) {
   m_authToken = token;
-  SKN_LOG(m_parent, "SetAuthToken called, token='%s'",token.Left(20));
+  SKN_LOG(m_parent, "SetAuthToken called, token='%s'", token.Left(20));
   if (!token.IsEmpty()) {
     m_authTokenReceivedTime = wxDateTime::Now();
   }
