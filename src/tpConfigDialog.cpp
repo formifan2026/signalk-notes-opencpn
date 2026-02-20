@@ -37,7 +37,7 @@ const wxColour tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR(*wxWHITE);
 tpConfigDialog::tpConfigDialog(signalk_notes_opencpn_pi* parent,
                                wxWindow* winparent)
     : wxDialog(winparent, wxID_ANY, _("SignalK Notes Konfiguration"),
-               wxDefaultPosition, wxSize(700, 800),
+               wxDefaultPosition, wxSize(800, 800),
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
       m_settingsLoaded(false) {
   m_parent = parent;
@@ -463,7 +463,8 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
         _("Bitte in SignalK den Request im Menüpunkt 'Access Requests' "
           "mit 'Permission' Admin und 'Authentication Timeout' NEVER "
           "bestätigen."));
-    m_authStatusLabel->Wrap(400);
+    m_authStatusLabel->Wrap(500);
+    m_authStatusLabel->SetForegroundColour(*wxRED); 
     Layout();
   } else {
     wxMessageBox(_("Fehler beim Anfordern der Authentifizierung"), _("Fehler"),
@@ -503,7 +504,7 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
   }
 
   wxTimeSpan tokenAge = wxDateTime::Now() - mgr->GetAuthTokenReceivedTime();
-  
+
   if (tokenAge.GetSeconds() < 10) {
     SKN_LOG(m_parent, "Token just received (%lld sec ago), skipping validation",
             tokenAge.GetSeconds());
@@ -586,6 +587,8 @@ void tpConfigDialog::ShowAuthenticatedState() {
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_TICK_MARK, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxGREEN);
+  m_authStatusLabel->SetLabel(_("SignalK Verbindung")); 
+  m_authStatusLabel->Wrap(-1);                         
 
   m_authButton->Hide();
   m_cancelAuthButton->Hide();
