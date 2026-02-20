@@ -7,7 +7,7 @@
  *
  * Icon Licensing:
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
- *   - Some icons are based on OpenCPN standard icons (GPLv2)
+ *   - Some icons are based on OpenCPN standard icons (GPLv2) 
  ******************************************************************************/
 #include "signalk_notes_opencpn_pi.h"
 #include "tpConfigDialog.h"
