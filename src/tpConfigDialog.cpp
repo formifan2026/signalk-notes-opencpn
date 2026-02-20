@@ -636,7 +636,9 @@ void tpConfigDialog::ShowInitialState() {
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_ERROR, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxRED);
-
+  m_authStatusLabel->SetLabel(_("SignalK Verbindung"));
+  m_authStatusLabel->Wrap(-1);
+  
   // Auth-Button aktiv
   m_authButton->SetLabel(_("SignalK Authentifizierung"));
   m_authButton->Enable(true);
