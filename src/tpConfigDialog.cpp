@@ -81,11 +81,11 @@ void tpConfigDialog::CreateControls() {
   // Auth-Status-Anzeige
   wxBoxSizer* authStatusSizer = new wxBoxSizer(wxHORIZONTAL);
   m_authStatusIcon = new wxStaticBitmap(providerPanel, wxID_ANY, wxNullBitmap);
-  m_authStatusLabel->SetMinSize(wxSize(-1, 45));
   authStatusSizer->Add(m_authStatusIcon, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
   m_authStatusLabel =
       new wxStaticText(providerPanel, wxID_ANY, _("SignalK Verbindung"));
+  m_authStatusLabel->SetMinSize(wxSize(-1, 45));
   authStatusSizer->Add(m_authStatusLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL,
                        5);
 
