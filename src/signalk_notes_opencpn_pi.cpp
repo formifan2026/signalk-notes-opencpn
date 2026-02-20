@@ -619,7 +619,7 @@ void signalk_notes_opencpn_pi::SaveConfig() {
   pConf->Write("AuthToken", m_pSignalKNotesManager->GetAuthToken());
   pConf->Write("AuthRequestHref", m_pSignalKNotesManager->GetAuthRequestHref());
   pConf->Write("ClientUUID", m_clientUUID);
-
+  
   if (m_pConfigDialog) {
 
     m_pTPConfig->Write("DisplaySettings/IconSize",
@@ -646,6 +646,7 @@ void signalk_notes_opencpn_pi::SaveConfig() {
 
     m_pTPConfig->Write("DisplaySettings/DebugMode", (long)m_debugMode);
   }
+  pConf->Flush();
 }
 
 void signalk_notes_opencpn_pi::LoadConfig() {
