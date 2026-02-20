@@ -26,10 +26,59 @@
 #include <wx/datetime.h>
 #include <wx/artprov.h>
 #include <cstring>
+#include <curl/curl.h>
 
 #ifndef __OCPN__ANDROID__
 #include <wx/bmpbndl.h>
 #endif
+
+static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
+{
+    size_t total = size * nmemb;
+    std::string* s = static_cast<std::string*>(userp);
+    s->append(static_cast<char*>(contents), total);
+    return total;
+}
+
+wxString HttpGet(const wxString& url, const wxString& authHeader = "")
+{
+    CURL* curl = curl_easy_init();
+    if (!curl)
+        return "";
+
+    std::string response;
+    struct curl_slist* headers = NULL;
+
+    if (!authHeader.IsEmpty()) {
+        wxString hdr = "Authorization: " + authHeader;
+        headers = curl_slist_append(headers, hdr.mb_str().data());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_URL, url.mb_str().data());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    if (headers)
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    CURLcode res = curl_easy_perform(curl);
+
+    long httpCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK)
+        return "";
+
+    if (httpCode != 200)
+        return "";
+
+    return wxString::FromUTF8(response.c_str());
+}
 
 // ---------------------------------------------------------------------------
 // Helper: strip extension and return base path (without .svg/.png)
@@ -310,71 +359,47 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
 }
 
 bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
-                                           double maxDistance) {
-  wxString path;
-  path.Printf(
-      wxT("/signalk/v2/api/resources/notes?position=[%f,%f]&distance=%.0f"),
-      centerLon, centerLat, maxDistance);
+                                           double maxDistance)
+{
+    wxString path;
+    path.Printf(
+        wxT("http://%s:%d/signalk/v2/api/resources/notes?position=[%f,%f]&distance=%.0f"),
+        m_serverHost, m_serverPort,
+        centerLon, centerLat, maxDistance);
 
-  wxString response = MakeHTTPRequest(path);
+    wxString response = HttpGet(path);
 
-  if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
-    return false;
-  }
+    if (response.IsEmpty()) {
+        SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
+        return false;
+    }
 
-  bool ok = ParseNotesListJSON(response);
+    bool ok = ParseNotesListJSON(response);
 
-  if (!ok) {
-    SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
-  }
-  return ok;
+    if (!ok) {
+        SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
+    }
+
+    return ok;
 }
+
 
 bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
-                                             SignalKNote& note) {
-  wxString path;
-  path.Printf(wxT("/signalk/v2/api/resources/notes/%s"), noteId);
+                                             SignalKNote& note)
+{
+    wxString path;
+    path.Printf(
+        wxT("http://%s:%d/signalk/v2/api/resources/notes/%s"),
+        m_serverHost, m_serverPort, noteId);
 
-  wxString response = MakeHTTPRequest(path);
-  if (response.IsEmpty()) {
-    return false;
-  }
+    wxString response = HttpGet(path);
 
-  return ParseNoteDetailsJSON(response, note);
-}
+    if (response.IsEmpty()) {
+        SKN_LOG(m_parent, "FetchNoteDetails FAILED - empty response");
+        return false;
+    }
 
-wxString tpSignalKNotesManager::MakeHTTPRequest(const wxString& path) {
-  wxString urlStr;
-  urlStr.Printf(wxT("http://%s:%d%s"), m_serverHost, m_serverPort, path);
-  SKN_LOG(m_parent, _("SignalKNotes: fetching data with URL: %s"), urlStr);
-
-  wxHTTP http;
-  http.SetTimeout(10);
-
-  if (!http.Connect(m_serverHost, m_serverPort)) {
-    SKN_LOG(m_parent, _("Failed to connect to: %s"), urlStr);
-    return wxEmptyString;
-  }
-
-  wxInputStream* in = http.GetInputStream(path);
-  if (!in || !in->IsOk()) {
-    delete in;
-    SKN_LOG(m_parent, _("Failed to get stream from: %s"), urlStr);
-    return wxEmptyString;
-  }
-
-  wxString response;
-  char buf[4096];
-  while (true) {
-    in->Read(buf, sizeof(buf));
-    size_t read = in->LastRead();
-    if (read == 0) break;
-    response += wxString::FromUTF8(buf, read);
-  }
-
-  delete in;
-  return response;
+    return ParseNoteDetailsJSON(response, note);
 }
 
 bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
@@ -726,231 +751,167 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   return false;
 }
 
-bool tpSignalKNotesManager::CheckAuthorizationStatus() {
-  if (m_authRequestHref.IsEmpty()) return false;
-  SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s",
-          m_authRequestHref);  // NEU
-  wxString response = MakeHTTPRequest(m_authRequestHref);
+bool tpSignalKNotesManager::CheckAuthorizationStatus()
+{
+    if (m_authRequestHref.IsEmpty())
+        return false;
 
-  if (response.IsEmpty()) {
-    return false;
-  }
-  SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'",
-          response.Left(200));  // NEU
-  wxJSONReader reader;
-  wxJSONValue root;
-  if (reader.Parse(response, &root) > 0) {
-    SKN_LOG(m_parent, "SignalK Notes Auth: Failed to parse JSON");
-    return false;
-  }
+    SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);
 
-  wxString state;
-  if (root.HasMember("state"))
-    state = root["state"].AsString();
-  else if (root.HasMember("status"))
-    state = root["status"].AsString();
+    wxString response = HttpGet(m_authRequestHref);
 
-  if (state == "PENDING") {
-    return false;
-  }
+    if (response.IsEmpty()) {
+        SKN_LOG(m_parent, "CheckAuthorizationStatus - empty response");
+        return false;
+    }
 
-  if (!root.HasMember("accessRequest")) {
-    SKN_LOG(m_parent,
-            "SignalK Notes Auth: No accessRequest although state !=PENDING → "
-            "treating as failed");
+    SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'",
+            response.Left(200));
+
+    wxJSONReader reader;
+    wxJSONValue root;
+
+    if (reader.Parse(response, &root) != 0) {
+        SKN_LOG(m_parent, "CheckAuthorizationStatus - invalid JSON");
+        return false;
+    }
+
+    wxString state;
+    if (root.HasMember("state"))
+        state = root["state"].AsString();
+    else if (root.HasMember("status"))
+        state = root["status"].AsString();
+
+    if (state == "PENDING")
+        return false;
+
+    if (!root.HasMember("accessRequest")) {
+        SKN_LOG(m_parent, "AuthStatus - no accessRequest → failed");
+        ClearAuthRequest();
+        return false;
+    }
+
+    wxJSONValue access = root["accessRequest"];
+
+    if (access.HasMember("permission") &&
+        access["permission"].AsString() == "DENIED") {
+        SKN_LOG(m_parent, "AuthStatus - denied");
+        ClearAuthRequest();
+        return false;
+    }
+
+    if (access.HasMember("token")) {
+        m_authToken = access["token"].AsString();
+        SKN_LOG(m_parent, "AuthStatus - token received");
+        ClearAuthRequest();
+        return true;
+    }
+
+    SKN_LOG(m_parent, "AuthStatus - completed without token");
     ClearAuthRequest();
     return false;
-  }
-
-  wxJSONValue access = root["accessRequest"];
-
-  if (access.HasMember("permission") &&
-      access["permission"].AsString() == "DENIED") {
-    SKN_LOG(m_parent, "SignalK Notes Auth: Request denied by server");
-    ClearAuthRequest();
-    return false;
-  }
-
-  if (access.HasMember("token")) {
-    m_authToken = access["token"].AsString();
-    ClearAuthRequest();
-    return true;
-  }
-
-  SKN_LOG(m_parent,
-          "SignalK Notes Auth: Completed without token → treating as failed");
-  ClearAuthRequest();
-  return false;
 }
 
-bool tpSignalKNotesManager::ValidateToken() {
-  if (m_authToken.IsEmpty()) {
-    SKN_LOG(m_parent, "ValidateToken - token is empty");
-    return false;
-  }
 
-  wxHTTP http;
-  http.SetTimeout(10);
+bool tpSignalKNotesManager::ValidateToken()
+{
+    if (m_authToken.IsEmpty()) {
+        SKN_LOG(m_parent, "ValidateToken - token is empty");
+        return false;
+    }
 
-  if (!http.Connect(m_serverHost, m_serverPort)) {
-    SKN_LOG(m_parent, "ValidateToken - connection failed");
-    return false;
-  }
+    wxString url = wxString::Format("http://%s:%d/plugins/",
+                                    m_serverHost, m_serverPort);
 
-  http.SetHeader("Authorization", "Bearer " + m_authToken);
+    wxString response = HttpGet(url, "Bearer " + m_authToken);
 
-  wxInputStream* in = http.GetInputStream("/plugins/");
-
-  if (!in) {
-    SKN_LOG(m_parent,
-            "ValidateToken - GetInputStream returned NULL (likely "
-            "401/403 - no admin rights)");
-    return false;
-  }
-
-  if (!in->IsOk()) {
-    SKN_LOG(m_parent, "ValidateToken - stream not ok (unauthorized)");
-    delete in;
-    return false;
-  }
-
-  int responseCode = http.GetResponse();
-
-// Chunk-weises Lesen bis wirklich nichts mehr kommt
-  wxString response;
-  char buf[4096];
-  while (true) {
-    in->Read(buf, sizeof(buf));
-    size_t read = in->LastRead();
-    if (read == 0) break;
-    response += wxString::FromUTF8(buf, read);
-  }
-  delete in;
-
-  if (responseCode == 401 || responseCode == 403) {
-    SKN_LOG(m_parent, "Token is invalid or lacks admin rights (HTTP %d)",
-            responseCode);
-    return false;
-  }
-
-  if (responseCode == 200) {
     if (response.IsEmpty()) {
-      SKN_LOG(m_parent,
-              "Token validation - EMPTY response despite HTTP 200 "
-              "(suspicious)");
-      return false;
+        SKN_LOG(m_parent, "ValidateToken - empty or failed HTTP response");
+        return false;
+    }
+
+    SKN_LOG(m_parent, "ValidateToken: response='%s'", response.Left(200));
+
+    wxJSONReader reader;
+    wxJSONValue root;
+
+    if (reader.Parse(response, &root) != 0) {
+        SKN_LOG(m_parent, "ValidateToken - invalid JSON");
+        return false;
+    }
+
+    if (!root.IsArray()) {
+        SKN_LOG(m_parent, "ValidateToken - JSON is not an array");
+        return false;
+    }
+
+    SKN_LOG(m_parent, "ValidateToken - token valid");
+    return true;
+}
+
+static wxString HttpGetAuth(const wxString& url, const wxString& token)
+{
+    return HttpGet(url, "Bearer " + token);
+}
+
+
+bool tpSignalKNotesManager::FetchInstalledPlugins(
+    std::map<wxString, bool>& plugins)
+{
+    wxString url;
+    url.Printf("http://%s:%d/plugins/", m_serverHost, m_serverPort);
+
+    wxString response = HttpGetAuth(url, m_authToken);
+
+    if (response.IsEmpty()) {
+        SKN_LOG(m_parent, "Failed to fetch installed plugins");
+        return false;
     }
 
     wxJSONReader reader;
     wxJSONValue root;
 
-    if (reader.Parse(response, &root) == 0) {
-      if (!root.IsArray()) {
-        SKN_LOG(m_parent,
-                "Token validation - Response is not an array "
-                "(expected plugin list)");
+    if (reader.Parse(response, &root) > 0) {
+        SKN_LOG(m_parent, "Failed to parse plugins JSON");
         return false;
-      }
-
-      return true;
-    } else {
-      // SKN_LOG(m_parent,
-      //         "Token validation - Response is not valid JSON");
-      SKN_LOG(m_parent, "Token validation - Response is not valid JSON: '%s'",
-              response.Left(300));  // ← NEU
-      return false;
     }
-  }
 
-  SKN_LOG(m_parent, "Unexpected response code %d - treating as invalid",
-          responseCode);
-  return false;
-}
+    if (!root.IsArray()) {
+        SKN_LOG(m_parent, "Expected array in plugins response");
+        return false;
+    }
 
-wxString tpSignalKNotesManager::MakeAuthenticatedHTTPRequest(
-    const wxString& path) {
-  wxHTTP http;
-  http.SetTimeout(10);
+    plugins.clear();
+    m_providerDetails.clear();
 
-  if (!http.Connect(m_serverHost, m_serverPort)) {
-    return wxEmptyString;
-  }
+    for (int i = 0; i < root.Size(); i++) {
+        wxJSONValue plugin = root[i];
 
-  if (!m_authToken.IsEmpty()) {
-    http.SetHeader("Authorization", "Bearer " + m_authToken);
-  }
+        if (plugin.HasMember("id")) {
+            wxString id = plugin["id"].AsString();
 
-  wxInputStream* in = http.GetInputStream(path);
-  if (!in || !in->IsOk()) {
-    delete in;
-    return wxEmptyString;
-  }
+            ProviderDetails details;
+            details.id = id;
+            details.name = plugin.Get("name", id).AsString();
+            details.description = plugin.Get("description", "").AsString();
 
-  // Chunk-weises Lesen statt Read() in einem Zug
-  wxString response;
-  char buf[4096];
-  while (!in->Eof()) {
-    in->Read(buf, sizeof(buf));
-    size_t read = in->LastRead();
-    if (read > 0) response += wxString::FromUTF8(buf, read);
-  }
+            bool enabled = false;
+            if (plugin.HasMember("data")) {
+                wxJSONValue data = plugin["data"];
+                if (data.HasMember("enabled")) {
+                    enabled = data["enabled"].AsBool();
+                }
+            }
 
-  delete in;
-  return response;
-}
-
-bool tpSignalKNotesManager::FetchInstalledPlugins(
-    std::map<wxString, bool>& plugins) {
-  wxString path = "/plugins/";
-  wxString response = MakeAuthenticatedHTTPRequest(path);
-
-  if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "Failed to fetch installed plugins");
-    return false;
-  }
-
-  wxJSONReader reader;
-  wxJSONValue root;
-  if (reader.Parse(response, &root) > 0) {
-    SKN_LOG(m_parent, "Failed to parse plugins JSON");
-    return false;
-  }
-
-  if (!root.IsArray()) {
-    SKN_LOG(m_parent, "Expected array in plugins response");
-    return false;
-  }
-
-  plugins.clear();
-  m_providerDetails.clear();
-
-  for (int i = 0; i < root.Size(); i++) {
-    wxJSONValue plugin = root[i];
-
-    if (plugin.HasMember("id")) {
-      wxString id = plugin["id"].AsString();
-
-      ProviderDetails details;
-      details.id = id;
-      details.name = plugin.Get("name", id).AsString();
-      details.description = plugin.Get("description", "").AsString();
-
-      bool enabled = false;
-      if (plugin.HasMember("data")) {
-        wxJSONValue data = plugin["data"];
-        if (data.HasMember("enabled")) {
-          enabled = data["enabled"].AsBool();
+            details.enabled = enabled;
+            plugins[id] = enabled;
+            m_providerDetails[id] = details;
         }
-      }
-
-      details.enabled = enabled;
-      plugins[id] = enabled;
-      m_providerDetails[id] = details;
     }
-  }
 
-  return true;
+    return true;
 }
+
 
 void tpSignalKNotesManager::CleanupDisabledProviders() {
   std::map<wxString, bool> installedPlugins;

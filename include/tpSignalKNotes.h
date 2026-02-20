@@ -138,14 +138,12 @@ private:
   bool ParseNotesListJSON(const wxString& json);
   bool ParseNoteDetailsJSON(const wxString& json, SignalKNote& note);
 
-  wxString MakeHTTPRequest(const wxString& path);
-  wxString MakeAuthenticatedHTTPRequest(const wxString& path);
-
   // Server data
   wxString m_serverHost;
   int m_serverPort;
 
   // Authentication data
+
   wxString m_authRequestHref;  // vom Server geliefertes href
   wxString m_authToken;
   bool m_authPending = false;
