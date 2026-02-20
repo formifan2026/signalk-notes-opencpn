@@ -459,11 +459,12 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
     SKN_LOG(m_parent, "Auth request started");
     ShowPendingState();
     m_parent->SaveConfig();
-    wxMessageBox(
+    m_authStatusLabel->SetLabel(
         _("Bitte in SignalK den Request im Menüpunkt 'Access Requests' "
           "mit 'Permission' Admin und 'Authentication Timeout' NEVER "
-          "bestätigen."),
-        _("SignalK Authentifizierung"), wxOK | wxICON_INFORMATION, this);
+          "bestätigen."));
+    m_authStatusLabel->Wrap(400);
+    Layout();
   } else {
     wxMessageBox(_("Fehler beim Anfordern der Authentifizierung"), _("Fehler"),
                  wxOK | wxICON_ERROR);
