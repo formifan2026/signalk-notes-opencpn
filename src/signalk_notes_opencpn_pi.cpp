@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Main plugin implementation and OpenCPN integration
  * Author:    Dirk Behrendt

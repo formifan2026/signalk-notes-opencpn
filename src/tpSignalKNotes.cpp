@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Handling of SignalK note objects and data updates
  * Author:    Dirk Behrendt
@@ -44,7 +44,7 @@ static wxString GetBasePathWithoutExt(const wxString& fullPath) {
 // Helper: unified icon loader (Desktop: SVG+PNG, Android: PNG only)
 // basePathWithoutExt: full path without extension
 // size: requested size (square)
-// outBmp: resulting bitmap
+// outBmp: resulting bitmap 
 // ---------------------------------------------------------------------------
 bool tpSignalKNotesManager::LoadIconSmart(const wxString& basePathWithoutExt,
                                           int size,

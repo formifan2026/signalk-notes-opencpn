@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Icon handling and icon resource management
  * Author:    Dirk Behrendt
