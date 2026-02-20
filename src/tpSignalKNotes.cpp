@@ -44,11 +44,10 @@ static wxString GetBasePathWithoutExt(const wxString& fullPath) {
 // Helper: unified icon loader (Desktop: SVG+PNG, Android: PNG only)
 // basePathWithoutExt: full path without extension
 // size: requested size (square)
-// outBmp: resulting bitmap 
+// outBmp: resulting bitmap
 // ---------------------------------------------------------------------------
 bool tpSignalKNotesManager::LoadIconSmart(const wxString& basePathWithoutExt,
-                                          int size,
-                                          wxBitmap& outBmp) {
+                                          int size, wxBitmap& outBmp) {
 #ifdef __OCPN__ANDROID__
   // ANDROID → PNG ONLY
   wxString pngPath = basePathWithoutExt + ".png";
@@ -290,8 +289,8 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
     vp.lon_min = lon - lonSpan / 2.0;
     vp.lon_max = lon + lonSpan / 2.0;
 
-    SKN_LOG(m_parent,
-            "Centering via VP lat=%.6f lon=%.6f scale=%.6f", lat, lon, scale);
+    SKN_LOG(m_parent, "Centering via VP lat=%.6f lon=%.6f scale=%.6f", lat, lon,
+            scale);
 
     JumpToPosition(lat, lon, scale);
   });
@@ -567,8 +566,7 @@ bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
   }
 
   // 3. Letzter Fallback: notice-to-mariners.*
-  wxString baseFallback =
-      m_parent->GetPluginIconDir() + "notice-to-mariners";
+  wxString baseFallback = m_parent->GetPluginIconDir() + "notice-to-mariners";
   wxBitmap raw3;
   if (LoadIconSmart(baseFallback, 24, raw3) && raw3.IsOk()) {
     bmp = m_parent->PrepareIconBitmapForGL(raw3, 24);
@@ -690,8 +688,12 @@ bool tpSignalKNotesManager::RequestAuthorization() {
   }
 
   wxString response;
-  wxStringOutputStream out(&response);
-  in->Read(out);
+  char buf[4096];
+  while (!in->Eof()) {
+    in->Read(buf, sizeof(buf));
+    size_t read = in->LastRead();
+    if (read > 0) response += wxString::FromUTF8(buf, read);
+  }
   delete in;
 
   wxJSONReader reader;
@@ -716,13 +718,15 @@ bool tpSignalKNotesManager::RequestAuthorization() {
 
 bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   if (m_authRequestHref.IsEmpty()) return false;
-SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);  // NEU
+  SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s",
+          m_authRequestHref);  // NEU
   wxString response = MakeHTTPRequest(m_authRequestHref);
 
   if (response.IsEmpty()) {
     return false;
   }
-SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'", response.Left(200));  // NEU
+  SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'",
+          response.Left(200));  // NEU
   wxJSONReader reader;
   wxJSONValue root;
   if (reader.Parse(response, &root) > 0) {
@@ -788,10 +792,9 @@ bool tpSignalKNotesManager::ValidateToken() {
   wxInputStream* in = http.GetInputStream("/plugins/");
 
   if (!in) {
-    SKN_LOG(
-        m_parent,
-        "ValidateToken - GetInputStream returned NULL (likely "
-        "401/403 - no admin rights)");
+    SKN_LOG(m_parent,
+            "ValidateToken - GetInputStream returned NULL (likely "
+            "401/403 - no admin rights)");
     return false;
   }
 
@@ -803,23 +806,27 @@ bool tpSignalKNotesManager::ValidateToken() {
 
   int responseCode = http.GetResponse();
 
+  // Chunk-weises Lesen
   wxString response;
-  wxStringOutputStream out(&response);
-  in->Read(out);
+  char buf[4096];
+  while (!in->Eof()) {
+    in->Read(buf, sizeof(buf));
+    size_t read = in->LastRead();
+    if (read > 0) response += wxString::FromUTF8(buf, read);
+  }
   delete in;
 
   if (responseCode == 401 || responseCode == 403) {
-    SKN_LOG(m_parent,
-            "Token is invalid or lacks admin rights (HTTP %d)", responseCode);
+    SKN_LOG(m_parent, "Token is invalid or lacks admin rights (HTTP %d)",
+            responseCode);
     return false;
   }
 
   if (responseCode == 200) {
     if (response.IsEmpty()) {
-      SKN_LOG(
-          m_parent,
-          "Token validation - EMPTY response despite HTTP 200 "
-          "(suspicious)");
+      SKN_LOG(m_parent,
+              "Token validation - EMPTY response despite HTTP 200 "
+              "(suspicious)");
       return false;
     }
 
@@ -836,24 +843,21 @@ bool tpSignalKNotesManager::ValidateToken() {
 
       return true;
     } else {
-      //SKN_LOG(m_parent,
-      //        "Token validation - Response is not valid JSON");
-                  SKN_LOG(m_parent, "Token validation - Response is not valid JSON: '%s'", 
-            response.Left(300));  // ← NEU
+      // SKN_LOG(m_parent,
+      //         "Token validation - Response is not valid JSON");
+      SKN_LOG(m_parent, "Token validation - Response is not valid JSON: '%s'",
+              response.Left(300));  // ← NEU
       return false;
     }
   }
 
-  SKN_LOG(m_parent,
-          "Unexpected response code %d - treating as invalid", responseCode);
+  SKN_LOG(m_parent, "Unexpected response code %d - treating as invalid",
+          responseCode);
   return false;
 }
 
 wxString tpSignalKNotesManager::MakeAuthenticatedHTTPRequest(
     const wxString& path) {
-  wxString urlStr =
-      wxString::Format("http://%s:%d%s", m_serverHost, m_serverPort, path);
-
   wxHTTP http;
   http.SetTimeout(10);
 
@@ -871,11 +875,16 @@ wxString tpSignalKNotesManager::MakeAuthenticatedHTTPRequest(
     return wxEmptyString;
   }
 
+  // Chunk-weises Lesen statt Read() in einem Zug
   wxString response;
-  wxStringOutputStream out(&response);
-  in->Read(out);
-  delete in;
+  char buf[4096];
+  while (!in->Eof()) {
+    in->Read(buf, sizeof(buf));
+    size_t read = in->LastRead();
+    if (read > 0) response += wxString::FromUTF8(buf, read);
+  }
 
+  delete in;
   return response;
 }
 
@@ -936,8 +945,7 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
   std::map<wxString, bool> installedPlugins;
 
   if (!FetchInstalledPlugins(installedPlugins)) {
-    SKN_LOG(m_parent,
-            "Cannot cleanup providers - plugin fetch failed");
+    SKN_LOG(m_parent, "Cannot cleanup providers - plugin fetch failed");
     return;
   }
 
@@ -952,8 +960,8 @@ void tpSignalKNotesManager::CleanupDisabledProviders() {
       SKN_LOG(m_parent, "Removing provider '%s' - not installed", provider);
       providersToRemove.push_back(provider);
     } else if (!it->second) {
-      SKN_LOG(m_parent,
-              "Removing provider '%s' - disabled in SignalK", provider);
+      SKN_LOG(m_parent, "Removing provider '%s' - disabled in SignalK",
+              provider);
       providersToRemove.push_back(provider);
     }
   }
@@ -1007,4 +1015,3 @@ void tpSignalKNotesManager::ClearAuthRequest() {
     m_parent->SaveConfig();
   }
 }
-
