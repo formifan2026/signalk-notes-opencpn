@@ -716,13 +716,13 @@ bool tpSignalKNotesManager::RequestAuthorization() {
 
 bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   if (m_authRequestHref.IsEmpty()) return false;
-
+SKN_LOG(m_parent, "CheckAuthorizationStatus: href=%s", m_authRequestHref);  // NEU
   wxString response = MakeHTTPRequest(m_authRequestHref);
 
   if (response.IsEmpty()) {
     return false;
   }
-
+SKN_LOG(m_parent, "CheckAuthorizationStatus: response='%s'", response.Left(200));  // NEU
   wxJSONReader reader;
   wxJSONValue root;
   if (reader.Parse(response, &root) > 0) {
@@ -836,8 +836,10 @@ bool tpSignalKNotesManager::ValidateToken() {
 
       return true;
     } else {
-      SKN_LOG(m_parent,
-              "Token validation - Response is not valid JSON");
+      //SKN_LOG(m_parent,
+      //        "Token validation - Response is not valid JSON");
+                  SKN_LOG(m_parent, "Token validation - Response is not valid JSON: '%s'", 
+            response.Left(300));  // ← NEU
       return false;
     }
   }

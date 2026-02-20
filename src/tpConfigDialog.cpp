@@ -473,6 +473,7 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
 
 void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
   auto* mgr = m_parent->m_pSignalKNotesManager;
+  SKN_LOG(m_parent, "OnAuthCheckTimer fired, IsAuthPending=%d", (int)mgr->IsAuthPending());  // NEU
 
   // 1. Wenn noch eine Auth-Anfrage läuft → alten Flow benutzen
   if (mgr->IsAuthPending()) {
