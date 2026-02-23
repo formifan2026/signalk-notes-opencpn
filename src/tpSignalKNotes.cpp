@@ -33,7 +33,7 @@
 
 wxString HttpGet(const wxString& url, const wxString& authHeader = "");
 
-#if defined(__linux__) || defined(__APPLE__)
+#if (defined(__linux__) || defined(__APPLE__)) && !defined(__OCPN__ANDROID__)
 
 #include <curl/curl.h>
 
