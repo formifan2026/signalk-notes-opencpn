@@ -173,6 +173,47 @@ wxString HttpGet(const wxString& url, const wxString& authHeader) {
 
 #endif
 
+#ifdef __OCPN__ANDROID__
+
+wxString HttpGet(const wxString& url, const wxString& authHeader) {
+  // Android: HTTP über wxHTTP
+  wxHTTP http;
+  http.SetTimeout(10);
+
+  wxURL wxurl(url);
+  if (wxurl.GetError() != wxURL_NOERR) return "";
+
+  wxString host = wxurl.GetServer();
+  long port = 80;
+  wxurl.GetPort().ToLong(&port);
+  wxString path = "/" + wxurl.GetPath();
+
+  if (!authHeader.IsEmpty()) {
+    http.SetHeader("Authorization", authHeader.AfterFirst(' ').AfterFirst(' '));
+  }
+
+  if (!http.Connect(host, (unsigned short)port)) return "";
+
+  wxInputStream* in = http.GetInputStream(path);
+  if (!in || !in->IsOk()) {
+    delete in;
+    return "";
+  }
+
+  wxString response;
+  char buf[4096];
+  while (true) {
+    in->Read(buf, sizeof(buf));
+    size_t read = in->LastRead();
+    if (read == 0) break;
+    response += wxString::FromUTF8(buf, read);
+  }
+  delete in;
+  return response;
+}
+
+#endif
+
 // ---------------------------------------------------------------------------
 // Helper: strip extension and return base path (without .svg/.png)
 // ---------------------------------------------------------------------------
