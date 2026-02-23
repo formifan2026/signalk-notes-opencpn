@@ -85,114 +85,93 @@ wxString HttpGet(const wxString& url, const wxString& authHeader) {
 #include <winhttp.h>
 #pragma comment(lib, "winhttp.lib")
 
-wxString HttpGet(const wxString& url, const wxString& authHeader)
-{
-    // URL parsen
-    URL_COMPONENTS uc = {0};
-    uc.dwStructSize = sizeof(uc);
+wxString HttpGet(const wxString& url, const wxString& authHeader) {
+  // URL parsen
+  URL_COMPONENTS uc = {0};
+  uc.dwStructSize = sizeof(uc);
 
-    wchar_t host[256];
-    wchar_t path[2048];
+  wchar_t host[256];
+  wchar_t path[2048];
 
-    uc.lpszHostName = host;
-    uc.dwHostNameLength = 256;
-    uc.lpszUrlPath = path;
-    uc.dwUrlPathLength = 2048;
+  uc.lpszHostName = host;
+  uc.dwHostNameLength = 256;
+  uc.lpszUrlPath = path;
+  uc.dwUrlPathLength = 2048;
 
-    if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc))
-        return "";
+  if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc)) return "";
 
-    HINTERNET hSession = WinHttpOpen(
-        L"SignalKNotes/1.0",
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        WINHTTP_NO_PROXY_NAME,
-        WINHTTP_NO_PROXY_BYPASS,
-        0);
+  HINTERNET hSession =
+      WinHttpOpen(L"SignalKNotes/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 
-    if (!hSession)
-        return "";
+  if (!hSession) return "";
 
-    HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
-    if (!hConnect) {
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
+  HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
+  if (!hConnect) {
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    HINTERNET hRequest = WinHttpOpenRequest(
-        hConnect,
-        L"GET",
-        uc.lpszUrlPath,
-        NULL,
-        WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
-        (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+  HINTERNET hRequest = WinHttpOpenRequest(
+      hConnect, L"GET", uc.lpszUrlPath, NULL, WINHTTP_NO_REFERER,
+      WINHTTP_DEFAULT_ACCEPT_TYPES,
+      (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
 
-    if (!hRequest) {
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
+  if (!hRequest) {
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    // Authorization Header korrekt übernehmen
-    if (!authHeader.IsEmpty()) {
-        std::wstring hdr = std::wstring(authHeader.wc_str());
-        WinHttpAddRequestHeaders(
-            hRequest,
-            hdr.c_str(),
-            (DWORD)-1,
-            WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
-    }
+  // Authorization Header korrekt übernehmen
+  if (!authHeader.IsEmpty()) {
+    std::wstring hdr = std::wstring(authHeader.wc_str());
+    WinHttpAddRequestHeaders(
+        hRequest, hdr.c_str(), (DWORD)-1,
+        WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+  }
 
-    if (!WinHttpSendRequest(
-            hRequest,
-            WINHTTP_NO_ADDITIONAL_HEADERS,
-            0,
-            WINHTTP_NO_REQUEST_DATA,
-            0,
-            0,
-            0)) {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
-
-    if (!WinHttpReceiveResponse(hRequest, NULL)) {
-        WinHttpCloseHandle(hRequest);
-        WinHttpCloseHandle(hConnect);
-        WinHttpCloseHandle(hSession);
-        return "";
-    }
-
-    std::string response;
-    DWORD bytesAvailable = 0;
-
-    do {
-        if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable))
-            break;
-
-        if (bytesAvailable == 0)
-            break;
-
-        std::vector<char> buffer(bytesAvailable);
-        DWORD bytesRead = 0;
-
-        if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
-            break;
-
-        response.append(buffer.data(), bytesRead);
-
-    } while (bytesAvailable > 0);
-
+  if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                          WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
     WinHttpCloseHandle(hRequest);
     WinHttpCloseHandle(hConnect);
     WinHttpCloseHandle(hSession);
+    return "";
+  }
 
-    return wxString::FromUTF8(response.c_str());
+  if (!WinHttpReceiveResponse(hRequest, NULL)) {
+    WinHttpCloseHandle(hRequest);
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+    return "";
+  }
+
+  std::string response;
+  DWORD bytesAvailable = 0;
+
+  do {
+    if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable)) break;
+
+    if (bytesAvailable == 0) break;
+
+    std::vector<char> buffer(bytesAvailable);
+    DWORD bytesRead = 0;
+
+    if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
+      break;
+
+    response.append(buffer.data(), bytesRead);
+
+  } while (bytesAvailable > 0);
+
+  WinHttpCloseHandle(hRequest);
+  WinHttpCloseHandle(hConnect);
+  WinHttpCloseHandle(hSession);
+
+  return wxString::FromUTF8(response.c_str());
 }
 
 #endif
-
 
 // ---------------------------------------------------------------------------
 // Helper: strip extension and return base path (without .svg/.png)
@@ -392,9 +371,9 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
   }
 
   SKN_LOG(m_parent, "Found note '%s'", note->name);
-
   wxDialog* dlg =
-      new wxDialog(NULL, wxID_ANY, _("SignalK Note Details"), wxDefaultPosition,
+      new wxDialog(m_parent->GetParentWindow(), wxID_ANY,
+                   _("SignalK Note Details"), wxDefaultPosition,
                    wxSize(500, 400), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
   wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
@@ -470,6 +449,13 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
 
   dlg->ShowModal();
   dlg->Destroy();
+    // OpenCPN den Mouse-Capture-Zustand zurücksetzen
+  wxWindow* canvas = GetOCPNCanvasWindow();
+  if (canvas) {
+    wxMouseEvent upEvent(wxEVT_LEFT_UP);
+    upEvent.SetPosition(wxGetMousePosition());
+    canvas->GetEventHandler()->ProcessEvent(upEvent);
+  }
 }
 
 bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,

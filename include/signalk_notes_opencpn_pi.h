@@ -154,6 +154,7 @@ private:
       int clusterRadius = 60);
 
   void OnClusterClick(const NoteCluster& cluster);
+  void ShowClusterSelectionDialog(NoteCluster cluster); 
 
   std::vector<NoteCluster> m_currentClusters;
 
@@ -168,6 +169,7 @@ private:
   void MoveViewportTowardsCluster(PlugIn_ViewPort& vp);
   bool AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp,
                                        double zoomFactor) const;
+  wxString m_pendingNoteClick;
 };
 
 // LOGGING-MAKRO

@@ -6,21 +6,21 @@
  ******************************************************************************/
 
 #ifdef _WIN32
-  #define WIN32_LEAN_AND_MEAN
-  #include <windows.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 #if defined(ocpnUSE_GL) && !defined(__OCPN__ANDROID__) && !defined(__APPLE__)
-  #include <GL/gl.h>
-  #include <GL/glu.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #endif
 
 #if defined(ocpnUSE_GL) && defined(__APPLE__)
-  #include <OpenGL/gl.h>
+#include <OpenGL/gl.h>
 #endif
 
 #ifdef __OCPN__ANDROID__
-  #include <GLES2/gl2.h>
+#include <GLES2/gl2.h>
 #endif
 
 #include "version.h"
@@ -30,7 +30,7 @@
 #include <cmath>
 #include "wx/wxprec.h"
 #ifndef WX_PRECOMP
-  #include "wx/wx.h"
+#include "wx/wx.h"
 #endif
 
 #include <wx/stdpaths.h>
@@ -45,15 +45,16 @@
 #include <wx/fileconf.h>
 #include <wx/filename.h>
 #include <wx/graphics.h>
+#include <wx/listctrl.h>
 #include <algorithm>
 
 #ifdef __WXMSW__
-  #include <rpc.h>
-  #pragma comment(lib, "Rpcrt4.lib")
+#include <rpc.h>
+#pragma comment(lib, "Rpcrt4.lib")
 #elif defined(__OCPN__ANDROID__)
-  #include "android_uuid.h"
+#include "android_uuid.h"
 #else
-  #include <uuid/uuid.h>
+#include <uuid/uuid.h>
 #endif
 
 #include "signalk_notes_opencpn_pi.h"
@@ -63,11 +64,11 @@
 #include "wx/jsonwriter.h"
 
 #ifndef DECL_EXP
-  #if defined(_WIN32) || defined(WIN32) || defined(__WIN32__)
-    #define DECL_EXP __declspec(dllexport)
-  #else
-    #define DECL_EXP
-  #endif
+#if defined(_WIN32) || defined(WIN32) || defined(__WIN32__)
+#define DECL_EXP __declspec(dllexport)
+#else
+#define DECL_EXP
+#endif
 #endif
 
 signalk_notes_opencpn_pi* g_signalk_notes_opencpn_pi = nullptr;
@@ -90,9 +91,7 @@ extern "C" DECL_EXP opencpn_plugin* create_pi(void* ppimgr) {
   return new signalk_notes_opencpn_pi(ppimgr);
 }
 
-extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p) {
-  delete p;
-}
+extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p) { delete p; }
 
 extern "C" DECL_EXP int get_api_major_version() {
   return OCPN_API_VERSION_MAJOR;
@@ -108,7 +107,6 @@ extern "C" DECL_EXP int get_api_minor_version() {
 
 signalk_notes_opencpn_pi::signalk_notes_opencpn_pi(void* ppimgr)
     : opencpn_plugin_120(ppimgr) {
-
   g_signalk_notes_opencpn_pi = this;
 
   wxString pluginDir = GetPluginDataDir("signalk_notes_opencpn_pi");
@@ -145,7 +143,8 @@ signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi() {
 void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
   const double zoomFactor = 2.0;
 
-  SKN_LOG(this, "MoveViewportTowardsCluster ENTER scale=%.3f", vp.view_scale_ppm);
+  SKN_LOG(this, "MoveViewportTowardsCluster ENTER scale=%.3f",
+          vp.view_scale_ppm);
 
   bool allVisible = AreAllNotesVisibleAfterNextZoom(vp, zoomFactor);
   SKN_LOG(this, "MoveViewportTowardsCluster allVisible=%d", allVisible);
@@ -194,24 +193,41 @@ void signalk_notes_opencpn_pi::ProcessClusterPanStep() {
 // Metadata
 // -----------------------------------------------------------------------------
 
-int signalk_notes_opencpn_pi::GetAPIVersionMajor() { return OCPN_API_VERSION_MAJOR; }
-int signalk_notes_opencpn_pi::GetAPIVersionMinor() { return OCPN_API_VERSION_MINOR; }
+int signalk_notes_opencpn_pi::GetAPIVersionMajor() {
+  return OCPN_API_VERSION_MAJOR;
+}
+int signalk_notes_opencpn_pi::GetAPIVersionMinor() {
+  return OCPN_API_VERSION_MINOR;
+}
 
-int signalk_notes_opencpn_pi::GetPlugInVersionMajor() { return PLUGIN_VERSION_MAJOR; }
-int signalk_notes_opencpn_pi::GetPlugInVersionMinor() { return PLUGIN_VERSION_MINOR; }
-int signalk_notes_opencpn_pi::GetPlugInVersionPatch() { return PLUGIN_VERSION_PATCH; }
-int signalk_notes_opencpn_pi::GetPlugInVersionPost()  { return PLUGIN_VERSION_TWEAK; }
+int signalk_notes_opencpn_pi::GetPlugInVersionMajor() {
+  return PLUGIN_VERSION_MAJOR;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionMinor() {
+  return PLUGIN_VERSION_MINOR;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionPatch() {
+  return PLUGIN_VERSION_PATCH;
+}
+int signalk_notes_opencpn_pi::GetPlugInVersionPost() {
+  return PLUGIN_VERSION_TWEAK;
+}
 
-wxString signalk_notes_opencpn_pi::GetCommonName()        { return _T(PLUGIN_COMMON_NAME); }
-wxString signalk_notes_opencpn_pi::GetShortDescription()  { return _(PLUGIN_SHORT_DESCRIPTION); }
-wxString signalk_notes_opencpn_pi::GetLongDescription()   { return _(PLUGIN_LONG_DESCRIPTION); }
+wxString signalk_notes_opencpn_pi::GetCommonName() {
+  return _T(PLUGIN_COMMON_NAME);
+}
+wxString signalk_notes_opencpn_pi::GetShortDescription() {
+  return _(PLUGIN_SHORT_DESCRIPTION);
+}
+wxString signalk_notes_opencpn_pi::GetLongDescription() {
+  return _(PLUGIN_LONG_DESCRIPTION);
+}
 
 // -----------------------------------------------------------------------------
 // Init / DeInit
 // -----------------------------------------------------------------------------
 
 int signalk_notes_opencpn_pi::Init(void) {
-
   AddLocaleCatalog(PLUGIN_CATALOG_NAME);
 
   m_parent_window = GetOCPNCanvasWindow();
@@ -221,22 +237,20 @@ int signalk_notes_opencpn_pi::Init(void) {
 
 #ifdef PLUGIN_USE_SVG
   m_signalk_notes_opencpn_button_id = InsertPlugInToolSVG(
-      _("SignalK Notes"),
-      m_ptpicons->m_s_signalk_notes_opencpn_grey_pi,
+      _("SignalK Notes"), m_ptpicons->m_s_signalk_notes_opencpn_grey_pi,
       m_ptpicons->m_s_signalk_notes_opencpn_pi,
-      m_ptpicons->m_s_signalk_notes_opencpn_toggled_pi,
-      wxITEM_CHECK, _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
+      m_ptpicons->m_s_signalk_notes_opencpn_toggled_pi, wxITEM_CHECK,
+      _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
 #else
   m_signalk_notes_opencpn_button_id = InsertPlugInTool(
-      _("SignalK Notes"),
-      &m_ptpicons->m_bm_signalk_notes_opencpn_grey_pi,
-      &m_ptpicons->m_bm_signalk_notes_opencpn_pi,
-      wxITEM_CHECK, _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
+      _("SignalK Notes"), &m_ptpicons->m_bm_signalk_notes_opencpn_grey_pi,
+      &m_ptpicons->m_bm_signalk_notes_opencpn_pi, wxITEM_CHECK,
+      _("SignalK Notes"), wxS(""), nullptr, -1, 0, this);
 #endif
 
   g_pFontTitle = GetOCPNScaledFont_PlugIn("tp_Title");
   g_pFontLabel = GetOCPNScaledFont_PlugIn("tp_Label");
-  g_pFontData  = GetOCPNScaledFont_PlugIn("tp_Data");
+  g_pFontData = GetOCPNScaledFont_PlugIn("tp_Data");
   g_pFontSmall = GetOCPNScaledFont_PlugIn("tp_Small");
 
   return (WANTS_CURSOR_LATLON | WANTS_TOOLBAR_CALLBACK | INSTALLS_TOOLBAR_TOOL |
@@ -265,7 +279,6 @@ bool signalk_notes_opencpn_pi::DeInit(void) {
 // -----------------------------------------------------------------------------
 
 void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
-
   if (!m_pSignalKNotesManager->GetAuthToken().IsEmpty()) {
     if (!m_pSignalKNotesManager->ValidateToken()) {
       m_pSignalKNotesManager->SetAuthToken("");
@@ -287,12 +300,10 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
   m_pConfigDialog->ShowModal();
 
   if (m_pConfigDialog->GetReturnCode() == wxID_OK) {
-
     m_pSignalKNotesManager->SetProviderSettings(
         m_pConfigDialog->GetProviderSettings());
 
-    m_pSignalKNotesManager->SetIconMappings(
-        m_pConfigDialog->GetIconMappings());
+    m_pSignalKNotesManager->SetIconMappings(m_pConfigDialog->GetIconMappings());
 
     SaveConfig();
 
@@ -325,8 +336,7 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
 
   int count = m_pSignalKNotesManager->GetVisibleIconCount(m_lastViewPort);
 
-  if (m_pOverviewDialog)
-    m_pOverviewDialog->UpdateVisibleCount(count);
+  if (m_pOverviewDialog) m_pOverviewDialog->UpdateVisibleCount(count);
 }
 
 // -----------------------------------------------------------------------------
@@ -334,9 +344,13 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
 // -----------------------------------------------------------------------------
 
 bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
-
   if (!vp || !m_pSignalKNotesManager) return false;
-
+  if (!m_pendingNoteClick.IsEmpty()) {
+    wxString noteId = m_pendingNoteClick;
+    m_pendingNoteClick.Clear();
+    m_pSignalKNotesManager->OnIconClick(noteId);
+    return true;
+  }
   m_lastViewPort = *vp;
   m_lastViewPortValid = true;
 
@@ -353,18 +367,17 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
 
   wxLongLong now = wxGetLocalTimeMillis();
 
-  if (m_lastFetchTime == 0 ||
-      (now - m_lastFetchTime).ToLong() > 30000 ||
+  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
       fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
       fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
       fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
-
-    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon, maxDistance);
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
 
     m_lastFetchCenterLat = centerLat;
     m_lastFetchCenterLon = centerLon;
-    m_lastFetchDistance  = maxDistance;
-    m_lastFetchTime      = now;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
   }
 
   std::vector<const SignalKNote*> visibleNotes;
@@ -377,14 +390,11 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
   bool drewSomething = false;
 
   for (const auto& cluster : m_currentClusters) {
-
     if (cluster.notes.size() == 1) {
-
       const SignalKNote* note = cluster.notes[0];
       wxBitmap bmp;
 
-      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp))
-        continue;
+      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
 
 #ifdef __OCPN__ANDROID__
       wxBitmap drawBmp = bmp;
@@ -392,21 +402,16 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
       wxBitmap drawBmp = PrepareIconBitmapForGL(bmp, bmp.GetWidth());
 #endif
 
-      dc.DrawBitmap(drawBmp,
-                    cluster.screenPos.x - drawBmp.GetWidth() / 2,
-                    cluster.screenPos.y - drawBmp.GetHeight() / 2,
-                    true);
+      dc.DrawBitmap(drawBmp, cluster.screenPos.x - drawBmp.GetWidth() / 2,
+                    cluster.screenPos.y - drawBmp.GetHeight() / 2, true);
 
       drewSomething = true;
 
     } else {
-
       wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
 
-      dc.DrawBitmap(clusterBmp,
-                    cluster.screenPos.x - clusterBmp.GetWidth() / 2,
-                    cluster.screenPos.y - clusterBmp.GetHeight() / 2,
-                    true);
+      dc.DrawBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
+                    cluster.screenPos.y - clusterBmp.GetHeight() / 2, true);
 
       drewSomething = true;
     }
@@ -417,6 +422,7 @@ bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
 
 bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
                                                PlugIn_ViewPort* vp) {
+  SKN_LOG(this, "RenderGLOverlay - START");
 #ifdef __OCPN__ANDROID__
   SKN_LOG(this, "RenderGLOverlay called on Android -> ignored");
   return false;
@@ -424,14 +430,25 @@ bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
 
   if (!vp || !m_pSignalKNotesManager) return false;
 
+  if (!m_pendingNoteClick.IsEmpty()) {
+    wxString noteId = m_pendingNoteClick;
+    m_pendingNoteClick.Clear();
+    m_pSignalKNotesManager->OnIconClick(noteId);
+    return true;
+  }
+
   m_lastViewPort = *vp;
   m_lastViewPortValid = true;
 
   if (m_clusterZoom.active) {
-    if (m_clusterZoom.justStarted)
+    SKN_LOG(this, "RenderGLOverlay - m_clusterZoom.active");
+    if (m_clusterZoom.justStarted) {
+      SKN_LOG(this, "RenderGLOverlay - m_clusterZoom.justStarted = false;");
       m_clusterZoom.justStarted = false;
-    else
+    } else {
+      SKN_LOG(this, "RenderGLOverlay - ProcessClusterPanStep()");
       ProcessClusterPanStep();
+    }
   }
 
   double centerLat = vp->clat;
@@ -440,18 +457,17 @@ bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
 
   wxLongLong now = wxGetLocalTimeMillis();
 
-  if (m_lastFetchTime == 0 ||
-      (now - m_lastFetchTime).ToLong() > 30000 ||
+  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
       fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
       fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
       fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
-
-    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon, maxDistance);
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
 
     m_lastFetchCenterLat = centerLat;
     m_lastFetchCenterLon = centerLon;
-    m_lastFetchDistance  = maxDistance;
-    m_lastFetchTime      = now;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
   }
 
   std::vector<const SignalKNote*> visibleNotes;
@@ -464,33 +480,27 @@ bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
   bool drewSomething = false;
 
   for (const auto& cluster : m_currentClusters) {
-
     if (cluster.notes.size() == 1) {
-
       const SignalKNote* note = cluster.notes[0];
       wxBitmap bmp;
 
-      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp))
-        continue;
+      if (!m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp)) continue;
 
-      DrawGLBitmap(bmp,
-                   cluster.screenPos.x - bmp.GetWidth() / 2,
+      DrawGLBitmap(bmp, cluster.screenPos.x - bmp.GetWidth() / 2,
                    cluster.screenPos.y - bmp.GetHeight() / 2);
 
       drewSomething = true;
 
     } else {
-
       wxBitmap clusterBmp = CreateClusterBitmap(cluster.notes.size());
 
-      DrawGLBitmap(clusterBmp,
-                   cluster.screenPos.x - clusterBmp.GetWidth() / 2,
+      DrawGLBitmap(clusterBmp, cluster.screenPos.x - clusterBmp.GetWidth() / 2,
                    cluster.screenPos.y - clusterBmp.GetHeight() / 2);
 
       drewSomething = true;
     }
   }
-
+  SKN_LOG(this, "RenderGLOverlay - END");
   return drewSomething;
 }
 
@@ -515,16 +525,18 @@ bool signalk_notes_opencpn_pi::KeyboardEventHook(wxKeyEvent& event) {
 }
 
 bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
-
-  if (!event.LeftDown()) return false;
+  if (!event.LeftDown()) {
+    SKN_LOG(this, "Leaving MouseEnventHook !event.LeftDown");
+    return false;
+  }
   if (!m_pSignalKNotesManager || !m_lastViewPortValid) return false;
 
   wxPoint mousePos = event.GetPosition();
   double clickLat, clickLon;
   GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
 
-  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)",
-          clickLat, clickLon, mousePos.x, mousePos.y);
+  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)", clickLat,
+          clickLon, mousePos.x, mousePos.y);
 
   auto pxToMeters = [&](int px) { return px * m_lastViewPort.view_scale_ppm; };
 
@@ -543,9 +555,11 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
     double dLat = halfSizeMeters / metersPerDegLat;
     double dLon = halfSizeMeters / metersPerDegLonClick;
 
-    struct Box { double minLat, maxLat, minLon, maxLon; };
-    return Box{clickLat - dLat, clickLat + dLat,
-               clickLon - dLon, clickLon + dLon};
+    struct Box {
+      double minLat, maxLat, minLon, maxLon;
+    };
+    return Box{clickLat - dLat, clickLat + dLat, clickLon - dLon,
+               clickLon + dLon};
   };
 
   auto clusterBox = computeBoxAroundClick(m_clusterSize);
@@ -559,7 +573,6 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
 
     if (lat >= clusterBox.minLat && lat <= clusterBox.maxLat &&
         lon >= clusterBox.minLon && lon <= clusterBox.maxLon) {
-
       OnClusterClick(cluster);
       return true;
     }
@@ -571,7 +584,6 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
   for (size_t i = 0; i < visibleNotes.size(); i++) {
-
     const SignalKNote* note = visibleNotes[i];
     if (!note) continue;
 
@@ -580,7 +592,6 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
 
     if (lat >= noteBox.minLat && lat <= noteBox.maxLat &&
         lon >= noteBox.minLon && lon <= noteBox.maxLon) {
-
       m_pSignalKNotesManager->OnIconClick(note->id);
       return true;
     }
@@ -595,7 +606,6 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
 // -----------------------------------------------------------------------------
 
 void signalk_notes_opencpn_pi::SaveConfig() {
-
   wxFileConfig* pConf = m_pTPConfig;
   if (!pConf) return;
   SKN_LOG(this, "SaveConfig called, token='%s'",  // ← NEU
@@ -621,9 +631,8 @@ void signalk_notes_opencpn_pi::SaveConfig() {
   pConf->Write("AuthToken", m_pSignalKNotesManager->GetAuthToken());
   pConf->Write("AuthRequestHref", m_pSignalKNotesManager->GetAuthRequestHref());
   pConf->Write("ClientUUID", m_clientUUID);
-  
-  if (m_pConfigDialog) {
 
+  if (m_pConfigDialog) {
     m_pTPConfig->Write("DisplaySettings/IconSize",
                        m_pConfigDialog->GetIconSize());
 
@@ -634,14 +643,20 @@ void signalk_notes_opencpn_pi::SaveConfig() {
                        m_pConfigDialog->GetClusterRadius());
 
     wxColour clusterColor = m_pConfigDialog->GetClusterColor();
-    m_pTPConfig->Write("DisplaySettings/ClusterColorR", (int)clusterColor.Red());
-    m_pTPConfig->Write("DisplaySettings/ClusterColorG", (int)clusterColor.Green());
-    m_pTPConfig->Write("DisplaySettings/ClusterColorB", (int)clusterColor.Blue());
+    m_pTPConfig->Write("DisplaySettings/ClusterColorR",
+                       (int)clusterColor.Red());
+    m_pTPConfig->Write("DisplaySettings/ClusterColorG",
+                       (int)clusterColor.Green());
+    m_pTPConfig->Write("DisplaySettings/ClusterColorB",
+                       (int)clusterColor.Blue());
 
     wxColour textColor = m_pConfigDialog->GetClusterTextColor();
-    m_pTPConfig->Write("DisplaySettings/ClusterTextColorR", (int)textColor.Red());
-    m_pTPConfig->Write("DisplaySettings/ClusterTextColorG", (int)textColor.Green());
-    m_pTPConfig->Write("DisplaySettings/ClusterTextColorB", (int)textColor.Blue());
+    m_pTPConfig->Write("DisplaySettings/ClusterTextColorR",
+                       (int)textColor.Red());
+    m_pTPConfig->Write("DisplaySettings/ClusterTextColorG",
+                       (int)textColor.Green());
+    m_pTPConfig->Write("DisplaySettings/ClusterTextColorB",
+                       (int)textColor.Blue());
 
     m_pTPConfig->Write("DisplaySettings/ClusterFontSize",
                        m_pConfigDialog->GetClusterFontSize());
@@ -654,7 +669,6 @@ void signalk_notes_opencpn_pi::SaveConfig() {
 }
 
 void signalk_notes_opencpn_pi::LoadConfig() {
-
   wxFileConfig* pConf = m_pTPConfig;
   if (!pConf) return;
 
@@ -722,7 +736,6 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   pConf->Read("ClientUUID", &m_clientUUID, "");
 
   if (m_clientUUID.IsEmpty()) {
-
 #ifdef __WXMSW__
     UUID uuid;
     UuidCreate(&uuid);
@@ -762,8 +775,9 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   int r = m_pTPConfig->Read("DisplaySettings/ClusterColorR",
                             (long)tpConfigDialog::DEFAULT_CLUSTER_COLOR.Red());
 
-  int g = m_pTPConfig->Read("DisplaySettings/ClusterColorG",
-                            (long)tpConfigDialog::DEFAULT_CLUSTER_COLOR.Green());
+  int g =
+      m_pTPConfig->Read("DisplaySettings/ClusterColorG",
+                        (long)tpConfigDialog::DEFAULT_CLUSTER_COLOR.Green());
 
   int b = m_pTPConfig->Read("DisplaySettings/ClusterColorB",
                             (long)tpConfigDialog::DEFAULT_CLUSTER_COLOR.Blue());
@@ -773,11 +787,13 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   r = m_pTPConfig->Read("DisplaySettings/ClusterTextColorR",
                         (long)tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR.Red());
 
-  g = m_pTPConfig->Read("DisplaySettings/ClusterTextColorG",
-                        (long)tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR.Green());
+  g = m_pTPConfig->Read(
+      "DisplaySettings/ClusterTextColorG",
+      (long)tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR.Green());
 
-  b = m_pTPConfig->Read("DisplaySettings/ClusterTextColorB",
-                        (long)tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR.Blue());
+  b = m_pTPConfig->Read(
+      "DisplaySettings/ClusterTextColorB",
+      (long)tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR.Blue());
 
   m_clusterTextColor = wxColour(r, g, b);
 
@@ -805,8 +821,7 @@ void signalk_notes_opencpn_pi::appendOSDirSlash(wxString* pString) {
 }
 
 double signalk_notes_opencpn_pi::CalculateMaxDistance(PlugIn_ViewPort& vp) {
-
-  double vpWidth  = vp.pix_width;
+  double vpWidth = vp.pix_width;
   double vpHeight = vp.pix_height;
 
   double diagonalPixels =
@@ -833,17 +848,14 @@ int signalk_notes_opencpn_pi::GetVisibleNoteCount() const {
 
 std::vector<signalk_notes_opencpn_pi::NoteCluster>
 signalk_notes_opencpn_pi::BuildClusters(
-    const std::vector<const SignalKNote*>& notes,
-    const PlugIn_ViewPort& vp,
+    const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
     int clusterRadius) {
-
   std::vector<NoteCluster> clusters;
   std::vector<bool> clustered(notes.size(), false);
 
   PlugIn_ViewPort vpCopy = vp;
 
   for (size_t i = 0; i < notes.size(); i++) {
-
     if (clustered[i]) continue;
 
     wxPoint p1;
@@ -854,7 +866,6 @@ signalk_notes_opencpn_pi::BuildClusters(
     clustered[i] = true;
 
     for (size_t j = i + 1; j < notes.size(); j++) {
-
       if (clustered[j]) continue;
 
       wxPoint p2;
@@ -881,8 +892,8 @@ signalk_notes_opencpn_pi::BuildClusters(
     cluster.centerLat = sumLat / cluster.notes.size();
     cluster.centerLon = sumLon / cluster.notes.size();
 
-    GetCanvasPixLL(&vpCopy, &cluster.screenPos,
-                   cluster.centerLat, cluster.centerLon);
+    GetCanvasPixLL(&vpCopy, &cluster.screenPos, cluster.centerLat,
+                   cluster.centerLon);
 
     clusters.push_back(cluster);
   }
@@ -892,9 +903,36 @@ signalk_notes_opencpn_pi::BuildClusters(
 }
 
 void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
+  SKN_LOG(this, "ClusterClick START with %zu notes", cluster.notes.size());
 
-  SKN_LOG(this, "===== ClusterClick START =====");
-  SKN_LOG(this, "Cluster with %zu notes", cluster.notes.size());
+  // Simulieren ob ein weiterer Zoom den Cluster aufsprengen würde
+  PlugIn_ViewPort futureVP = m_lastViewPort;
+  double zoomFactor = 2.0;
+  futureVP.view_scale_ppm *= zoomFactor;
+  futureVP.lat_min =
+      cluster.centerLat -
+      (m_lastViewPort.lat_max - m_lastViewPort.lat_min) / (2.0 * zoomFactor);
+  futureVP.lat_max =
+      cluster.centerLat +
+      (m_lastViewPort.lat_max - m_lastViewPort.lat_min) / (2.0 * zoomFactor);
+  futureVP.lon_min =
+      cluster.centerLon -
+      (m_lastViewPort.lon_max - m_lastViewPort.lon_min) / (2.0 * zoomFactor);
+  futureVP.lon_max =
+      cluster.centerLon +
+      (m_lastViewPort.lon_max - m_lastViewPort.lon_min) / (2.0 * zoomFactor);
+
+  auto futureClusters = BuildClusters(cluster.notes, futureVP, m_clusterRadius);
+  bool stillClustered =
+      (futureClusters.size() == 1 && futureClusters[0].notes.size() > 1);
+
+  if (stillClustered) {
+    SKN_LOG(this,
+            "Cluster would not split after zoom -> showing selection dialog");
+    ShowClusterSelectionDialog(cluster);
+    SKN_LOG(this, "===== ClusterClick END =====");
+    return;
+  }
 
   m_clusterZoom.notes = cluster.notes;
   m_clusterZoom.targetLat = cluster.centerLat;
@@ -907,10 +945,11 @@ void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
   RequestRefresh(m_parent_window);
 }
 
-void signalk_notes_opencpn_pi::SetDisplaySettings(
-    int iconSize, int clusterSize, int clusterRadius,
-    const wxColour& clusterColor, const wxColour& textColor, int fontSize) {
-
+void signalk_notes_opencpn_pi::SetDisplaySettings(int iconSize, int clusterSize,
+                                                  int clusterRadius,
+                                                  const wxColour& clusterColor,
+                                                  const wxColour& textColor,
+                                                  int fontSize) {
   m_iconSize = iconSize;
   m_clusterSize = clusterSize;
   m_clusterRadius = clusterRadius;
@@ -949,8 +988,7 @@ wxBitmap signalk_notes_opencpn_pi::CreateClusterBitmap(size_t count) {
 
   wxString text = wxString::Format("%zu", count);
   wxSize ts = dc.GetTextExtent(text);
-  dc.DrawText(text, centerX - ts.GetWidth() / 2,
-              centerY - ts.GetHeight() / 2);
+  dc.DrawText(text, centerX - ts.GetWidth() / 2, centerY - ts.GetHeight() / 2);
 
   dc.SelectObject(wxNullBitmap);
   return bmp;
@@ -975,7 +1013,8 @@ wxBitmap signalk_notes_opencpn_pi::CreateClusterBitmap(size_t count) {
   gc->SetAntialiasMode(wxANTIALIAS_DEFAULT);
 #endif
 
-  wxColour fill(circleColor.Red(), circleColor.Green(), circleColor.Blue(), 200);
+  wxColour fill(circleColor.Red(), circleColor.Green(), circleColor.Blue(),
+                200);
   wxColour border(0, 0, 0, 220);
 
   gc->SetBrush(wxBrush(fill));
@@ -1113,7 +1152,6 @@ static FutureViewPort MakeFutureViewportForCluster(const PlugIn_ViewPort& vp,
                                                    double centerLat,
                                                    double centerLon,
                                                    double zoomFactor) {
-
   double curLatSpan = vp.lat_max - vp.lat_min;
   double curLonSpan = vp.lon_max - vp.lon_min;
 
@@ -1131,7 +1169,6 @@ static FutureViewPort MakeFutureViewportForCluster(const PlugIn_ViewPort& vp,
 
 bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
     const PlugIn_ViewPort& vp, double zoomFactor) const {
-
   if (m_clusterZoom.notes.empty()) return false;
 
   double centerLat = m_clusterZoom.targetLat;
@@ -1143,7 +1180,6 @@ bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
   bool allInside = true;
 
   for (const auto* note : m_clusterZoom.notes) {
-
     double lat = note->latitude;
     double lon = note->longitude;
 
@@ -1169,4 +1205,72 @@ void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
 
 wxWindow* signalk_notes_opencpn_pi::GetParentWindow() {
   return GetOCPNCanvasWindow() ? GetOCPNCanvasWindow() : m_parent_window;
+}
+
+void signalk_notes_opencpn_pi::ShowClusterSelectionDialog(NoteCluster cluster) {
+
+  wxDialog* dlg = new wxDialog(
+      GetParentWindow(), wxID_ANY, _("Notes an dieser Position"),
+      wxDefaultPosition, wxSize(600, 400),
+      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+  dlg->CenterOnScreen();
+
+  wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+
+  wxListCtrl* listCtrl = new wxListCtrl(dlg, wxID_ANY, wxDefaultPosition,
+                                        wxDefaultSize,
+                                        wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER);
+  listCtrl->AppendColumn("", wxLIST_FORMAT_LEFT, 560);
+
+  wxImageList* imgList = new wxImageList(24, 24, true);
+  listCtrl->SetImageList(imgList, wxIMAGE_LIST_SMALL);
+
+  for (size_t i = 0; i < cluster.notes.size(); i++) {
+    const SignalKNote* note = cluster.notes[i];
+    wxString label = note->name.IsEmpty() ? note->id : note->name;
+
+    int imgIdx = -1;
+    wxBitmap bmp;
+    if (m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp) && bmp.IsOk()) {
+      wxImage img = bmp.ConvertToImage().Scale(24, 24, wxIMAGE_QUALITY_HIGH);
+      img = img.Mirror(false);  // Y-Flip korrigieren
+      imgIdx = imgList->Add(wxBitmap(img));
+    }
+
+    listCtrl->InsertItem(i, label, imgIdx);
+  }
+
+  sizer->Add(listCtrl, 1, wxALL | wxEXPAND, 10);
+
+  wxBoxSizer* btnSizer = new wxBoxSizer(wxHORIZONTAL);
+  wxButton* okBtn = new wxButton(dlg, wxID_OK, _("OK"));
+  btnSizer->Add(okBtn, 0, wxALL, 5);
+  sizer->Add(btnSizer, 0, wxALIGN_RIGHT | wxALL, 5);
+  dlg->SetSizer(sizer);
+
+  wxString selectedNoteId;
+
+  listCtrl->Bind(wxEVT_LIST_ITEM_ACTIVATED, [&](wxListEvent& evt) {
+    long sel = evt.GetIndex();
+    if (sel < 0 || sel >= (long)cluster.notes.size()) {
+      return;
+    }
+    selectedNoteId = cluster.notes[sel]->id;
+    dlg->EndModal(wxID_OK);
+  });
+
+ dlg->ShowModal();
+  dlg->Destroy();
+
+  wxWindow* canvas = GetOCPNCanvasWindow();
+  if (canvas) {
+    wxMouseEvent upEvent(wxEVT_LEFT_UP);
+    upEvent.SetPosition(wxGetMousePosition());
+    canvas->GetEventHandler()->ProcessEvent(upEvent);
+  }
+
+  if (!selectedNoteId.IsEmpty()) {
+    m_pendingNoteClick = selectedNoteId;
+    RequestRefresh(m_parent_window);
+  }
 }
