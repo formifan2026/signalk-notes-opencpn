@@ -66,7 +66,8 @@ public:
   void ClearAllIcons();
 
   SignalKNote* GetNoteByGUID(const wxString& guid);
-  void OnIconClick(const wxString& guid);
+  void OnIconClick(const wxString& guid,
+                   const PlugIn_ViewPort& currentViewPort);
 
   void GetVisibleNotes(std::vector<const SignalKNote*>& outNotes);
   bool GetIconBitmapForNote(const SignalKNote& note, wxBitmap& outBitmap);
@@ -120,9 +121,12 @@ public:
 
   std::vector<ProviderInfo> GetProviderInfos() const;
 
-  bool LoadIconSmart(const wxString& basePathWithoutExt, int size, wxBitmap& outBmp);
+  bool LoadIconSmart(const wxString& basePathWithoutExt, int size,
+                     wxBitmap& outBmp);
   wxDateTime GetAuthRequestTime() const { return m_authRequestTime; }
-  wxDateTime GetAuthTokenReceivedTime() const { return m_authTokenReceivedTime; }
+  wxDateTime GetAuthTokenReceivedTime() const {
+    return m_authTokenReceivedTime;
+  }
 
 private:
   signalk_notes_opencpn_pi* m_parent = nullptr;
@@ -169,6 +173,12 @@ private:
     bool enabled;
   };
   std::map<wxString, ProviderDetails> m_providerDetails;
-};
 
+  // Helper-Methoden für Note-Details Dialog
+  wxString PrepareHTMLContent(const wxString& description, const wxString& url);
+  bool RenderWithWebView(wxDialog* dlg, wxBoxSizer* sizer,
+                         const wxString& htmlContent);
+  void RenderWithHtmlWindow(wxDialog* dlg, wxBoxSizer* sizer,
+                            const wxString& htmlContent);
+};
 #endif  // _TPSIGNALKNOTES_H_

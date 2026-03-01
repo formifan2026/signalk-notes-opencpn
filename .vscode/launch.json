@@ -4,11 +4,24 @@
     {
       "name": "Attach to OpenCPN",
       "type": "cppdbg",
-      "request": "attach",
+      "request": "launch",
       "program": "/usr/bin/opencpn",
-      "processId": "${command:pickProcess}",
+      "miDebuggerServerAddress": "192.168.188.25:1234",
       "MIMode": "gdb",
-      "miDebuggerPath": "/usr/bin/gdb"
+      "miDebuggerPath": "/usr/bin/gdb",
+      "cwd": "/home/pi",
+      "stopAtEntry": false,
+      "stopAtConnect": true,
+      "externalConsole": false,
+      "additionalSOLibSearchPath": "/home/pi/.local/lib/opencpn",
+      "setupCommands": [
+        { "text": "set sysroot /", "description": "Use remote filesystem" },
+        { "text": "set detach-on-fork off" },
+        { "text": "handle SIGPIPE nostop noprint pass" }
+      ],
+      "sourceFileMap": {
+        "/home/pi/Documents/Scripts/opencpn_plugins/signalk-notes-opencpn": "${workspaceFolder}"
+      }
     }
   ]
 }

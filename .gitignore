@@ -6,3 +6,4 @@ tmp
 master.zip
 build/
 savechanges/
+builddebug.sh

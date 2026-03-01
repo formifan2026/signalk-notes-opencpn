@@ -38,21 +38,10 @@ public:
 
   struct ClusterZoomState {
     bool active = false;
-    bool justStarted = false;
-
-    // Zielpunkt des Clusters (aus OnClusterClick)
+    std::vector<wxString> noteIds;
     double targetLat = 0.0;
     double targetLon = 0.0;
-
-    // Mittelpunkt während des Pan/Zoom-Prozesses
-    double centerLat = 0.0;
-    double centerLon = 0.0;
-
-    // Alle Notes, die zu diesem Cluster gehören
-    std::vector<const SignalKNote*> notes;
   };
-
-  ClusterZoomState m_clusterZoom;
 
   // Bitmap-Erzeugung / GL-Vorbereitung
   wxBitmap PrepareIconBitmapForGL(const wxBitmap& src, int targetSize);
@@ -101,7 +90,6 @@ public:
   void LoadConfig();
 
   // Utility
-  void appendOSDirSlash(wxString* pString);
   double CalculateMaxDistance(PlugIn_ViewPort& vp);
   void UpdateOverviewDialog();
   wxString GetPluginIconDir() const;
@@ -118,7 +106,6 @@ public:
                           const wxColour& clusterColor,
                           const wxColour& textColor, int fontSize);
 
-  void ProcessClusterPanStep();
   int GetIconSize() const { return m_iconSize; }
   int GetClusterSize() const { return m_clusterSize; }
   int GetClusterRadius() const { return m_clusterRadius; }
@@ -127,10 +114,9 @@ public:
   int GetClusterFontSize() const { return m_clusterFontSize; }
   bool IsDebugMode() const { return m_debugMode; }
   void SetDebugMode(bool v) { m_debugMode = v; }
-
-  bool HasOptions();
   void ShowPreferencesDialog(wxWindow* parent);
   wxWindow* GetParentWindow();
+  virtual void SetCurrentViewPort(PlugIn_ViewPort& vp) override;
 
 private:
   // Config + UI
@@ -154,7 +140,8 @@ private:
       int clusterRadius = 60);
 
   void OnClusterClick(const NoteCluster& cluster);
-  void ShowClusterSelectionDialog(NoteCluster cluster); 
+  void ShowClusterSelectionDialog(NoteCluster cluster);
+  void TryZoomToCluster(const NoteCluster& cluster);
 
   std::vector<NoteCluster> m_currentClusters;
 
@@ -166,11 +153,12 @@ private:
   wxColour m_clusterTextColor;
   int m_clusterFontSize;
   bool m_debugMode = false;
-  void MoveViewportTowardsCluster(PlugIn_ViewPort& vp);
-  bool AreAllNotesVisibleAfterNextZoom(const PlugIn_ViewPort& vp,
-                                       double zoomFactor) const;
-  wxString m_pendingNoteClick;
+  ClusterZoomState m_clusterZoom;
+  double m_prevChartScale = -1;
 };
+
+wxString FormatDMM(double angle, bool isLat);
+int ComputeScale(const PlugIn_ViewPort& vp);
 
 // LOGGING-MAKRO
 #define SKN_LOG(plugin, fmt, ...)                                           \

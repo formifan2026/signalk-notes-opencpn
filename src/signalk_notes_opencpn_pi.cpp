@@ -48,6 +48,10 @@
 #include <wx/listctrl.h>
 #include <algorithm>
 
+#include <wx/dcclient.h>
+#include <wx/display.h>
+#include <wx/window.h>
+
 #ifdef __WXMSW__
 #include <rpc.h>
 #pragma comment(lib, "Rpcrt4.lib")
@@ -137,59 +141,6 @@ signalk_notes_opencpn_pi::~signalk_notes_opencpn_pi() {
 }
 
 // -----------------------------------------------------------------------------
-// Viewport / Cluster-Zoom
-// -----------------------------------------------------------------------------
-
-void signalk_notes_opencpn_pi::MoveViewportTowardsCluster(PlugIn_ViewPort& vp) {
-  const double zoomFactor = 2.0;
-
-  SKN_LOG(this, "MoveViewportTowardsCluster ENTER scale=%.3f",
-          vp.view_scale_ppm);
-
-  bool allVisible = AreAllNotesVisibleAfterNextZoom(vp, zoomFactor);
-  SKN_LOG(this, "MoveViewportTowardsCluster allVisible=%d", allVisible);
-
-  if (!allVisible) {
-    double vpCenterLat = (vp.lat_min + vp.lat_max) / 2.0;
-    double vpCenterLon = (vp.lon_min + vp.lon_max) / 2.0;
-
-    double dLat = m_clusterZoom.targetLat - vpCenterLat;
-    double dLon = m_clusterZoom.targetLon - vpCenterLon;
-
-    double step = 0.3;
-
-    double newCenterLat = vpCenterLat + dLat * step;
-    double newCenterLon = vpCenterLon + dLon * step;
-
-    double latSpan = vp.lat_max - vp.lat_min;
-    double lonSpan = vp.lon_max - vp.lon_min;
-
-    vp.lat_min = newCenterLat - latSpan / 2.0;
-    vp.lat_max = newCenterLat + latSpan / 2.0;
-    vp.lon_min = newCenterLon - lonSpan / 2.0;
-    vp.lon_max = newCenterLon + lonSpan / 2.0;
-
-    JumpToPosition(newCenterLat, newCenterLon, vp.view_scale_ppm);
-    return;
-  }
-
-  double newScale = vp.view_scale_ppm * zoomFactor;
-  JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
-  m_clusterZoom.active = false;
-}
-
-void signalk_notes_opencpn_pi::ProcessClusterPanStep() {
-  if (!m_lastViewPortValid) return;
-
-  PlugIn_ViewPort vp = m_lastViewPort;
-  MoveViewportTowardsCluster(vp);
-
-  if (m_clusterZoom.notes.size() <= 1) {
-    m_clusterZoom.active = false;
-  }
-}
-
-// -----------------------------------------------------------------------------
 // Metadata
 // -----------------------------------------------------------------------------
 
@@ -255,9 +206,10 @@ int signalk_notes_opencpn_pi::Init(void) {
 
   return (WANTS_CURSOR_LATLON | WANTS_TOOLBAR_CALLBACK | INSTALLS_TOOLBAR_TOOL |
           INSTALLS_TOOLBOX_PAGE | INSTALLS_CONTEXTMENU_ITEMS |
-          WANTS_OVERLAY_CALLBACK | WANTS_OPENGL_OVERLAY_CALLBACK |
-          WANTS_PLUGIN_MESSAGING | WANTS_LATE_INIT | WANTS_MOUSE_EVENTS |
-          WANTS_KEYBOARD_EVENTS | WANTS_ONPAINT_VIEWPORT | WANTS_PREFERENCES);
+          WANTS_VECTOR_CHART_OBJECT_INFO | WANTS_OVERLAY_CALLBACK |
+          WANTS_OPENGL_OVERLAY_CALLBACK | WANTS_PLUGIN_MESSAGING |
+          WANTS_LATE_INIT | WANTS_MOUSE_EVENTS | WANTS_KEYBOARD_EVENTS |
+          WANTS_ONPAINT_VIEWPORT | WANTS_PREFERENCES);
 }
 
 void signalk_notes_opencpn_pi::LateInit(void) {
@@ -345,48 +297,20 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
 
 bool signalk_notes_opencpn_pi::RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) {
   if (!vp || !m_pSignalKNotesManager) return false;
-  if (!m_pendingNoteClick.IsEmpty()) {
-    wxString noteId = m_pendingNoteClick;
-    m_pendingNoteClick.Clear();
-    m_pSignalKNotesManager->OnIconClick(noteId);
-    return true;
-  }
-  m_lastViewPort = *vp;
-  m_lastViewPortValid = true;
 
-  if (m_clusterZoom.active) {
-    if (m_clusterZoom.justStarted)
-      m_clusterZoom.justStarted = false;
-    else
-      ProcessClusterPanStep();
-  }
-
-  double centerLat = vp->clat;
-  double centerLon = vp->clon;
-  double maxDistance = CalculateMaxDistance(*vp);
-
-  wxLongLong now = wxGetLocalTimeMillis();
-
-  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
-      fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
-      fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
-      fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
-    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
-                                                 maxDistance);
-
-    m_lastFetchCenterLat = centerLat;
-    m_lastFetchCenterLon = centerLon;
-    m_lastFetchDistance = maxDistance;
-    m_lastFetchTime = now;
-  }
-
+  // ============================================================
+  // GET VISIBLE NOTES AND BUILD CLUSTERS
+  // ============================================================
   std::vector<const SignalKNote*> visibleNotes;
   m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
   if (visibleNotes.empty()) return false;
 
-  m_currentClusters = BuildClusters(visibleNotes, *vp);
+  m_currentClusters = BuildClusters(visibleNotes, m_lastViewPort);
 
+  // ============================================================
+  // RENDER CLUSTERS
+  // ============================================================
   bool drewSomething = false;
 
   for (const auto& cluster : m_currentClusters) {
@@ -428,55 +352,21 @@ bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
   return false;
 #endif
 
-  if (!vp || !m_pSignalKNotesManager) return false;
+  if (!m_lastViewPortValid || !m_pSignalKNotesManager) return false;
 
-  if (!m_pendingNoteClick.IsEmpty()) {
-    wxString noteId = m_pendingNoteClick;
-    m_pendingNoteClick.Clear();
-    m_pSignalKNotesManager->OnIconClick(noteId);
-    return true;
-  }
-
-  m_lastViewPort = *vp;
-  m_lastViewPortValid = true;
-
-  if (m_clusterZoom.active) {
-    SKN_LOG(this, "RenderGLOverlay - m_clusterZoom.active");
-    if (m_clusterZoom.justStarted) {
-      SKN_LOG(this, "RenderGLOverlay - m_clusterZoom.justStarted = false;");
-      m_clusterZoom.justStarted = false;
-    } else {
-      SKN_LOG(this, "RenderGLOverlay - ProcessClusterPanStep()");
-      ProcessClusterPanStep();
-    }
-  }
-
-  double centerLat = vp->clat;
-  double centerLon = vp->clon;
-  double maxDistance = CalculateMaxDistance(*vp);
-
-  wxLongLong now = wxGetLocalTimeMillis();
-
-  if (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
-      fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
-      fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
-      fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2) {
-    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
-                                                 maxDistance);
-
-    m_lastFetchCenterLat = centerLat;
-    m_lastFetchCenterLon = centerLon;
-    m_lastFetchDistance = maxDistance;
-    m_lastFetchTime = now;
-  }
-
+  // ============================================================
+  // GET VISIBLE NOTES AND BUILD CLUSTERS
+  // ============================================================
   std::vector<const SignalKNote*> visibleNotes;
   m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
   if (visibleNotes.empty()) return false;
 
-  m_currentClusters = BuildClusters(visibleNotes, *vp);
+  m_currentClusters = BuildClusters(visibleNotes, m_lastViewPort);
 
+  // ============================================================
+  // RENDER CLUSTERS
+  // ============================================================
   bool drewSomething = false;
 
   for (const auto& cluster : m_currentClusters) {
@@ -500,6 +390,7 @@ bool signalk_notes_opencpn_pi::RenderGLOverlay(wxGLContext* pcontext,
       drewSomething = true;
     }
   }
+
   SKN_LOG(this, "RenderGLOverlay - END");
   return drewSomething;
 }
@@ -526,84 +417,136 @@ bool signalk_notes_opencpn_pi::KeyboardEventHook(wxKeyEvent& event) {
 
 bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   if (!event.LeftDown()) {
-    SKN_LOG(this, "Leaving MouseEnventHook !event.LeftDown");
     return false;
   }
-  if (!m_pSignalKNotesManager || !m_lastViewPortValid) return false;
 
-  wxPoint mousePos = event.GetPosition();
-  double clickLat, clickLon;
-  GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
-
-  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)", clickLat,
-          clickLon, mousePos.x, mousePos.y);
-
-  auto pxToMeters = [&](int px) { return px * m_lastViewPort.view_scale_ppm; };
-
-  const double baseScale = 800.0;
-  const double baseTolMeters = 10.0;
-  const double scaleFactor = (double)m_lastViewPort.chart_scale / baseScale;
-  const double tolMeters = baseTolMeters * scaleFactor;
-
-  const double metersPerDegLat = 111320.0;
-  const double metersPerDegLonClick =
-      metersPerDegLat * cos(clickLat * M_PI / 180.0);
-
-  auto computeBoxAroundClick = [&](int pixelSize) {
-    double halfSizeMeters = pxToMeters(pixelSize) / 2.0 + tolMeters;
-
-    double dLat = halfSizeMeters / metersPerDegLat;
-    double dLon = halfSizeMeters / metersPerDegLonClick;
-
-    struct Box {
-      double minLat, maxLat, minLon, maxLon;
-    };
-    return Box{clickLat - dLat, clickLat + dLat, clickLon - dLon,
-               clickLon + dLon};
-  };
-
-  auto clusterBox = computeBoxAroundClick(m_clusterSize);
-
-  for (size_t i = 0; i < m_currentClusters.size(); i++) {
-    auto& cluster = m_currentClusters[i];
-    if (cluster.notes.size() <= 1) continue;
-
-    double lat = cluster.centerLat;
-    double lon = cluster.centerLon;
-
-    if (lat >= clusterBox.minLat && lat <= clusterBox.maxLat &&
-        lon >= clusterBox.minLon && lon <= clusterBox.maxLon) {
-      OnClusterClick(cluster);
-      return true;
-    }
+  if (!m_pSignalKNotesManager || !m_lastViewPortValid) {
+    return false;
   }
 
-  auto noteBox = computeBoxAroundClick(m_iconSize);
+  wxPoint mousePos = event.GetPosition();
+  wxWindow* canvas = GetOCPNCanvasWindow();
+
+  double clickLat = 0.0, clickLon = 0.0;
+  GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
+
+  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)",
+          clickLat, clickLon, mousePos.x, mousePos.y);
+
+  // PIXEL-BASED HIT-TESTING
+
+  struct ClickableElement {
+    enum Type { NOTE, CLUSTER } type;
+    double distancePixels;
+    wxString noteGuid;
+    size_t clusterIndex;
+    wxString description;
+  };
+
+  std::vector<ClickableElement> hitElements;
+
+  auto pixelDistance = [](wxPoint p1, wxPoint p2) {
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    return std::sqrt(dx * dx + dy * dy);
+  };
+
+  auto noteIsInMultiCluster = [&](const SignalKNote* note) {
+    for (const auto& c : m_currentClusters) {
+      if (c.notes.size() <= 1) continue;
+      for (auto* n : c.notes) {
+        if (n == note) return true;
+      }
+    }
+    return false;
+  };
 
   std::vector<const SignalKNote*> visibleNotes;
   m_pSignalKNotesManager->GetVisibleNotes(visibleNotes);
 
-  for (size_t i = 0; i < visibleNotes.size(); i++) {
-    const SignalKNote* note = visibleNotes[i];
-    if (!note) continue;
+  double noteTolerance = GetIconSize() / 2;
+  double clusterTolerance = GetClusterSize() / 2;
 
-    double lat = note->latitude;
-    double lon = note->longitude;
+  SKN_LOG(this, "Hit-Test tolerances: note=%.1f px, cluster=%.1f px",
+          noteTolerance, clusterTolerance);
 
-    if (lat >= noteBox.minLat && lat <= noteBox.maxLat &&
-        lon >= noteBox.minLon && lon <= noteBox.maxLon) {
-      m_pSignalKNotesManager->OnIconClick(note->id);
-      return true;
+  // CLUSTER-HIT-TEST
+  SKN_LOG(this, "Testing %zu clusters for hit...", m_currentClusters.size());
+
+  for (size_t i = 0; i < m_currentClusters.size(); i++) {
+    const auto& cluster = m_currentClusters[i];
+    if (cluster.notes.size() <= 1) continue;
+
+    double distPx = pixelDistance(mousePos, cluster.screenPos);
+
+    if (distPx <= clusterTolerance) {
+      ClickableElement elem;
+      elem.type = ClickableElement::CLUSTER;
+      elem.distancePixels = distPx;
+      elem.clusterIndex = i;
+      elem.description = wxString::Format("Cluster %zu (%zu notes) at %.1f px",
+                                          i, cluster.notes.size(), distPx);
+      hitElements.push_back(elem);
+
+      SKN_LOG(this, "Cluster HIT: %s (tolerance=%.1f px)",
+              elem.description.mb_str(), clusterTolerance);
     }
   }
 
-  SKN_LOG(this, "No icon or cluster hit");
-  return false;
+  // NOTE-HIT-TEST
+  SKN_LOG(this, "Testing %zu individual notes for hit...", visibleNotes.size());
+
+  for (const SignalKNote* note : visibleNotes) {
+    if (!note) continue;
+    if (noteIsInMultiCluster(note)) continue;
+
+    wxPoint noteScreenPos;
+    GetCanvasPixLL(&m_lastViewPort, &noteScreenPos,
+                   note->latitude, note->longitude);
+
+    double distPx = pixelDistance(mousePos, noteScreenPos);
+
+    if (distPx <= noteTolerance) {
+      ClickableElement elem;
+      elem.type = ClickableElement::NOTE;
+      elem.distancePixels = distPx;
+      elem.noteGuid = note->id;
+      elem.description =
+          wxString::Format("Note '%s' at %.1f px", note->id, distPx);
+      hitElements.push_back(elem);
+
+      SKN_LOG(this, "Note HIT: %s (tolerance=%.1f px)",
+              elem.description.mb_str(), noteTolerance);
+    }
+  }
+
+  // NO HITS
+  if (hitElements.empty()) {
+    SKN_LOG(this, "No icon or cluster hit");
+    return false;
+  }
+
+  // SORTING
+  std::sort(hitElements.begin(), hitElements.end(),
+            [](const ClickableElement& a, const ClickableElement& b) {
+              return a.distancePixels < b.distancePixels;
+            });
+
+  const ClickableElement& winner = hitElements[0];
+
+  // TREAT WINNERS
+  if (winner.type == ClickableElement::CLUSTER) {
+    const auto& cluster = m_currentClusters[winner.clusterIndex];
+    SKN_LOG(this, "Cluster clicked with %zu notes", cluster.notes.size());
+    OnClusterClick(cluster);
+    return true;
+  }
+
+  SKN_LOG(this, "Note clicked: %s", winner.noteGuid.mb_str());
+  m_pSignalKNotesManager->OnIconClick(winner.noteGuid, m_lastViewPort);
+  return true;
 }
 
-// -----------------------------------------------------------------------------
-// Config
-// -----------------------------------------------------------------------------
 
 void signalk_notes_opencpn_pi::SaveConfig() {
   wxFileConfig* pConf = m_pTPConfig;
@@ -815,11 +758,6 @@ wxBitmap* signalk_notes_opencpn_pi::GetPlugInBitmap() {
   return &m_ptpicons->m_bm_signalk_notes_opencpn_pi;
 }
 
-void signalk_notes_opencpn_pi::appendOSDirSlash(wxString* pString) {
-  wxChar sep = wxFileName::GetPathSeparator();
-  if (pString->Last() != sep) pString->Append(sep);
-}
-
 double signalk_notes_opencpn_pi::CalculateMaxDistance(PlugIn_ViewPort& vp) {
   double vpWidth = vp.pix_width;
   double vpHeight = vp.pix_height;
@@ -903,46 +841,53 @@ signalk_notes_opencpn_pi::BuildClusters(
 }
 
 void signalk_notes_opencpn_pi::OnClusterClick(const NoteCluster& cluster) {
-  SKN_LOG(this, "ClusterClick START with %zu notes", cluster.notes.size());
+  SKN_LOG(this, "OnClusterClick: cluster with %zu notes", cluster.notes.size());
+  TryZoomToCluster(cluster);
+}
 
-  // Simulieren ob ein weiterer Zoom den Cluster aufsprengen würde
-  PlugIn_ViewPort futureVP = m_lastViewPort;
-  double zoomFactor = 2.0;
-  futureVP.view_scale_ppm *= zoomFactor;
-  futureVP.lat_min =
-      cluster.centerLat -
-      (m_lastViewPort.lat_max - m_lastViewPort.lat_min) / (2.0 * zoomFactor);
-  futureVP.lat_max =
-      cluster.centerLat +
-      (m_lastViewPort.lat_max - m_lastViewPort.lat_min) / (2.0 * zoomFactor);
-  futureVP.lon_min =
-      cluster.centerLon -
-      (m_lastViewPort.lon_max - m_lastViewPort.lon_min) / (2.0 * zoomFactor);
-  futureVP.lon_max =
-      cluster.centerLon +
-      (m_lastViewPort.lon_max - m_lastViewPort.lon_min) / (2.0 * zoomFactor);
+void signalk_notes_opencpn_pi::TryZoomToCluster(const NoteCluster& cluster) {
+  SKN_LOG(this, "TryZoomToCluster: Starting zoom for %zu notes",
+          cluster.notes.size());
 
-  auto futureClusters = BuildClusters(cluster.notes, futureVP, m_clusterRadius);
-  bool stillClustered =
-      (futureClusters.size() == 1 && futureClusters[0].notes.size() > 1);
+  if (cluster.notes.size() <= 1) return;
 
-  if (stillClustered) {
-    SKN_LOG(this,
-            "Cluster would not split after zoom -> showing selection dialog");
+  const int MAX_SCALE_LIMIT = 800;
+  int currentScale = (int)std::round(m_lastViewPort.chart_scale);
+
+  if (currentScale <= MAX_SCALE_LIMIT) {
     ShowClusterSelectionDialog(cluster);
-    SKN_LOG(this, "===== ClusterClick END =====");
     return;
   }
 
-  m_clusterZoom.notes = cluster.notes;
+  // ============================================================
+  // Cluster-Zoom aktivieren und Ziel speichern
+  // ============================================================
+  m_clusterZoom.active = true;
+  m_clusterZoom.noteIds.clear();
+  for (const auto* note : cluster.notes) {
+    m_clusterZoom.noteIds.push_back(note->id);  // <- IDs speichern!
+  }
   m_clusterZoom.targetLat = cluster.centerLat;
   m_clusterZoom.targetLon = cluster.centerLon;
-  m_clusterZoom.active = true;
-  m_clusterZoom.justStarted = true;
 
-  SKN_LOG(this, "===== ClusterClick END =====");
+  // ============================================================
+  // EINEN Zoom-Schritt ausführen
+  // ============================================================
+  if (m_lastViewPortValid) {
+    double factor = 1.4;  // entspricht etwa einem "+"-Zoom
+    double newScale = m_lastViewPort.view_scale_ppm * factor;
 
-  RequestRefresh(m_parent_window);
+    SKN_LOG(this,
+            "TryZoomToCluster: JumpToPosition lat=%.6f lon=%.6f scale=%.3f",
+            m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
+
+    JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon, newScale);
+  }
+
+  // ============================================================
+  // Methode sofort beenden – weiterer Zoom erfolgt in SetCurrentViewPort()
+  // ============================================================
+  return;
 }
 
 void signalk_notes_opencpn_pi::SetDisplaySettings(int iconSize, int clusterSize,
@@ -1120,7 +1065,7 @@ void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap& bmp, int x, int y) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  glRasterPos2i(x, y);
+  glRasterPos2i(x, y + h);
   glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());
 }
 
@@ -1139,65 +1084,6 @@ void signalk_notes_opencpn_pi::DrawGLBitmap(const wxBitmap&, int, int) {
 
 #endif
 
-// -----------------------------------------------------------------------------
-// Cluster-Zoom Hilfsfunktionen
-// -----------------------------------------------------------------------------
-
-struct FutureViewPort {
-  double lat_min, lat_max;
-  double lon_min, lon_max;
-};
-
-static FutureViewPort MakeFutureViewportForCluster(const PlugIn_ViewPort& vp,
-                                                   double centerLat,
-                                                   double centerLon,
-                                                   double zoomFactor) {
-  double curLatSpan = vp.lat_max - vp.lat_min;
-  double curLonSpan = vp.lon_max - vp.lon_min;
-
-  double newLatSpan = curLatSpan / zoomFactor;
-  double newLonSpan = curLonSpan / zoomFactor;
-
-  FutureViewPort fvp;
-  fvp.lat_min = centerLat - newLatSpan / 2.0;
-  fvp.lat_max = centerLat + newLatSpan / 2.0;
-  fvp.lon_min = centerLon - newLonSpan / 2.0;
-  fvp.lon_max = centerLon + newLonSpan / 2.0;
-
-  return fvp;
-}
-
-bool signalk_notes_opencpn_pi::AreAllNotesVisibleAfterNextZoom(
-    const PlugIn_ViewPort& vp, double zoomFactor) const {
-  if (m_clusterZoom.notes.empty()) return false;
-
-  double centerLat = m_clusterZoom.targetLat;
-  double centerLon = m_clusterZoom.targetLon;
-
-  FutureViewPort fvp =
-      MakeFutureViewportForCluster(vp, centerLat, centerLon, zoomFactor);
-
-  bool allInside = true;
-
-  for (const auto* note : m_clusterZoom.notes) {
-    double lat = note->latitude;
-    double lon = note->longitude;
-
-    bool inside = !(lat < fvp.lat_min || lat > fvp.lat_max ||
-                    lon < fvp.lon_min || lon > fvp.lon_max);
-
-    if (!inside) allInside = false;
-  }
-
-  return allInside;
-}
-
-// -----------------------------------------------------------------------------
-// Preferences
-// -----------------------------------------------------------------------------
-
-bool signalk_notes_opencpn_pi::HasOptions() { return true; }
-
 void signalk_notes_opencpn_pi::ShowPreferencesDialog(wxWindow* parent) {
   tpConfigDialog dlg(this, parent);
   dlg.ShowModal();
@@ -1208,18 +1094,17 @@ wxWindow* signalk_notes_opencpn_pi::GetParentWindow() {
 }
 
 void signalk_notes_opencpn_pi::ShowClusterSelectionDialog(NoteCluster cluster) {
-
-  wxDialog* dlg = new wxDialog(
-      GetParentWindow(), wxID_ANY, _("Notes an dieser Position"),
-      wxDefaultPosition, wxSize(600, 400),
-      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+  wxDialog* dlg =
+      new wxDialog(GetParentWindow(), wxID_ANY, _("Notes an dieser Position"),
+                   wxDefaultPosition, wxSize(600, 400),
+                   wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
   dlg->CenterOnScreen();
 
   wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
-  wxListCtrl* listCtrl = new wxListCtrl(dlg, wxID_ANY, wxDefaultPosition,
-                                        wxDefaultSize,
-                                        wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER);
+  wxListCtrl* listCtrl =
+      new wxListCtrl(dlg, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                     wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER);
   listCtrl->AppendColumn("", wxLIST_FORMAT_LEFT, 560);
 
   wxImageList* imgList = new wxImageList(24, 24, true);
@@ -1231,9 +1116,10 @@ void signalk_notes_opencpn_pi::ShowClusterSelectionDialog(NoteCluster cluster) {
 
     int imgIdx = -1;
     wxBitmap bmp;
-    if (m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp) && bmp.IsOk()) {
+    if (m_pSignalKNotesManager->GetIconBitmapForNote(*note, bmp) &&
+        bmp.IsOk()) {
       wxImage img = bmp.ConvertToImage().Scale(24, 24, wxIMAGE_QUALITY_HIGH);
-      img = img.Mirror(false);  // Y-Flip korrigieren
+      img = img.Mirror(false);
       imgIdx = imgList->Add(wxBitmap(img));
     }
 
@@ -1250,16 +1136,16 @@ void signalk_notes_opencpn_pi::ShowClusterSelectionDialog(NoteCluster cluster) {
 
   wxString selectedNoteId;
 
-  listCtrl->Bind(wxEVT_LIST_ITEM_ACTIVATED, [&](wxListEvent& evt) {
+  auto handler = [&](wxListEvent& evt) {
     long sel = evt.GetIndex();
-    if (sel < 0 || sel >= (long)cluster.notes.size()) {
-      return;
-    }
+    if (sel < 0 || sel >= (long)cluster.notes.size()) return;
+
     selectedNoteId = cluster.notes[sel]->id;
     dlg->EndModal(wxID_OK);
-  });
+  };
+  listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED, handler);
 
- dlg->ShowModal();
+  dlg->ShowModal();
   dlg->Destroy();
 
   wxWindow* canvas = GetOCPNCanvasWindow();
@@ -1270,7 +1156,150 @@ void signalk_notes_opencpn_pi::ShowClusterSelectionDialog(NoteCluster cluster) {
   }
 
   if (!selectedNoteId.IsEmpty()) {
-    m_pendingNoteClick = selectedNoteId;
-    RequestRefresh(m_parent_window);
+    m_pSignalKNotesManager->OnIconClick(selectedNoteId, m_lastViewPort);
+    return;
   }
+}
+
+void signalk_notes_opencpn_pi::SetCurrentViewPort(PlugIn_ViewPort& vp) {
+  double oldScale = m_lastViewPortValid ? m_lastViewPort.chart_scale : -1;
+  m_prevChartScale = oldScale;
+  m_lastViewPort = vp;
+  m_lastViewPortValid = true;
+
+  wxString lat_str = FormatDMM(m_lastViewPort.clat, true);
+  wxString lon_str = FormatDMM(m_lastViewPort.clon, false);
+
+  wxWindow* canvas = GetOCPNCanvasWindow();
+
+  wxPoint mousePos = canvas->ScreenToClient(wxGetMousePosition());
+
+  double mouseLat = 0.0, mouseLon = 0.0;
+  GetCanvasLLPix(&m_lastViewPort, mousePos, &mouseLat, &mouseLon);
+
+  wxString mouse_lat_str = FormatDMM(mouseLat, true);
+  wxString mouse_lon_str = FormatDMM(mouseLon, false);
+
+  SKN_LOG(
+      this,
+      wxString("SetCurrentViewPort: ") + "Maßstab(1:" +
+          wxString::Format("%d", (int)std::round(m_lastViewPort.chart_scale)) +
+          ") " +
+          wxString::Format("view_scale_ppm=%.6f ",
+                           m_lastViewPort.view_scale_ppm) +
+          "VP lat=" + wxString::Format("%.6f", m_lastViewPort.clat) + " (" +
+          lat_str + ") " + "lon=" +
+          wxString::Format("%.6f", m_lastViewPort.clon) + " (" + lon_str +
+          ") " + "Mouse lat=" + wxString::Format("%.6f", mouseLat) + " (" +
+          mouse_lat_str + ") " + "lon=" + wxString::Format("%.6f", mouseLon) +
+          " (" + mouse_lon_str + ") " + "screen(" +
+          wxString::Format("%d,%d", mousePos.x, mousePos.y) + ") ");
+
+  // PROCESS CLUSTER ZOOM
+  if (m_clusterZoom.active && m_lastViewPort.chart_scale != m_prevChartScale) {
+    const double zoomFactor = 1.4;
+    const int MAX_SCALE_LIMIT = 800;
+    int currentScale = (int)std::round(m_lastViewPort.chart_scale);
+
+    SKN_LOG(this, "ClusterZoom: current scale 1:%d", currentScale);
+
+    // FIND THE NOTES USING THE IDS
+    std::vector<const SignalKNote*> originalNotes;
+    for (const auto& id : m_clusterZoom.noteIds) {
+      SignalKNote* note = m_pSignalKNotesManager->GetNoteByGUID(id);
+      if (note) {
+        originalNotes.push_back(note);
+      }
+    }
+
+    // LIMIT REACHED?
+    if (currentScale <= MAX_SCALE_LIMIT) {
+      SKN_LOG(this, "ClusterZoom: Scale limit reached, showing dialog");
+      m_clusterZoom.active = false;
+
+      NoteCluster dialogCluster;
+      dialogCluster.notes = originalNotes;
+      dialogCluster.centerLat = m_clusterZoom.targetLat;
+      dialogCluster.centerLon = m_clusterZoom.targetLon;
+
+      ShowClusterSelectionDialog(dialogCluster);
+      return;
+    }
+
+    // CALCULATE NEW CLUSTERS
+    std::vector<NoteCluster> newClusters =
+        BuildClusters(originalNotes, m_lastViewPort);
+
+    // ARE THE NOTES STILL TOGETHER?
+    bool stillTogether = false;
+    for (const auto& nc : newClusters) {
+      if (nc.notes.size() == originalNotes.size()) {
+        stillTogether = true;
+        break;
+      }
+    }
+
+    // CLUSTER BLOWN OPEN!
+    if (!stillTogether) {
+      SKN_LOG(this, "ClusterZoom: Cluster successfully separated");
+      m_clusterZoom.active = false;
+      return;
+    }
+
+    // PERFORM THE NEXT ZOOM
+    PlugIn_ViewPort nextVp = m_lastViewPort;
+    double latSpan = nextVp.lat_max - nextVp.lat_min;
+    double lonSpan = nextVp.lon_max - nextVp.lon_min;
+
+    nextVp.view_scale_ppm *= zoomFactor;
+    nextVp.lat_min = m_clusterZoom.targetLat - latSpan / (2.0 * zoomFactor);
+    nextVp.lat_max = m_clusterZoom.targetLat + latSpan / (2.0 * zoomFactor);
+    nextVp.lon_min = m_clusterZoom.targetLon - lonSpan / (2.0 * zoomFactor);
+    nextVp.lon_max = m_clusterZoom.targetLon + lonSpan / (2.0 * zoomFactor);
+
+    JumpToPosition(m_clusterZoom.targetLat, m_clusterZoom.targetLon,
+                   nextVp.view_scale_ppm);
+    return;
+  }
+
+  // UPDATE DISPLAYED ICONS
+  double centerLat = m_lastViewPort.clat;
+  double centerLon = m_lastViewPort.clon;
+  double maxDistance = CalculateMaxDistance(m_lastViewPort);
+
+  wxLongLong now = wxGetLocalTimeMillis();
+  if (!m_clusterZoom.active &&
+      (m_lastFetchTime == 0 || (now - m_lastFetchTime).ToLong() > 30000 ||
+       fabs(centerLat - m_lastFetchCenterLat) > 0.01 ||
+       fabs(centerLon - m_lastFetchCenterLon) > 0.01 ||
+       fabs(maxDistance - m_lastFetchDistance) > maxDistance * 0.2)) {
+    m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
+                                                 maxDistance);
+
+    m_lastFetchCenterLat = centerLat;
+    m_lastFetchCenterLon = centerLon;
+    m_lastFetchDistance = maxDistance;
+    m_lastFetchTime = now;
+  }
+}
+
+wxString FormatDMM(double angle, bool isLat) {
+  double abs_val = fabs(angle);
+  int degrees = (int)abs_val;
+  double minutes = (abs_val - degrees) * 60.0;
+
+  wxString hemi;
+  if (isLat)
+    hemi = angle >= 0 ? "N" : "S";
+  else
+    hemi = angle >= 0 ? "E" : "W";
+  return wxString::Format("%02d° %07.4f' %s", degrees, minutes, hemi);
+}
+
+int ComputeScale(const PlugIn_ViewPort& vp) {
+  if (vp.view_scale_ppm <= 0) {
+    return 1;
+  }
+  double scale = 1.0 / vp.view_scale_ppm;
+  return (int)scale;
 }

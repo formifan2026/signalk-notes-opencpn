@@ -136,6 +136,10 @@ msgstr "Invalid URL: %s"
 msgid "Kreis-Farbe:"
 msgstr "Circle color:"
 
+#: src/signalk_notes_opencpn_pi.cpp:1213
+msgid "Notes an dieser Position"
+msgstr "Notes at this position"
+
 #: src/tpSignalKNotes.cpp:261 src/tpConfigDialog.cpp:128
 msgid "OK"
 msgstr "OK"

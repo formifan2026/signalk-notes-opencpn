@@ -65,6 +65,11 @@ As soon as the request has been approved the valid connection is displayed in Si
 - Detailed debug logging for the plugin in the opencpn.log file is possible via the checkbox. However, this should only be activated temporarily if there are real problems with the plugin.
 - <img src="docs/images/configuration3.png" width="75%">
 
+## Hints
+If emojis (like 📐 or 🕐) don't appear in Note details, please install:
+- sudo apt install fonts-noto-color-emoji
+- sudo fc-cache -fv
+
 ## Installation
 
 The plugin can be installed like any other OpenCPN plugin:

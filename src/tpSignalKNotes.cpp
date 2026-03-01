@@ -26,6 +26,7 @@
 #include <wx/datetime.h>
 #include <wx/artprov.h>
 #include <cstring>
+#include <wx/webview.h>
 
 #ifndef __OCPN__ANDROID__
 #include <wx/bmpbndl.h>
@@ -393,7 +394,7 @@ SignalKNote* tpSignalKNotesManager::GetNoteByGUID(const wxString& guid) {
   return nullptr;
 }
 
-void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
+void tpSignalKNotesManager::OnIconClick(const wxString& guid, const PlugIn_ViewPort& currentViewPort) {
   SKN_LOG(m_parent, "OnIconClick called with guid='%s'", guid);
 
   SignalKNote* note = GetNoteByGUID(guid);
@@ -412,10 +413,13 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
   }
 
   SKN_LOG(m_parent, "Found note '%s'", note->name);
+  int dlgWidth = std::max(400, (int)std::round(currentViewPort.pix_width * 0.75));
+  int dlgHeight = std::max(300, (int)std::round(currentViewPort.pix_height * 0.75));
   wxDialog* dlg =
       new wxDialog(m_parent->GetParentWindow(), wxID_ANY,
                    _("SignalK Note Details"), wxDefaultPosition,
-                   wxSize(500, 400), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+                   wxSize(dlgWidth, dlgHeight),
+                   wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
   wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -426,30 +430,33 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
   title->SetFont(font);
   sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-  wxHtmlWindow* htmlWin = new wxHtmlWindow(dlg, wxID_ANY, wxDefaultPosition,
-                                           wxDefaultSize, wxHW_SCROLLBAR_AUTO);
+  // ============================================================
+  // HTML-Content vorbereiten
+  // ============================================================
+  wxString htmlContent = PrepareHTMLContent(note->description, note->url);
 
-  htmlWin->Bind(wxEVT_HTML_LINK_CLICKED, [this](wxHtmlLinkEvent& evt) {
-    wxString url = evt.GetLinkInfo().GetHref();
-    SKN_LOG(m_parent, "Opening URL: %s", url);
-    wxLaunchDefaultBrowser(url);
-  });
+  // ============================================================
+  // Platform-spezifische Rendering
+  // ============================================================
+#if defined(__WXMSW__) || defined(__WXMAC__)
+  // Windows & macOS: wxWebView (beste Unterstützung)
+  RenderWithWebView(dlg, sizer, htmlContent);
 
-  wxString htmlContent;
-  htmlContent << "<html><body><font size=\"3\">" << note->description
-              << "</font>";
+#elif defined(__OCPN__ANDROID__)
+  // Android: wxHtmlWindow (wxWebView begrenzt)
+  RenderWithHtmlWindow(dlg, sizer, htmlContent);
 
-  if (!note->url.IsEmpty()) {
-    htmlContent << "<br><br>"
-                << "<b>Link:</b> "
-                << "<a href=\"" << note->url << "\">" << note->url << "</a>";
+#else
+  // Linux & sonstige: Versuche wxWebView, fallback auf wxHtmlWindow
+  if (!RenderWithWebView(dlg, sizer, htmlContent)) {
+    SKN_LOG(m_parent, "wxWebView not available on this system, using wxHtmlWindow");
+    RenderWithHtmlWindow(dlg, sizer, htmlContent);
   }
+#endif
 
-  htmlContent << "</body></html>";
-
-  htmlWin->SetPage(htmlContent);
-  sizer->Add(htmlWin, 1, wxALL | wxEXPAND, 10);
-
+  // ============================================================
+  // Buttons
+  // ============================================================
   wxBoxSizer* btnSizer = new wxBoxSizer(wxHORIZONTAL);
 
   wxButton* centerBtn = new wxButton(dlg, wxID_ANY, _("Auf Karte zentrieren"));
@@ -458,7 +465,6 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
 
     double lat = note->latitude;
     double lon = note->longitude;
-
     double scale = vp.view_scale_ppm;
 
     vp.clat = lat;
@@ -490,13 +496,122 @@ void tpSignalKNotesManager::OnIconClick(const wxString& guid) {
 
   dlg->ShowModal();
   dlg->Destroy();
-    // OpenCPN den Mouse-Capture-Zustand zurücksetzen
+
+  // Canvas aus potenziellem Drag-Modus befreien
   wxWindow* canvas = GetOCPNCanvasWindow();
   if (canvas) {
     wxMouseEvent upEvent(wxEVT_LEFT_UP);
     upEvent.SetPosition(wxGetMousePosition());
     canvas->GetEventHandler()->ProcessEvent(upEvent);
   }
+}
+
+// ============================================================
+// Helper: HTML-Content vorbereiten
+// ============================================================
+wxString tpSignalKNotesManager::PrepareHTMLContent(const wxString& description,
+                                                    const wxString& url) {
+  wxString htmlContent;
+  htmlContent << "<!DOCTYPE html><html><head>"
+              << "<meta charset=\"UTF-8\">"
+              << "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+              << "<style>"
+              << "body { "
+              << "  font-family: 'Segoe UI', 'Apple Color Emoji', 'Noto Color Emoji', Arial, sans-serif; "
+              << "  font-size: 14px; "
+              << "  margin: 10px; "
+              << "  line-height: 1.5; "
+              << "  color: #333; "
+              << "}"
+              << "h1, h2, h3, h4, h5, h6 { color: #333; margin-top: 15px; }"
+              << "table { border-collapse: collapse; width: 100%; margin: 10px 0; }"
+              << "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }"
+              << "th { background-color: #f2f2f2; font-weight: bold; }"
+              << "a { color: #0066cc; text-decoration: none; }"
+              << "a:hover { text-decoration: underline; }"
+              << "hr { margin: 15px 0; border: none; border-top: 1px solid #ddd; }"
+              << "img { max-width: 100%; height: auto; }"
+              << "</style>"
+              << "</head><body>"
+              << description;
+
+  if (!url.IsEmpty()) {
+    htmlContent << "<hr>"
+                << "<b>Link:</b> "
+                << "<a href=\"" << url << "\" target=\"_blank\">" << url << "</a>";
+  }
+
+  htmlContent << "<hr>"
+              << "<small style=\"color: #666;\">"
+              << "<i>Do not use for navigation.</i>"
+              << "</small>"
+              << "</body></html>";
+
+  return htmlContent;
+}
+
+// ============================================================
+// Helper: Rendering mit wxWebView (Windows, macOS, Linux optional)
+// ============================================================
+#ifdef wxHAS_WEB_VIEW
+bool tpSignalKNotesManager::RenderWithWebView(wxDialog* dlg, wxBoxSizer* sizer,
+                                               const wxString& htmlContent) {
+  try {
+    wxWebView* webView = wxWebView::New(dlg, wxID_ANY, "",
+                                        wxDefaultPosition,
+                                        wxDefaultSize);
+
+    if (!webView) return false;
+
+    // Link-Clicks abfangen
+    webView->Bind(wxEVT_WEBVIEW_NAVIGATING, [this](wxWebViewEvent& evt) {
+      wxString url = evt.GetURL();
+      if (url.StartsWith("http://") || url.StartsWith("https://")) {
+        evt.Veto();
+        SKN_LOG(m_parent, "Opening URL: %s", url);
+        wxLaunchDefaultBrowser(url);
+      }
+    });
+
+    webView->SetPage(htmlContent, "");
+    sizer->Add(webView, 1, wxALL | wxEXPAND, 10);
+    
+    SKN_LOG(m_parent, "Using wxWebView for rendering");
+    return true;
+  } catch (...) {
+    SKN_LOG(m_parent, "wxWebView initialization failed, falling back");
+    return false;
+  }
+}
+#else
+bool tpSignalKNotesManager::RenderWithWebView(wxDialog* dlg, wxBoxSizer* sizer,
+                                               const wxString& htmlContent) {
+  SKN_LOG(m_parent, "wxWebView not compiled, using wxHtmlWindow");
+  return false;
+}
+#endif
+
+// ============================================================
+// Helper: Rendering mit wxHtmlWindow (Fallback, Android)
+// ============================================================
+void tpSignalKNotesManager::RenderWithHtmlWindow(wxDialog* dlg,
+                                                  wxBoxSizer* sizer,
+                                                  const wxString& htmlContent) {
+  wxHtmlWindow* htmlWin = new wxHtmlWindow(dlg, wxID_ANY,
+                                           wxDefaultPosition,
+                                           wxDefaultSize,
+                                           wxHW_SCROLLBAR_AUTO);
+
+  htmlWin->Bind(wxEVT_HTML_LINK_CLICKED, [this](wxHtmlLinkEvent& evt) {
+    wxString url = evt.GetLinkInfo().GetHref();
+    SKN_LOG(m_parent, "Opening URL: %s", url);
+    wxLaunchDefaultBrowser(url);
+  });
+
+  htmlWin->SetPage(htmlContent);
+  sizer->Add(htmlWin, 1, wxALL | wxEXPAND, 10);
+  
+  SKN_LOG(m_parent, "Using wxHtmlWindow for rendering");
 }
 
 bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,

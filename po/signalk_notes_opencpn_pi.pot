@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-01 00:55+0100\n"
+"POT-Creation-Date: 2026-02-23 17:13+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,175 +17,166 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/tpConfigDialog.cpp:129
+#: src/tpConfigDialog.cpp:142
 msgid "Abbrechen"
 msgstr ""
 
-#. Zentrieren-Button
-#: src/tpSignalKNotes.cpp:228
+#: src/tpSignalKNotes.cpp:455
 msgid "Auf Karte zentrieren"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:120
+#: src/tpConfigDialog.cpp:133
 msgid "Authentifizierung abbrechen"
 msgstr ""
 
 #. Auth-Button deaktiviert mit neuem Text
-#: src/tpConfigDialog.cpp:590
+#: src/tpConfigDialog.cpp:622
 msgid "Authentifizierung läuft..."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:435
+#: src/tpConfigDialog.cpp:463
 msgid ""
 "Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
 "Admin und 'Authentication Timeout' NEVER bestätigen."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:727
+#: src/tpConfigDialog.cpp:761
 msgid "Cluster Einstellungen"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:741
+#: src/tpConfigDialog.cpp:775
 msgid "Cluster Radius (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:733
+#: src/tpConfigDialog.cpp:767
 msgid "Cluster-Größe (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:108
+#: src/tpConfigDialog.cpp:121
 msgid "Darstellung"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:179
+#: src/tpSignalKNotes.cpp:410
 msgid "Details konnten nicht geladen werden."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:782
+#: src/tpConfigDialog.cpp:816
 msgid "Erweitertes Debug-Logging in opencpn.log"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:324
-#, c-format
-msgid "Failed to connect to: %s"
-msgstr ""
-
-#: src/tpicons.cpp:83
+#: src/tpicons.cpp:71
 msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:409
+#: src/tpSignalKNotes.cpp:610
 msgid "Failed to parse note details JSON"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:343
+#: src/tpSignalKNotes.cpp:547
 msgid "Failed to parse notes list JSON"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:440
+#: src/tpConfigDialog.cpp:470
 msgid "Fehler"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung"
+#: src/tpConfigDialog.cpp:470
+msgid ""
+"Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in "
+"SignalK vorhanden? Falls ja, diese löschen / ablehnen."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:761
+#: src/tpConfigDialog.cpp:795
 msgid "Font-Größe:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:307
+#: src/tpConfigDialog.cpp:335
 msgid ""
 "Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
 "Provider zu entdecken."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:49
+#: src/tpConfigDialog.cpp:62
 msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:702
+#: src/tpConfigDialog.cpp:736
 msgid "Icon Einstellungen"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:708
+#: src/tpConfigDialog.cpp:742
 msgid "Icon-Größe (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:104
+#: src/tpConfigDialog.cpp:117
 msgid "Icon-Zuordnung"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:42
+#: src/tpConfigDialog.cpp:55
 msgid "Icons im Kartenausschnitt: 0"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:318
-#, c-format
-msgid "Invalid URL: %s"
-msgstr ""
-
-#: src/tpConfigDialog.cpp:749
+#: src/tpConfigDialog.cpp:783
 msgid "Kreis-Farbe:"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:261 src/tpConfigDialog.cpp:128
+#: src/signalk_notes_opencpn_pi.cpp:1213
+msgid "Notes an dieser Position"
+msgstr ""
+
+#: src/signalk_notes_opencpn_pi.cpp:1246 src/tpSignalKNotes.cpp:484
+#: src/tpConfigDialog.cpp:141
 msgid "OK"
 msgstr ""
 
-#: src/tpicons.cpp:85
+#: src/tpicons.cpp:73
 msgid "OpenCPN Alert"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:89
+#: src/tpConfigDialog.cpp:102
 msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:81
+#: src/tpConfigDialog.cpp:94
 msgid "Provider"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:48
+#: src/tpSignalKNotes.cpp:292
 msgid "Server host not configured"
 msgstr ""
 
 #. Auth-Button aktiv
-#: src/tpConfigDialog.cpp:115 src/tpConfigDialog.cpp:438
-#: src/tpConfigDialog.cpp:608
+#: src/tpConfigDialog.cpp:128 src/tpConfigDialog.cpp:642
 msgid "SignalK Authentifizierung"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:186
+#: src/tpSignalKNotes.cpp:417
 msgid "SignalK Note Details"
 msgstr ""
 
-#: src/signalk_notes_opencpn_pi.cpp:266 src/signalk_notes_opencpn_pi.cpp:269
-#: src/signalk_notes_opencpn_pi.cpp:272 src/signalk_notes_opencpn_pi.cpp:274
+#: src/signalk_notes_opencpn_pi.cpp:240 src/signalk_notes_opencpn_pi.cpp:243
+#: src/signalk_notes_opencpn_pi.cpp:246 src/signalk_notes_opencpn_pi.cpp:248
 msgid "SignalK Notes"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:26
+#: src/tpConfigDialog.cpp:39
 msgid "SignalK Notes Konfiguration"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:74
+#: src/tpConfigDialog.cpp:87 src/tpConfigDialog.cpp:590
+#: src/tpConfigDialog.cpp:638
 msgid "SignalK Verbindung"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:315
-#, c-format
-msgid "SignalKNotes: fetching data with URL: %s"
-msgstr ""
-
-#: src/tpConfigDialog.cpp:755
+#: src/tpConfigDialog.cpp:789
 msgid "Text-Farbe:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
+#: src/tpConfigDialog.cpp:753 src/tpConfigDialog.cpp:806
 msgid "Vorschau:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:62
+#: src/tpConfigDialog.cpp:75
 msgid "Wählen Sie die anzuzeigenden Provider:"
 msgstr ""
