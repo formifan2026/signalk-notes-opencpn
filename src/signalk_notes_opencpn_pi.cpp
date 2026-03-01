@@ -430,8 +430,8 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   double clickLat = 0.0, clickLon = 0.0;
   GetCanvasLLPix(&m_lastViewPort, mousePos, &clickLat, &clickLon);
 
-  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)",
-          clickLat, clickLon, mousePos.x, mousePos.y);
+  SKN_LOG(this, "Mouse clicked at lat=%.6f lon=%.6f screen(%d,%d)", clickLat,
+          clickLon, mousePos.x, mousePos.y);
 
   // PIXEL-BASED HIT-TESTING
 
@@ -501,8 +501,8 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
     if (noteIsInMultiCluster(note)) continue;
 
     wxPoint noteScreenPos;
-    GetCanvasPixLL(&m_lastViewPort, &noteScreenPos,
-                   note->latitude, note->longitude);
+    GetCanvasPixLL(&m_lastViewPort, &noteScreenPos, note->latitude,
+                   note->longitude);
 
     double distPx = pixelDistance(mousePos, noteScreenPos);
 
@@ -546,7 +546,6 @@ bool signalk_notes_opencpn_pi::MouseEventHook(wxMouseEvent& event) {
   m_pSignalKNotesManager->OnIconClick(winner.noteGuid, m_lastViewPort);
   return true;
 }
-
 
 void signalk_notes_opencpn_pi::SaveConfig() {
   wxFileConfig* pConf = m_pTPConfig;
