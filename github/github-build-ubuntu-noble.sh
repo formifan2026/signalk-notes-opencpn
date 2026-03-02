@@ -1,40 +1,49 @@
 #!/usr/bin/env bash
-set -e
+set -xe
 
 echo "=== Building OpenCPN Plugin for Ubuntu 24.04 (Noble) x86_64 ==="
 
-docker run --rm \
-  -v $(pwd):/workspace \
-  -w /workspace \
-  ubuntu:24.04 \
-  bash -c "
-    set -e
+# Install base tools
+sudo apt-get update -qq
+sudo apt-get install -y devscripts equivs git cmake g++ make pkg-config
 
-    apt-get update &&
-    apt-get install -y \
-      cmake g++ make git pkg-config \
-      libwxgtk3.2-dev wx-common \
-      libgtk-3-dev \
-      gettext \
-      libglu1-mesa-dev freeglut3-dev mesa-common-dev \
-      libcurl4-openssl-dev \
-      libtinyxml2-dev \
-      libarchive-dev \
-      zlib1g-dev
+# Install extra libs (same mechanism as Jammy)
+ME=$(echo ${0##*/} | sed 's/\.sh//g')
+EXTRA_LIBS=./ci/extras/extra_libs.txt
+if test -f "$EXTRA_LIBS"; then
+    while read -r line; do
+        sudo apt-get install -y $line
+    done < "$EXTRA_LIBS"
+fi
+EXTRA_LIBS=./ci/extras/${ME}_extra_libs.txt
+if test -f "$EXTRA_LIBS"; then
+    while read -r line; do
+        sudo apt-get install -y $line
+    done < "$EXTRA_LIBS"
+fi
 
-    echo '=== Cloning OpenCPN Plugin SDK ==='
-    git clone --depth=1 https://github.com/OpenCPN/OpenCPN.git /tmp/opencpn
+# Install build dependencies from ci/control
+sudo mk-build-deps --install ./ci/control
 
-    mkdir -p build &&
-    cd build &&
-    cmake \
-      -DOCPN_PLUGIN=ON \
-      -DOCPN_SDK_PATH=/tmp/opencpn \
-      -DwxWidgets_CONFIG_EXECUTABLE=/usr/bin/wx-config \
-      -DCMAKE_BUILD_TYPE=Release \
-      .. &&
-    make -j\$(nproc)
-  "
+# wxWidgets GTK3
+if [ -n "$BUILD_GTK3" ] && [ "$BUILD_GTK3" = "TRUE" ]; then
+  sudo update-alternatives --set wx-config /usr/lib/*-linux-*/wx/config/gtk3-unicode-3.0
+fi
 
-echo "=== Build finished ==="
+# Prepare build
+rm -rf build && mkdir build && cd build
+
+tag=$(git tag --contains HEAD)
+current_branch=$(git branch --show-current)
+
+if [ -n "$tag" ] || [ "$current_branch" = "master" ]; then
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..
+else
+  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr/local ..
+fi
+
+make -j$(nproc)
+make package
+
+ls -l
 
