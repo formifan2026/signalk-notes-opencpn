@@ -180,5 +180,6 @@ private:
                          const wxString& htmlContent);
   void RenderWithHtmlWindow(wxDialog* dlg, wxBoxSizer* sizer,
                             const wxString& htmlContent);
+  wxString FixBrokenLinksInDescription(const wxString& html);                            
 };
 #endif  // _TPSIGNALKNOTES_H_

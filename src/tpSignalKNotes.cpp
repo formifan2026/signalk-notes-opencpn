@@ -25,6 +25,8 @@
 #include <wx/protocol/http.h>
 #include <wx/datetime.h>
 #include <wx/artprov.h>
+#include <wx/uri.h>
+#include <wx/regex.h>
 #include <cstring>
 #if defined(wxHAS_WEB_VIEW)
 #include <wx/webview.h>
@@ -520,6 +522,7 @@ void tpSignalKNotesManager::OnIconClick(
 wxString tpSignalKNotesManager::PrepareHTMLContent(const wxString& description,
                                                    const wxString& url) {
   wxString htmlContent;
+  wxString safeDescription = FixBrokenLinksInDescription(description);
   htmlContent
       << "<!DOCTYPE html><html><head>"
       << "<meta charset=\"UTF-8\">"
@@ -543,12 +546,14 @@ wxString tpSignalKNotesManager::PrepareHTMLContent(const wxString& description,
       << "hr { margin: 15px 0; border: none; border-top: 1px solid #ddd; }"
       << "img { max-width: 100%; height: auto; }"
       << "</style>"
-      << "</head><body>" << description;
+      << "</head><body>" << safeDescription;
 
   if (!url.IsEmpty()) {
+    wxURI uri(url);
+    wxString safeUrl = uri.BuildURI();
     htmlContent << "<hr>"
                 << "<b>Link:</b> "
-                << "<a href=\"" << url << "\" target=\"_blank\">" << url
+                << "<a href=\"" << safeUrl << "\" target=\"_blank\">" << safeUrl
                 << "</a>";
   }
 
@@ -1243,4 +1248,33 @@ void tpSignalKNotesManager::ClearAuthRequest() {
   if (m_parent) {
     m_parent->SaveConfig();
   }
+}
+
+wxString tpSignalKNotesManager::FixBrokenLinksInDescription(const wxString& html)
+{
+    wxString fixed = html;
+
+    wxRegEx reHrefNoQuotes("<a[ ]+href=([^\"'> ]+)([^>]*)>", wxRE_ICASE);
+
+    while (reHrefNoQuotes.Matches(fixed)) {
+        wxString fullMatch = reHrefNoQuotes.GetMatch(fixed, 0);
+        wxString url       = reHrefNoQuotes.GetMatch(fixed, 1);
+        wxString rest      = reHrefNoQuotes.GetMatch(fixed, 2);
+
+        wxURI uri(url);
+        wxString safeUrl = uri.BuildURI();
+
+        wxString replacement;
+        replacement << "<a href=\"" << safeUrl << "\"" << rest << ">";
+
+        fixed.Replace(fullMatch, replacement);
+    }
+
+    wxRegEx reMissingClose("(<a[^>]+)(?<!>)$", wxRE_ICASE);
+    if (reMissingClose.Matches(fixed)) {
+        wxString fullMatch = reMissingClose.GetMatch(fixed, 1);
+        fixed.Replace(fullMatch, fullMatch + ">");
+    }
+
+    return fixed;
 }
