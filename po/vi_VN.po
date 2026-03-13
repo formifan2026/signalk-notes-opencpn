@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-01 00:55+0100\n"
+"POT-Creation-Date: 2026-03-13 08:50+0100\n"
 "PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
 "Language-Team: English, United Kingdom\n"
@@ -18,541 +18,201 @@ msgstr ""
 "signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
 
-#: src/tpConfigDialog.cpp:129
-msgid "Abbrechen"
-msgstr "Cancel"
+#: src/tpConfigDialog.cpp:124
+msgid "API update interval (minutes)"
+msgstr ""
 
-#. Zentrieren-Button
-#: src/tpSignalKNotes.cpp:228
-msgid "Auf Karte zentrieren"
-msgstr "Center on map"
-
-#: src/tpConfigDialog.cpp:120
-msgid "Authentifizierung abbrechen"
-msgstr "Cancel authentication"
+#: src/tpConfigDialog.cpp:946
+msgid "Advanced debug logging in opencpn.log"
+msgstr ""
 
 #. Auth-Button deaktiviert mit neuem Text
-#: src/tpConfigDialog.cpp:590
-msgid "Authentifizierung läuft..."
-msgstr "Authentication in progress..."
-
-#: src/tpConfigDialog.cpp:435
-msgid ""
-"Bitte in SignalK den Request im Menüpunkt 'Access Requests' mit 'Permission' "
-"Admin und 'Authentication Timeout' NEVER bestätigen."
+#: src/tpConfigDialog.cpp:716
+msgid "Authentication in progress..."
 msgstr ""
-"In SignalK, please confirm the request in the menu item 'Access Requests' with 'Permission' "
-"Admin and 'Authentication Timeout' NEVER."
 
-#: src/tpConfigDialog.cpp:727
-msgid "Cluster Einstellungen"
-msgstr "Cluster settings"
+#: src/tpConfigDialog.cpp:188
+msgid "Cancel"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:741
-msgid "Cluster Radius (px):"
-msgstr "Cluster radius (px):"
+#: src/tpConfigDialog.cpp:181
+msgid "Cancel authentication"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:733
-msgid "Cluster-Größe (px):"
-msgstr "Cluster size (px):"
+#: src/tpSignalKNotes.cpp:438
+msgid "Center on map"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:108
-msgid "Darstellung"
-msgstr "Deciption"
+#: src/tpConfigDialog.cpp:883 src/tpConfigDialog.cpp:890
+msgid "Circle color:"
+msgstr ""
 
-#: src/tpSignalKNotes.cpp:179
-msgid "Details konnten nicht geladen werden."
-msgstr "Details could not be loaded."
+#: src/tpConfigDialog.cpp:875
+msgid "Cluster radius (px):"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:782
-msgid "Erweitertes Debug-Logging in opencpn.log"
-msgstr "Advanced debug logging in opencpn.log"
+#: src/tpConfigDialog.cpp:861
+msgid "Cluster settings"
+msgstr ""
 
-#: src/tpSignalKNotes.cpp:324
-#, c-format
-msgid "Failed to connect to: %s"
-msgstr "Failed to connect to: %s"
+#: src/tpConfigDialog.cpp:867
+msgid "Cluster size (px):"
+msgstr ""
 
-#: src/tpicons.cpp:83
+#: src/tpConfigDialog.cpp:162
+msgid "Deciption"
+msgstr ""
+
+#: src/tpSignalKNotes.cpp:371
+msgid "Details could not be loaded."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:563
+msgid "Error"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:560
+msgid ""
+"Error requesting authentication. Are there still 'access requests' in "
+"SignalK? If yes, delete/reject them."
+msgstr ""
+
+#: src/tpicons.cpp:71
 msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
-"Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 
-#: src/tpSignalKNotes.cpp:409
+#: src/tpSignalKNotes.cpp:767
 msgid "Failed to parse note details JSON"
-msgstr "Failed to parse note details JSON"
-
-#: src/tpSignalKNotes.cpp:343
-msgid "Failed to parse notes list JSON"
-msgstr "Failed to parse notes list JSON"
-
-#: src/tpConfigDialog.cpp:440
-msgid "Fehler"
-msgstr "Error"
-
-#: src/tpConfigDialog.cpp:440
-msgid "Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."
-msgstr "Error requesting authentication. Are there still 'access requests' in SignalK? If yes, delete/reject them."
-
-#: src/tpConfigDialog.cpp:761
-msgid "Font-Größe:"
-msgstr "Font size"
-
-#: src/tpConfigDialog.cpp:307
-msgid ""
-"Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, um "
-"Provider zu entdecken."
 msgstr ""
-"Note: No providers configured yet. Move the map to "
-"Providers to discover."
 
-#: src/tpConfigDialog.cpp:49
-msgid "Hinweis: Provider werden beim Bewegen der Karte entdeckt."
-msgstr "Note: Providers are discovered as you move the map."
+#: src/tpSignalKNotes.cpp:643
+msgid "Failed to parse notes list JSON"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:702
-msgid "Icon Einstellungen"
-msgstr "Icon settings"
+#: src/tpConfigDialog.cpp:896
+msgid "Font size"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:708
-msgid "Icon-Größe (px):"
-msgstr "Icon size (px):"
+#: src/tpConfigDialog.cpp:158
+msgid "Icon mapping"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:104
-msgid "Icon-Zuordnung"
-msgstr "Icon mapping"
+#: src/tpConfigDialog.cpp:836
+msgid "Icon settings"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:42
-msgid "Icons im Kartenausschnitt: 0"
-msgstr "Icons in the map section: 0"
+#: src/tpConfigDialog.cpp:842
+msgid "Icon size (px):"
+msgstr ""
 
-#: src/tpSignalKNotes.cpp:318
+#: src/tpConfigDialog.cpp:535
 #, c-format
-msgid "Invalid URL: %s"
-msgstr "Invalid URL: %s"
+msgid "Icons in the left map area: %d"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:749
-msgid "Kreis-Farbe:"
-msgstr "Circle color:"
+#: src/tpConfigDialog.cpp:524
+#, c-format
+msgid "Icons in the map area: %d"
+msgstr ""
 
-#: src/signalk_notes_opencpn_pi.cpp:1213
-msgid "Notes an dieser Position"
-msgstr "Notes at this position"
+#: src/tpConfigDialog.cpp:56
+msgid "Icons in the map area: 0"
+msgstr ""
 
-#: src/tpSignalKNotes.cpp:261 src/tpConfigDialog.cpp:128
+#: src/tpConfigDialog.cpp:537
+#, c-format
+msgid "Icons in the right map area: %d"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:552
+msgid ""
+"In SignalK, please confirm the request in the menu item 'Access Requests' "
+"with 'Permission' Admin and 'Authentication Timeout' NEVER."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:143
+msgid "Map SignalK icons to plugin icons:"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:920
+msgid "Maximum scale for cluster 1:"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:1060
+msgid "Maximum scale must be at least 800."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:1063
+msgid ""
+"Maximum scale must be smaller than minimum scale (or minimum scale = 0)."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:929
+msgid "Minimum scale for cluster 1:"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:386
+msgid "Note: No providers configured yet. Move the map to discover providers."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:93
+msgid "Note: Providers are discovered as you move the map."
+msgstr ""
+
+#: src/signalk_notes_opencpn_pi.cpp:1232
+msgid "Notes at this position"
+msgstr ""
+
+#: src/signalk_notes_opencpn_pi.cpp:1274 src/tpSignalKNotes.cpp:459
+#: src/tpConfigDialog.cpp:187
 msgid "OK"
-msgstr "OK"
+msgstr ""
 
-#: src/tpicons.cpp:85
+#: src/tpicons.cpp:73
 msgid "OpenCPN Alert"
-msgstr "OpenCPN Alert"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:89
-msgid "Ordnen Sie SignalK-Icons Plugin-Icons zu:"
-msgstr "Map SignalK icons to plugin icons:"
+#: src/tpConfigDialog.cpp:853 src/tpConfigDialog.cpp:907
+msgid "Preview:"
+msgstr ""
 
-#: src/tpConfigDialog.cpp:81
+#: src/tpConfigDialog.cpp:136
 msgid "Provider"
-msgstr "Provider"
+msgstr ""
 
-#: src/tpSignalKNotes.cpp:48
+#: src/tpConfigDialog.cpp:105
+msgid "Select the providers to display:"
+msgstr ""
+
+#: src/tpSignalKNotes.cpp:596
 msgid "Server host not configured"
-msgstr "Server host not configured"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:117 src/tpConfigDialog.cpp:684
+#: src/tpConfigDialog.cpp:732
+msgid "SignalK Connection"
+msgstr ""
+
+#: src/tpSignalKNotes.cpp:391
+msgid "SignalK Note Details"
+msgstr ""
+
+#: src/signalk_notes_opencpn_pi.cpp:194 src/signalk_notes_opencpn_pi.cpp:197
+#: src/signalk_notes_opencpn_pi.cpp:200 src/signalk_notes_opencpn_pi.cpp:202
+msgid "SignalK Notes"
+msgstr ""
+
+#: src/tpConfigDialog.cpp:39
+msgid "SignalK Notes Configuration"
+msgstr ""
 
 #. Auth-Button aktiv
-#: src/tpConfigDialog.cpp:115 src/tpConfigDialog.cpp:438
-#: src/tpConfigDialog.cpp:608
-msgid "SignalK Authentifizierung"
-msgstr "SignalK authentication"
-
-#: src/tpSignalKNotes.cpp:186
-msgid "SignalK Note Details"
-msgstr "SignalK Note Details"
-
-#: src/signalk_notes_opencpn_pi.cpp:266 src/signalk_notes_opencpn_pi.cpp:269
-#: src/signalk_notes_opencpn_pi.cpp:272 src/signalk_notes_opencpn_pi.cpp:274
-msgid "SignalK Notes"
-msgstr "SignalK Notes"
-
-#: src/tpConfigDialog.cpp:26
-msgid "SignalK Notes Konfiguration"
-msgstr "SignalK Notes Configuration"
-
-#: src/tpConfigDialog.cpp:74
-msgid "SignalK Verbindung"
-msgstr "SignalK Connection"
-
-#: src/tpSignalKNotes.cpp:315
-#, c-format
-msgid "SignalKNotes: fetching data with URL: %s"
-msgstr "SignalKNotes: fetching data with URL: %s"
-
-#: src/tpConfigDialog.cpp:755
-msgid "Text color:"
+#: src/tpConfigDialog.cpp:176 src/tpConfigDialog.cpp:736
+msgid "SignalK authentication"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:719 src/tpConfigDialog.cpp:772
-msgid "Vorschau:"
-msgstr "Preview:"
-
-#: src/tpConfigDialog.cpp:62
-msgid "Wählen Sie die anzuzeigenden Provider:"
-msgstr "Select the providers to display:"
-
-#, fuzzy
-#~ msgid "Circle Color:"
-#~ msgstr "Line Colour"
-
-#, fuzzy
-#~ msgid "Text Color:"
-#~ msgstr "Text Colour"
-
-#~ msgid "Test Plugin Control Dialog"
-#~ msgstr "Test Plugin Control Dialogue"
-
-#~ msgid "Test Plugin"
-#~ msgstr "Test Plugin"
-
-#~ msgid "signalk_notes_opencpn PlugIn for OpenCPN"
-#~ msgstr "signalk_notes_opencpn PlugIn for OpenCPN"
-
-#~ msgid ""
-#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
-#~ "demonstrates PlugIn processing of NMEA messages."
-#~ msgstr ""
-#~ "signalk_notes_opencpn PlugIn for OpenCPN\n"
-#~ "demonstrates PlugIn processing of NMEA messages."
-
+#: src/tpConfigDialog.cpp:539
 #, c-format
-#~ msgid ""
-#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
-#~ "Minor: %i\n"
-#~ msgstr ""
-#~ "OD Version: Major: %i, Minor: %i, Patch: %i, ODAPI Version: Major: %i, "
-#~ "Minor: %i\n"
-
-#~ msgid "OD_FindPointInAnyBoundary\n"
-#~ msgstr "OD_FindPointInAnyBoundary\n"
-
-#~ msgid "OD_FindClosestBoundaryLineCrossing\n"
-#~ msgstr "OD_FindClosestBoundaryLineCrossing\n"
-
-#~ msgid "OD_FindFirstBoundaryLineCrossing\n"
-#~ msgstr "OD_FindFirstBoundaryLineCrossing\n"
-
-#~ msgid "OD_CreateBoundary\n"
-#~ msgstr "OD_CreateBoundary\n"
-
-#~ msgid "OD_CreateBoundaryPoint\n"
-#~ msgstr "OD_CreateBoundaryPoint\n"
-
-#~ msgid "OD_CreateTextPoint\n"
-#~ msgstr "OD_CreateTextPoint\n"
-
-#~ msgid "OD_AddPointIcon\n"
-#~ msgstr "OD_AddPointIcon\n"
-
-#~ msgid "OD_DeletePointIcon\n"
-#~ msgstr "OD_DeletePointIcon\n"
-
-#~ msgid "The following ODAPI's are available: \n"
-#~ msgstr "The following ODAPI's are available: \n"
-
-#~ msgid "The following ODAPI's are not available:\n"
-#~ msgstr "The following ODAPI's are not available:\n"
-
-#~ msgid "SIGNALK_NOTES_OPENCPN"
-#~ msgstr "SIGNALK_NOTES_OPENCPN"
-
-#~ msgid "File not found"
-#~ msgstr "File not found"
-
-#~ msgid "Save JSON on startup"
-#~ msgstr "Save JSON on startup"
-
-#~ msgid ""
-#~ "Delete config from conf\n"
-#~ "on shutdown"
-#~ msgstr ""
-#~ "Delete config from conf\n"
-#~ "on shutdown"
-
-#~ msgid "General"
-#~ msgstr "General"
-
-#~ msgid "Select JSON file to import"
-#~ msgstr "Select JSON file to import"
-
-#~ msgid "*.*"
-#~ msgstr "*.*"
-
-#~ msgid "Select a JSON file"
-#~ msgstr "Select a JSON file"
-
-#~ msgid ""
-#~ "Save incoming JSON\n"
-#~ "messages"
-#~ msgstr ""
-#~ "Save incoming JSON\n"
-#~ "messages"
-
-#~ msgid "Select a file"
-#~ msgstr "Select a file"
-
-#~ msgid ""
-#~ "Close save file after\n"
-#~ "each write"
-#~ msgstr ""
-#~ "Close save file after\n"
-#~ "each write"
-
-#~ msgid "Append to file"
-#~ msgstr "Append to file"
-
-#~ msgid "Import JSON"
-#~ msgstr "Import JSON"
-
-#~ msgid "File Input"
-#~ msgstr "File Input"
-
-#~ msgid "Name"
-#~ msgstr "Name"
-
-#~ msgid "Type"
-#~ msgstr "Type"
-
-#~ msgid "Exclusion"
-#~ msgstr "Exclusion"
-
-#~ msgid "Inclusion"
-#~ msgstr "Inclusion"
-
-#~ msgid "Neither"
-#~ msgstr "Neither"
-
-#~ msgid "Active"
-#~ msgstr "Active"
-
-#~ msgid "Visible"
-#~ msgstr "Visible"
-
-#~ msgid "Fill Colour"
-#~ msgstr "Fill Colour"
-
-#~ msgid "Boundary Points"
-#~ msgstr "Boundary Points"
-
-#~ msgid "Corner Lat"
-#~ msgstr "Corner Lat"
-
-#~ msgid "Corner Lon"
-#~ msgstr "Corner Lon"
-
-#~ msgid "Number of Points"
-#~ msgstr "Number of Points"
-
-#~ msgid "2"
-#~ msgstr "2"
-
-#~ msgid "3"
-#~ msgstr "3"
-
-#~ msgid "4"
-#~ msgstr "4"
-
-#~ msgid "5"
-#~ msgstr "5"
-
-#~ msgid "6"
-#~ msgstr "6"
-
-#~ msgid "Boundary Point Visible"
-#~ msgstr "Boundary Point Visible"
-
-#~ msgid ""
-#~ "Boundary Point\n"
-#~ "Range Rings Visible"
-#~ msgstr ""
-#~ "Boundary Point\n"
-#~ "Range Rings Visible"
-
-#~ msgid "Number of Rings"
-#~ msgstr "Number of Rings"
-
-#~ msgid "0"
-#~ msgstr "0"
-
-#~ msgid "1"
-#~ msgstr "1"
-
-#~ msgid "10"
-#~ msgstr "10"
-
-#~ msgid "7"
-#~ msgstr "7"
-
-#~ msgid "8"
-#~ msgstr "8"
-
-#~ msgid "9"
-#~ msgstr "9"
-
-#~ msgid "Rings Step"
-#~ msgstr "Rings Step"
-
-#~ msgid "0.5"
-#~ msgstr "0.5"
-
-#~ msgid "Ring Colour"
-#~ msgstr "Ring Colour"
-
-#~ msgid "Kilometers"
-#~ msgstr "Kilometres"
-
-#~ msgid "Nautical Miles"
-#~ msgstr "Nautical Miles"
-
-#~ msgid "Create ODAPI"
-#~ msgstr "Create ODAPI"
-
-#~ msgid "Create JSON"
-#~ msgstr "Create JSON"
-
-#~ msgid "Create Boundary"
-#~ msgstr "Create Boundary"
-
-#~ msgid "GUID"
-#~ msgstr "GUID"
-
-#~ msgid "Delete ODAPI"
-#~ msgstr "Delete ODAPI"
-
-#~ msgid "Delete JSON"
-#~ msgstr "Delete JSON"
-
-#~ msgid "Delete Boundary"
-#~ msgstr "Delete Boundary"
-
-#~ msgid "Icon Name"
-#~ msgstr "Icon Name"
-
-#~ msgid "Lat"
-#~ msgstr "Lat"
-
-#~ msgid "Lon"
-#~ msgstr "Lon"
-
-#~ msgid "Rings Visible"
-#~ msgstr "Rings Visible"
-
-#~ msgid "Step Units"
-#~ msgstr "Step Units"
-
-#~ msgid "Create Boundary Point"
-#~ msgstr "Create Boundary Point"
-
-#~ msgid "Delete Boundary Point"
-#~ msgstr "Delete Boundary Point"
-
-#~ msgid "Text to Display with Point"
-#~ msgstr "Text to Display with Point"
-
-#~ msgid "Text position relative to point"
-#~ msgstr "Text position relative to point"
-
-#~ msgid "Bottom"
-#~ msgstr "Bottom"
-
-#~ msgid "Bottom Centre"
-#~ msgstr "Bottom Centre"
-
-#~ msgid "Centre"
-#~ msgstr "Centre"
-
-#~ msgid "Left"
-#~ msgstr "Left"
-
-#~ msgid "Right"
-#~ msgstr "Right"
-
-#~ msgid "Top"
-#~ msgstr "Top"
-
-#~ msgid "Top Centre"
-#~ msgstr "Top Centre"
-
-#~ msgid "Background Colour"
-#~ msgstr "Background Colour"
-
-#~ msgid "Background Transparancy"
-#~ msgstr "Background Transparancy"
-
-#~ msgid "Text Font"
-#~ msgstr "Text Font"
-
-#~ msgid "Example"
-#~ msgstr "Example"
-
-#~ msgid "Fonts"
-#~ msgstr "Fonts"
-
-#~ msgid "Always"
-#~ msgstr "Always"
-
-#~ msgid "Never"
-#~ msgstr "Never"
-
-#~ msgid "On Rollover Only"
-#~ msgstr "On Rollover Only"
-
-#~ msgid "Show Display Text"
-#~ msgstr "Show Display Text"
-
-#~ msgid "Create Text Point"
-#~ msgstr "Create Text Point"
-
-#~ msgid "Delete Text Point"
-#~ msgstr "Delete Text Point"
-
-#~ msgid "Delete"
-#~ msgstr "Delete"
-
-#~ msgid "add"
-#~ msgstr "add"
-
-#~ msgid "ODAPI"
-#~ msgstr "ODAPI"
-
-#~ msgid "JSON"
-#~ msgstr "JSON"
-
-#~ msgid "Point Icon"
-#~ msgstr "Point Icon"
-
-#~ msgid "User Input"
-#~ msgstr "User Input"
-
-#~ msgid "&Close"
-#~ msgstr "&Close"
-
-#~ msgid "Blue Anchor"
-#~ msgstr "Blue Anchor"
-
-#~ msgid "Test Link"
-#~ msgstr "Test Link"
-
-#~ msgid "Test Link 1"
-#~ msgstr "Test Link 1"
-
-#~ msgid "Test Link 2"
-#~ msgstr "Test Link 2"
-
-#~ msgid "No file specified for output"
-#~ msgstr "No file specified for output"
-
-#~ msgid "No file specified for input"
-#~ msgstr "No file specified for input"
-
-#~ msgid "signalk_notes_opencpn_pi data location"
-#~ msgstr "signalk_notes_opencpn_pi data location"
+msgid "Total icons: %d"
+msgstr ""

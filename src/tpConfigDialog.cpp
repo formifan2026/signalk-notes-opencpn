@@ -2,12 +2,12 @@
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Configuration dialog and user interface settings
  * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
  *
  * Icon Licensing:
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
- *   - Some icons are based on OpenCPN standard icons (GPLv2) 
+ *   - Some icons are based on OpenCPN standard icons (GPLv2)
  ******************************************************************************/
 #include "signalk_notes_opencpn_pi.h"
 #include "tpConfigDialog.h"
@@ -36,7 +36,7 @@ const wxColour tpConfigDialog::DEFAULT_CLUSTER_TEXT_COLOR(*wxWHITE);
 
 tpConfigDialog::tpConfigDialog(signalk_notes_opencpn_pi* parent,
                                wxWindow* winparent)
-    : wxDialog(winparent, wxID_ANY, _("SignalK Notes Konfiguration"),
+    : wxDialog(winparent, wxID_ANY, _("SignalK Notes Configuration"),
                wxDefaultPosition, wxSize(800, 800),
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
       m_settingsLoaded(false) {
@@ -52,14 +52,44 @@ void tpConfigDialog::CreateControls() {
 
   // --- Sichtbare Icons ---
   m_countLabel =
-      new wxStaticText(this, wxID_ANY, _("Icons im Kartenausschnitt: 0"));
-  mainSizer->Add(m_countLabel, 0, wxALL | wxEXPAND, 10);
-  UpdateVisibleCount(m_parent->GetVisibleNoteCount());
+      new wxStaticText(this, wxID_ANY, _("Icons in the map area: 0"));
+
+  wxBoxSizer* countSizer = new wxBoxSizer(wxHORIZONTAL);
+  m_countLabelLeft = new wxStaticText(this, wxID_ANY, wxEmptyString);
+  m_countLabelRight = new wxStaticText(this, wxID_ANY, wxEmptyString);
+  m_countLabelTotal = new wxStaticText(this, wxID_ANY, wxEmptyString);
+  countSizer->Add(m_countLabel, 0, wxRIGHT, 15);
+  countSizer->Add(m_countLabelLeft, 0, wxRIGHT, 15);
+  countSizer->Add(m_countLabelRight, 0, wxRIGHT, 15);
+  countSizer->Add(m_countLabelTotal, 0, 0, 0);
+
+  mainSizer->Add(countSizer, 0, wxALL | wxEXPAND, 10);
+
+  // Initialer Aufruf — bestimmt selbst, welche Labels sichtbar sind
+  {
+    int canvasCount = (int)m_parent->m_canvasStates.size();
+    if (canvasCount >= 2) {
+      // Zähle für Canvas 0 (links) und Canvas 1 (rechts)
+      int left = 0, right = 0;
+      auto it = m_parent->m_canvasStates.begin();
+      if (it != m_parent->m_canvasStates.end()) {
+        left = m_parent->GetVisibleNoteCount(
+            const_cast<signalk_notes_opencpn_pi::CanvasState&>(it->second));
+        ++it;
+      }
+      if (it != m_parent->m_canvasStates.end()) {
+        right = m_parent->GetVisibleNoteCount(
+            const_cast<signalk_notes_opencpn_pi::CanvasState&>(it->second));
+      }
+      UpdateVisibleCount(left, right);
+    } else {
+      UpdateVisibleCount(m_parent->GetVisibleNoteCount());
+    }
+  }
 
   // --- Hinweis ---
   m_infoLabel = new wxStaticText(
-      this, wxID_ANY,
-      _("Hinweis: Provider werden beim Bewegen der Karte entdeckt."));
+      this, wxID_ANY, _("Note: Providers are discovered as you move the map."));
   m_infoLabel->SetForegroundColour(*wxBLUE);
   mainSizer->Add(m_infoLabel, 0, wxALL | wxEXPAND, 5);
 
@@ -70,25 +100,36 @@ void tpConfigDialog::CreateControls() {
   wxPanel* providerPanel = new wxPanel(m_notebook);
   wxBoxSizer* providerSizer = new wxBoxSizer(wxVERTICAL);
 
-  providerSizer->Add(
-      new wxStaticText(providerPanel, wxID_ANY,
-                       _("Wählen Sie die anzuzeigenden Provider:")),
-      0, wxALL, 5);
+  providerSizer->Add(new wxStaticText(providerPanel, wxID_ANY,
+                                      _("Select the providers to display:")),
+                     0, wxALL, 5);
 
   m_providerList = new wxCheckListBox(providerPanel, wxID_ANY);
   providerSizer->Add(m_providerList, 1, wxALL | wxEXPAND, 5);
 
-  // Auth-Status-Anzeige
+  // Auth-Status-Anzeige + Fetch-Intervall in einer Zeile
   wxBoxSizer* authStatusSizer = new wxBoxSizer(wxHORIZONTAL);
   m_authStatusIcon = new wxStaticBitmap(providerPanel, wxID_ANY, wxNullBitmap);
   authStatusSizer->Add(m_authStatusIcon, 0, wxALIGN_TOP | wxALL, 5);
 
   m_authStatusLabel =
-      new wxStaticText(providerPanel, wxID_ANY, _("SignalK Verbindung"));
+      new wxStaticText(providerPanel, wxID_ANY, _("SignalK Connection"));
   m_authStatusLabel->SetMinSize(wxSize(-1, 45));
   authStatusSizer->Add(m_authStatusLabel, 0, wxALIGN_TOP | wxALL, 5);
 
-  providerSizer->Add(authStatusSizer, 0, wxALL, 5);
+  authStatusSizer->AddStretchSpacer();
+
+  authStatusSizer->Add(new wxStaticText(providerPanel, wxID_ANY,
+                                        _("API update interval (minutes)")),
+                       0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+  m_fetchIntervalCtrl = new wxSpinCtrl(providerPanel, wxID_ANY);
+  m_fetchIntervalCtrl->SetRange(1, 1440);  // 1 Minute bis 24 Stunden
+  m_fetchIntervalCtrl->SetValue(tpConfigDialog::DEFAULT_FETCH_INTERVAL);
+  authStatusSizer->Add(m_fetchIntervalCtrl, 0, wxALIGN_CENTER_VERTICAL | wxALL,
+                       5);
+
+  providerSizer->Add(authStatusSizer, 0, wxALL | wxEXPAND, 5);
 
   providerPanel->SetSizer(providerSizer);
   m_notebook->AddPage(providerPanel, _("Provider"));
@@ -97,10 +138,9 @@ void tpConfigDialog::CreateControls() {
   wxPanel* iconPanel = new wxPanel(m_notebook);
   wxBoxSizer* iconPanelSizer = new wxBoxSizer(wxVERTICAL);
 
-  iconPanelSizer->Add(
-      new wxStaticText(iconPanel, wxID_ANY,
-                       _("Ordnen Sie SignalK-Icons Plugin-Icons zu:")),
-      0, wxALL, 5);
+  iconPanelSizer->Add(new wxStaticText(iconPanel, wxID_ANY,
+                                       _("Map SignalK icons to plugin icons:")),
+                      0, wxALL, 5);
 
   m_iconMappingPanel =
       new wxScrolledWindow(iconPanel, wxID_ANY, wxDefaultPosition,
@@ -114,33 +154,37 @@ void tpConfigDialog::CreateControls() {
   iconPanelSizer->Add(m_iconMappingPanel, 1, wxALL | wxEXPAND, 5);
 
   iconPanel->SetSizer(iconPanelSizer);
-  m_notebook->AddPage(iconPanel, _("Icon-Zuordnung"));
+  m_notebook->AddPage(iconPanel, _("Icon mapping"));
 
   // ========== Tab 3: Display Settings ==========
   CreateDisplayTab();
-  m_notebook->AddPage(m_displayPanel, _("Darstellung"));
+  m_notebook->AddPage(m_displayPanel, _("Deciption"));
 
   mainSizer->Add(m_notebook, 1, wxALL | wxEXPAND, 5);
 
   // ========== BUTTON-BEREICH ==========
   wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
 
-  m_authButton = new wxButton(this, wxID_ANY, _("SignalK Authentifizierung"));
+  m_scaleErrorLabel = new wxStaticText(this, wxID_ANY, wxEmptyString);
+  m_scaleErrorLabel->SetForegroundColour(*wxRED);
+  m_scaleErrorLabel->Hide();
+  buttonSizer->Add(m_scaleErrorLabel, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+
+  buttonSizer->AddStretchSpacer();
+
+  m_authButton = new wxButton(this, wxID_ANY, _("SignalK authentication"));
+
   m_authButton->Bind(wxEVT_BUTTON, &tpConfigDialog::OnAuthButtonClick, this);
   buttonSizer->Add(m_authButton, 0, wxALL, 5);
 
-  m_cancelAuthButton =
-      new wxButton(this, wxID_ANY, _("Authentifizierung abbrechen"));
+  m_cancelAuthButton = new wxButton(this, wxID_ANY, _("Cancel authentication"));
   m_cancelAuthButton->Bind(wxEVT_BUTTON, &tpConfigDialog::OnCancelAuthRequest,
                            this);
   m_cancelAuthButton->Hide();
   buttonSizer->Add(m_cancelAuthButton, 0, wxALL, 5);
 
-  buttonSizer->AddStretchSpacer();
-
   buttonSizer->Add(new wxButton(this, wxID_OK, _("OK")), 0, wxALL, 5);
-  buttonSizer->Add(new wxButton(this, wxID_CANCEL, _("Abbrechen")), 0, wxALL,
-                   5);
+  buttonSizer->Add(new wxButton(this, wxID_CANCEL, _("Cancel")), 0, wxALL, 5);
 
   mainSizer->Add(buttonSizer, 0, wxEXPAND | wxALL, 5);
 
@@ -171,11 +215,14 @@ void tpConfigDialog::CreateControls() {
   UpdateIconMappings(skIconNames);
   UpdateIconMappings(mgr->GetDiscoveredIcons());
 
-  // --- Display Settings laden ---
-  LoadDisplaySettings(m_parent->GetIconSize(), m_parent->GetClusterSize(),
-                      m_parent->GetClusterRadius(), m_parent->GetClusterColor(),
-                      m_parent->GetClusterTextColor(),
-                      m_parent->GetClusterFontSize());
+  LoadDisplaySettings(
+      m_parent->GetIconSize(), m_parent->GetClusterSize(),
+      m_parent->GetClusterRadius(), m_parent->GetClusterColor(),
+      m_parent->GetClusterTextColor(), m_parent->GetClusterFontSize(),
+      m_parent->GetClusterMaxScale(), m_parent->GetClusterMinScale());
+
+  if (m_fetchIntervalCtrl)
+    m_fetchIntervalCtrl->SetValue(m_parent->GetFetchInterval());
 
   //  ---Auth status setzen ---
   InitializeAuthUI();
@@ -303,9 +350,6 @@ void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
       m_currentIconMappings[skIconName] = iconPath.GetFullPath();
     }
 
-    // Event-Handler binden
-    combo->Bind(wxEVT_COMBOBOX, &tpConfigDialog::OnIconMappingChanged, this);
-
     m_iconMappingSizer->Add(combo, 1, wxEXPAND | wxALL, 5);
 
     // In Map speichern
@@ -321,7 +365,7 @@ void tpConfigDialog::UpdateIconMappings(const std::set<wxString>& skIcons) {
 void tpConfigDialog::LoadSettings(
     const std::map<wxString, bool>& providers,
     const std::map<wxString, wxString>& iconMappings) {
-  // Provider aus Settings in Liste laden
+
   m_providerList->Clear();
 
   for (const auto& pair : providers) {
@@ -332,8 +376,9 @@ void tpConfigDialog::LoadSettings(
 
   if (providers.empty()) {
     m_infoLabel->SetLabel(
-        _("Hinweis: Noch keine Provider konfiguriert. Bewegen Sie die Karte, "
-          "um Provider zu entdecken."));
+        _("Note: No providers configured yet. Move the map to discover "
+          "providers."));
+
     m_infoLabel->Show();
   } else {
     m_infoLabel->Hide();
@@ -404,26 +449,50 @@ void tpConfigDialog::OnOK(wxCommandEvent& event) {
 
   // Icon-Mappings an Manager übergeben
   if (m_parent && m_parent->m_pSignalKNotesManager) {
-    m_parent->m_pSignalKNotesManager->SetIconMappings(GetIconMappings());
+    auto newMappings = GetIconMappings();
+    auto oldMappings = m_parent->m_pSignalKNotesManager->GetIconMappings();
+
+    // Prüfe welche Mappings sich geändert haben
+    for (const auto& newMapping : newMappings) {
+      auto oldIt = oldMappings.find(newMapping.first);
+
+      // Wenn Mapping sich geändert hat → Cache für dieses Icon löschen
+      if (oldIt == oldMappings.end() || oldIt->second != newMapping.second) {
+        m_parent->m_pSignalKNotesManager->InvalidateIconCache(newMapping.first);
+      }
+    }
+
+    m_parent->m_pSignalKNotesManager->SetIconMappings(newMappings);
+  }
+
+  // Validierung Maßstäbe
+  int maxScale = GetClusterMaxScale();
+  int minScale = GetClusterMinScale();
+  if (maxScale < 800) {
+    m_notebook->SetSelection(2);  // Tab "Darstellung" aktivieren
+    ValidateScaleSettings();
+    return;
+  }
+  if (minScale != 0 && maxScale >= minScale) {
+    m_notebook->SetSelection(2);
+    ValidateScaleSettings();
+    return;
   }
 
   // Display-Einstellungen an Plugin übergeben
   if (m_parent) {
-    m_parent->SetDisplaySettings(GetIconSize(), GetClusterSize(),
-                                 GetClusterRadius(), GetClusterColor(),
-                                 GetClusterTextColor(), GetClusterFontSize());
+    m_parent->SetDisplaySettings(
+        GetIconSize(), GetClusterSize(), GetClusterRadius(), GetClusterColor(),
+        GetClusterTextColor(), GetClusterFontSize(), maxScale, minScale);
+    m_parent->SetFetchInterval(GetFetchInterval());
   }
+
   // Debug-Einstellungen an Plugin übergeben
   if (m_debugCheckbox && m_parent) {
     m_parent->SetDebugMode(m_debugCheckbox->GetValue());
   }
   // Icons neu berechnen und Karte aktualisieren
-  if (m_parent && m_parent->m_pSignalKNotesManager &&
-      m_parent->m_lastViewPortValid) {
-    m_parent->m_pSignalKNotesManager->UpdateDisplayedIcons(
-        m_parent->m_lastViewPort.clat, m_parent->m_lastViewPort.clon,
-        m_parent->CalculateMaxDistance(m_parent->m_lastViewPort));
-
+  if (m_parent) {
     RequestRefresh(m_parent->m_parent_window);
   }
 
@@ -443,14 +512,27 @@ void tpConfigDialog::OnCancel(wxCommandEvent& event) {
   EndModal(wxID_CANCEL);
 }
 
-void tpConfigDialog::OnIconMappingChanged(wxCommandEvent& event) {
-  // Wird aufgerufen wenn User eine Zuordnung ändert 
-  // Mappings werden beim OK-Klick aus den Combos ausgelesen
-}
-
 void tpConfigDialog::UpdateVisibleCount(int count) {
   m_countLabel->SetLabel(
-      wxString::Format("Icons im Kartenausschnitt: %d", count));
+      wxString::Format(_("Icons in the map area: %d"), count));
+  m_countLabel->Show(true);
+  m_countLabelLeft->Hide();
+  m_countLabelRight->Hide();
+  m_countLabelTotal->Hide();
+  Layout();
+}
+
+void tpConfigDialog::UpdateVisibleCount(int left, int right) {
+  m_countLabel->Hide();
+  m_countLabelLeft->SetLabel(
+      wxString::Format(_("Icons in the left map area: %d"), left));
+  m_countLabelRight->SetLabel(
+      wxString::Format(_("Icons in the right map area: %d"), right));
+  m_countLabelTotal->SetLabel(
+      wxString::Format(_("Total icons: %d"), left + right));
+  m_countLabelLeft->Show(true);
+  m_countLabelRight->Show(true);
+  m_countLabelTotal->Show(true);
   Layout();
 }
 
@@ -460,21 +542,25 @@ void tpConfigDialog::OnAuthButtonClick(wxCommandEvent& event) {
     ShowPendingState();
     m_parent->SaveConfig();
     m_authStatusLabel->SetLabel(
-        _("Bitte in SignalK den Request im Menüpunkt 'Access Requests' "
-          "mit 'Permission' Admin und 'Authentication Timeout' NEVER "
-          "bestätigen."));
+        _("In SignalK, please confirm the request in the menu item 'Access "
+          "Requests' "
+          "with 'Permission' Admin and 'Authentication Timeout' NEVER."));
+
     m_authStatusLabel->Wrap(500);
-    m_authStatusLabel->SetForegroundColour(*wxRED); 
+    m_authStatusLabel->SetForegroundColour(*wxRED);
     Layout();
   } else {
-    wxMessageBox(_("Fehler beim Anfordern der Authentifizierung. Sind noch 'access requests' in SignalK vorhanden? Falls ja, diese löschen / ablehnen."), _("Fehler"),
-                 wxOK | wxICON_ERROR);
+    wxMessageBox(_("Error requesting authentication. Are there still 'access "
+                   "requests' in "
+                   "SignalK? If yes, delete/reject them."),
+                 _("Error"), wxOK | wxICON_ERROR);
   }
 }
 
 void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
   auto* mgr = m_parent->m_pSignalKNotesManager;
-  SKN_LOG(m_parent, "OnAuthCheckTimer fired, IsAuthPending=%d", (int)mgr->IsAuthPending());
+  SKN_LOG(m_parent, "OnAuthCheckTimer fired, IsAuthPending=%d",
+          (int)mgr->IsAuthPending());
 
   if (mgr->IsAuthPending()) {
     if (mgr->CheckAuthorizationStatus()) {
@@ -513,7 +599,8 @@ void tpConfigDialog::OnAuthCheckTimer(wxTimerEvent& event) {
   }
 
   if (!mgr->ValidateToken()) {
-    SKN_LOG(m_parent, "OnAuthCheckTimer: token became invalid → resetting auth");
+    SKN_LOG(m_parent,
+            "OnAuthCheckTimer: token became invalid → resetting auth");
     mgr->SetAuthToken("");
     mgr->ClearAuthRequest();
     m_parent->SaveConfig();
@@ -587,8 +674,8 @@ void tpConfigDialog::ShowAuthenticatedState() {
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_TICK_MARK, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxGREEN);
-  m_authStatusLabel->SetLabel(_("SignalK Verbindung")); 
-  m_authStatusLabel->Wrap(-1);                         
+  m_authStatusLabel->SetLabel(_("SignalK Connection"));
+  m_authStatusLabel->Wrap(-1);
 
   m_authButton->Hide();
   m_cancelAuthButton->Hide();
@@ -619,7 +706,7 @@ void tpConfigDialog::ShowPendingState() {
   m_authStatusLabel->SetForegroundColour(*wxBLUE);
 
   // Auth-Button deaktiviert mit neuem Text
-  m_authButton->SetLabel(_("Authentifizierung läuft..."));
+  m_authButton->SetLabel(_("Authentication in progress..."));
   m_authButton->Enable(false);
   m_authButton->Show();
 
@@ -635,11 +722,11 @@ void tpConfigDialog::ShowInitialState() {
   m_authStatusIcon->SetBitmap(
       wxArtProvider::GetBitmap(wxART_ERROR, wxART_OTHER, wxSize(16, 16)));
   m_authStatusLabel->SetForegroundColour(*wxRED);
-  m_authStatusLabel->SetLabel(_("SignalK Verbindung"));
+  m_authStatusLabel->SetLabel(_("SignalK Connection"));
   m_authStatusLabel->Wrap(-1);
 
   // Auth-Button aktiv
-  m_authButton->SetLabel(_("SignalK Authentifizierung"));
+  m_authButton->SetLabel(_("SignalK authentication"));
   m_authButton->Enable(true);
   m_authButton->Show();
 
@@ -656,7 +743,7 @@ void tpConfigDialog::UpdateProviders(
 
   auto* mgr = m_parent->m_pSignalKNotesManager;
 
-  // 1. ProviderInfos (Name + Description) holen, falls authentifiziert
+  // ProviderInfos (Name + Description) holen, falls authentifiziert
   std::map<wxString, ProviderDisplayInfo> providerDisplayInfos;
   if (!mgr->GetAuthToken().IsEmpty()) {
     auto infos = mgr->GetProviderInfos();
@@ -669,7 +756,7 @@ void tpConfigDialog::UpdateProviders(
     }
   }
 
-  // 2. Bisherige Checked-States sichern
+  // Bisherige Checked-States sichern
   std::map<wxString, bool> existingChecked;
   for (unsigned int i = 0; i < m_providerList->GetCount(); i++) {
     wxString* idPtr = (wxString*)m_providerList->GetClientData(i);
@@ -678,15 +765,13 @@ void tpConfigDialog::UpdateProviders(
     }
   }
 
-  // 3. Provider bestimmen, die angezeigt werden sollen
-  //    = Provider aus Notes + Provider aus gespeicherten Settings
+  // Provider bestimmen, die angezeigt werden sollen
   std::set<wxString> allProviders = providersFromNotes;
 
   for (const auto& p : mgr->GetProviderSettings()) {
     allProviders.insert(p.first);
   }
 
-  // 4. Liste neu aufbauen
   m_providerList->Clear();
 
   for (const wxString& providerId : allProviders) {
@@ -733,13 +818,13 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Icon-Einstellungen
   wxStaticBoxSizer* iconBox =
-      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Icon Einstellungen"));
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Icon settings"));
 
   wxFlexGridSizer* iconGrid = new wxFlexGridSizer(2, 5, 5);
   iconGrid->AddGrowableCol(1);
 
   iconGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Icon-Größe (px):")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Icon size (px):")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_iconSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_iconSizeCtrl->SetRange(12, 64);
@@ -750,21 +835,21 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Icon-Vorschau
   m_iconPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
-  iconBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Vorschau:")), 0,
+  iconBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
                wxALL, 5);
   iconBox->Add(m_iconPreview, 0, wxALL | wxALIGN_CENTER, 5);
 
   mainSizer->Add(iconBox, 0, wxEXPAND | wxALL, 10);
 
   // Cluster-Einstellungen
-  wxStaticBoxSizer* clusterBox = new wxStaticBoxSizer(
-      wxVERTICAL, m_displayPanel, _("Cluster Einstellungen"));
+  wxStaticBoxSizer* clusterBox =
+      new wxStaticBoxSizer(wxVERTICAL, m_displayPanel, _("Cluster settings"));
 
   wxFlexGridSizer* clusterGrid = new wxFlexGridSizer(2, 5, 5);
   clusterGrid->AddGrowableCol(1);
 
   clusterGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster-Größe (px):")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster size (px):")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_clusterSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_clusterSizeCtrl->SetRange(16, 64);
@@ -772,7 +857,7 @@ void tpConfigDialog::CreateDisplayTab() {
   clusterGrid->Add(m_clusterSizeCtrl, 1, wxEXPAND);
 
   clusterGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster Radius (px):")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Cluster radius (px):")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_clusterRadiusCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_clusterRadiusCtrl->SetRange(5, 32);
@@ -780,19 +865,20 @@ void tpConfigDialog::CreateDisplayTab() {
   clusterGrid->Add(m_clusterRadiusCtrl, 1, wxEXPAND);
 
   clusterGrid->Add(
-      new wxStaticText(m_displayPanel, wxID_ANY, _("Kreis-Farbe:")), 0,
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Circle color:")), 0,
       wxALIGN_CENTER_VERTICAL);
   m_clusterColorCtrl =
       new wxColourPickerCtrl(m_displayPanel, wxID_ANY, DEFAULT_CLUSTER_COLOR);
   clusterGrid->Add(m_clusterColorCtrl, 1, wxEXPAND);
 
-  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Text-Farbe:")),
-                   0, wxALIGN_CENTER_VERTICAL);
+  clusterGrid->Add(
+      new wxStaticText(m_displayPanel, wxID_ANY, _("Circle color:")), 0,
+      wxALIGN_CENTER_VERTICAL);
   m_clusterTextColorCtrl = new wxColourPickerCtrl(m_displayPanel, wxID_ANY,
                                                   DEFAULT_CLUSTER_TEXT_COLOR);
   clusterGrid->Add(m_clusterTextColorCtrl, 1, wxEXPAND);
 
-  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Font-Größe:")),
+  clusterGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Font size")),
                    0, wxALIGN_CENTER_VERTICAL);
   m_clusterFontSizeCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
   m_clusterFontSizeCtrl->SetRange(6, 16);
@@ -803,17 +889,42 @@ void tpConfigDialog::CreateDisplayTab() {
 
   // Cluster-Vorschau
   m_clusterPreview = new wxStaticBitmap(m_displayPanel, wxID_ANY, wxNullBitmap);
-  clusterBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Vorschau:")), 0,
+  clusterBox->Add(new wxStaticText(m_displayPanel, wxID_ANY, _("Preview:")), 0,
                   wxALL, 5);
   clusterBox->Add(m_clusterPreview, 0, wxALL | wxALIGN_CENTER, 5);
 
   mainSizer->Add(clusterBox, 0, wxEXPAND | wxALL, 10);
 
-  // ---------------------------------------------------------
+  // Maßstab-Grenzen für Cluster
+  wxFlexGridSizer* scaleGrid = new wxFlexGridSizer(2, 5, 5);
+  scaleGrid->AddGrowableCol(1);
+
+  scaleGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY,
+                                  _("Maximum scale for cluster 1:")),
+                 0, wxALIGN_CENTER_VERTICAL);
+  m_clusterMaxScaleCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_clusterMaxScaleCtrl->SetRange(1, 999999);
+  m_clusterMaxScaleCtrl->SetValue(DEFAULT_CLUSTER_MAX_SCALE);
+  m_clusterMaxScaleCtrl->SetIncrement(100);
+  scaleGrid->Add(m_clusterMaxScaleCtrl, 1, wxEXPAND);
+
+  scaleGrid->Add(new wxStaticText(m_displayPanel, wxID_ANY,
+                                  _("Minimum scale for cluster 1:")),
+                 0, wxALIGN_CENTER_VERTICAL);
+  m_clusterMinScaleCtrl = new wxSpinCtrl(m_displayPanel, wxID_ANY);
+  m_clusterMinScaleCtrl->SetRange(0, 9999999);
+  m_clusterMinScaleCtrl->SetValue(DEFAULT_CLUSTER_MIN_SCALE);
+  m_clusterMinScaleCtrl->SetIncrement(100);
+  scaleGrid->Add(m_clusterMinScaleCtrl, 1, wxEXPAND);
+  m_clusterMaxScaleCtrl->Bind(wxEVT_SPINCTRL,
+                              &tpConfigDialog::OnScaleSettingChanged, this);
+  m_clusterMinScaleCtrl->Bind(wxEVT_SPINCTRL,
+                              &tpConfigDialog::OnScaleSettingChanged, this);
+  mainSizer->Add(scaleGrid, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+
   // Debug-Checkbox ("Erweitertes Logging")
-  // ---------------------------------------------------------
-  m_debugCheckbox = new wxCheckBox(
-      m_displayPanel, wxID_ANY, _("Erweitertes Debug-Logging in opencpn.log"));
+  m_debugCheckbox = new wxCheckBox(m_displayPanel, wxID_ANY,
+                                   _("Advanced debug logging in opencpn.log"));
   m_debugCheckbox->SetValue(m_parent->IsDebugMode());
   mainSizer->Add(m_debugCheckbox, 0, wxALL, 10);
 
@@ -903,14 +1014,43 @@ void tpConfigDialog::LoadDisplaySettings(int iconSize, int clusterSize,
                                          int clusterRadius,
                                          const wxColour& clusterColor,
                                          const wxColour& textColor,
-                                         int fontSize) {
+                                         int fontSize, int clusterMaxScale,
+                                         int clusterMinScale) {
   if (m_iconSizeCtrl) m_iconSizeCtrl->SetValue(iconSize);
   if (m_clusterSizeCtrl) m_clusterSizeCtrl->SetValue(clusterSize);
   if (m_clusterRadiusCtrl) m_clusterRadiusCtrl->SetValue(clusterRadius);
   if (m_clusterColorCtrl) m_clusterColorCtrl->SetColour(clusterColor);
   if (m_clusterTextColorCtrl) m_clusterTextColorCtrl->SetColour(textColor);
   if (m_clusterFontSizeCtrl) m_clusterFontSizeCtrl->SetValue(fontSize);
+  if (m_clusterMaxScaleCtrl) m_clusterMaxScaleCtrl->SetValue(clusterMaxScale);
+  if (m_clusterMinScaleCtrl) m_clusterMinScaleCtrl->SetValue(clusterMinScale);
 
   UpdateIconPreview();
   UpdateClusterPreview();
+}
+
+void tpConfigDialog::ValidateScaleSettings() {
+  if (!m_scaleErrorLabel) return;
+
+  int maxScale = m_clusterMaxScaleCtrl ? m_clusterMaxScaleCtrl->GetValue() : 0;
+  int minScale = m_clusterMinScaleCtrl ? m_clusterMinScaleCtrl->GetValue() : 0;
+
+  wxString error;
+
+  if (maxScale < 800) {
+    error = _("Maximum scale must be at least 800.");
+  } else if (minScale != 0 && maxScale >= minScale) {
+    error =
+        _("Maximum scale must be smaller than minimum scale (or minimum scale "
+          "= 0).");
+  }
+
+  m_scaleErrorLabel->SetLabel(error);
+  m_scaleErrorLabel->Show(!error.IsEmpty());
+  Layout();
+}
+
+void tpConfigDialog::OnScaleSettingChanged(wxSpinEvent& event) {
+  ValidateScaleSettings();
+  event.Skip();
 }

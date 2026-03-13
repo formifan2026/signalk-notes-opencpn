@@ -2,7 +2,7 @@
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Icon handling and icon resource management
  * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
  *
  * Icon Licensing:

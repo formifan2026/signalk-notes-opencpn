@@ -2,7 +2,7 @@
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Handling of SignalK note objects and data updates
  * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
  *
  * Icon Licensing:
@@ -11,8 +11,8 @@
  ******************************************************************************/
 
 #include "ocpn_plugin.h"
-#include "tpSignalKNotes.h"
 #include "signalk_notes_opencpn_pi.h"
+#include "tpSignalKNotes.h"
 #include "tpConfigDialog.h"
 
 #include <wx/filename.h>
@@ -219,9 +219,7 @@ wxString HttpGet(const wxString& url, const wxString& authHeader) {
 
 #endif
 
-// ---------------------------------------------------------------------------
 // Helper: strip extension and return base path (without .svg/.png)
-// ---------------------------------------------------------------------------
 static wxString GetBasePathWithoutExt(const wxString& fullPath) {
   wxFileName fn(fullPath);
   fn.ClearExt();
@@ -275,134 +273,87 @@ bool tpSignalKNotesManager::LoadIconSmart(const wxString& basePathWithoutExt,
 #endif
 }
 
-// ---------------------------------------------------------------------------
-
 tpSignalKNotesManager::tpSignalKNotesManager(signalk_notes_opencpn_pi* parent) {
   m_parent = parent;
   m_serverHost = wxEmptyString;
   m_serverPort = 3000;
 }
 
-tpSignalKNotesManager::~tpSignalKNotesManager() { ClearAllIcons(); }
-
 void tpSignalKNotesManager::SetServerDetails(const wxString& host, int port) {
   m_serverHost = host;
   m_serverPort = port;
 }
 
-bool tpSignalKNotesManager::FetchNotesForViewport(double centerLat,
-                                                  double centerLon,
-                                                  double maxDistance) {
-  if (m_serverHost.IsEmpty()) {
-    SKN_LOG(m_parent, _("Server host not configured"));
-    return false;
-  }
-
-  return FetchNotesList(centerLat, centerLon, maxDistance);
-}
-
-void tpSignalKNotesManager::UpdateDisplayedIcons(double centerLat,
-                                                 double centerLon,
-                                                 double maxDistance) {
-  if (!FetchNotesForViewport(centerLat, centerLon, maxDistance)) {
+void tpSignalKNotesManager::UpdateDisplayedIcons(
+    double centerLat, double centerLon, double maxDistance,
+    signalk_notes_opencpn_pi::CanvasState& state) {
+  int ok = FetchNotesListForCanvas(centerLat, centerLon, maxDistance, state);
+  if (ok < 0) {
     SKN_LOG(m_parent, "Failed to fetch notes");
     return;
   }
+  if (ok == 0) {
+    // No update of Notes
+    return;
+  }
+
+  wxMutexLocker lock(state.notesMutex);
 
   bool newMappingsFound = false;
 
-  for (auto& pair : m_notes) {
+  for (auto& pair : state.notes) {
     SignalKNote& note = pair.second;
 
+    // 1. Prüfe ob Icon-Pfad-Mapping existiert
     if (!note.iconName.IsEmpty()) {
       if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
         wxString iconPath = ResolveIconPath(note.iconName);
         m_iconMappings[note.iconName] = iconPath;
         newMappingsFound = true;
       }
+
+      // 2. Lade Bitmap in Cache falls noch nicht vorhanden
+      if (m_iconMappings.find(note.iconName) == m_iconMappings.end()) {
+        wxString iconPath = ResolveIconPath(note.iconName);
+        m_iconMappings[note.iconName] = iconPath;
+        newMappingsFound = true;
+      }
     }
+
+    // 3. Prüfe ob Provider aktiviert ist
+    bool providerEnabled = true;
+    if (!note.source.IsEmpty()) {
+      auto it = m_providerSettings.find(note.source);
+      if (it != m_providerSettings.end()) {
+        providerEnabled = it->second;
+      }
+    }
+
+    // 4. Setze isDisplayed
+    note.isDisplayed = providerEnabled;
   }
 
   if (newMappingsFound && m_parent) {
     m_parent->SaveConfig();
   }
-
-  std::set<wxString> visibleNoteIds;
-
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    bool providerEnabled = true;
-
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
-    }
-
-    if (providerEnabled) {
-      visibleNoteIds.insert(note.id);
-    }
-  }
-
-  for (auto it = m_displayedGUIDs.begin(); it != m_displayedGUIDs.end();) {
-    if (visibleNoteIds.find(*it) == visibleNoteIds.end()) {
-      auto noteIt = m_notes.find(*it);
-      if (noteIt != m_notes.end()) {
-        noteIt->second.isDisplayed = false;
-      }
-      it = m_displayedGUIDs.erase(it);
-    } else {
-      ++it;
-    }
-  }
-
-  for (auto& pair : m_notes) {
-    SignalKNote& note = pair.second;
-
-    bool providerEnabled = true;
-    if (!note.source.IsEmpty()) {
-      auto it = m_providerSettings.find(note.source);
-      if (it != m_providerSettings.end()) {
-        providerEnabled = it->second;
-      }
-    }
-    if (!providerEnabled) continue;
-
-    if (note.isDisplayed) continue;
-
-    if (CreateNoteIcon(note)) {
-      note.isDisplayed = true;
-
-      if (std::find(m_displayedGUIDs.begin(), m_displayedGUIDs.end(),
-                    note.id) == m_displayedGUIDs.end()) {
-        m_displayedGUIDs.push_back(note.id);
-      }
-    }
-  }
 }
 
-void tpSignalKNotesManager::ClearAllIcons() {
-  m_displayedGUIDs.clear();
+SignalKNote* tpSignalKNotesManager::GetNoteByGUID(
+    signalk_notes_opencpn_pi::CanvasState& state, const wxString& guid) {
+  wxMutexLocker lock(state.notesMutex);
 
-  for (auto& pair : m_notes) {
-    pair.second.isDisplayed = false;
-  }
-}
-
-SignalKNote* tpSignalKNotesManager::GetNoteByGUID(const wxString& guid) {
-  auto it = m_notes.find(guid);
-  if (it != m_notes.end()) return &it->second;
-
+  auto it = state.notes.find(guid);
+  if (it != state.notes.end()) return &it->second;
   return nullptr;
 }
 
 void tpSignalKNotesManager::OnIconClick(
-    const wxString& guid, const PlugIn_ViewPort& currentViewPort) {
+    const wxString& guid, signalk_notes_opencpn_pi::CanvasState& state,
+    int canvasIndex) {
   SKN_LOG(m_parent, "OnIconClick called with guid='%s'", guid);
+  m_parent->m_dialogOpen = true;
 
-  SignalKNote* note = GetNoteByGUID(guid);
+  SignalKNote* note = GetNoteByGUID(state, guid);
   if (!note) {
     SKN_LOG(m_parent, "Note with guid='%s' not found!", guid);
     return;
@@ -413,19 +364,30 @@ void tpSignalKNotesManager::OnIconClick(
       SKN_LOG(m_parent, "Failed to fetch details for %s", note->id);
       if (note->name.IsEmpty()) note->name = note->id;
       if (note->description.IsEmpty())
-        note->description = _("Details konnten nicht geladen werden.");
+        note->description = _("Details could not be loaded.");
     }
   }
 
   SKN_LOG(m_parent, "Found note '%s'", note->name);
-  int dlgWidth =
-      std::max(400, (int)std::round(currentViewPort.pix_width * 0.75));
-  int dlgHeight =
-      std::max(300, (int)std::round(currentViewPort.pix_height * 0.75));
+  // Berechne 2/3 der GESAMTEN verfügbaren Fläche aller Canvas
+  int totalWidth = 0;
+  int totalHeight = 0;
+
+  for (const auto& pair : m_parent->m_canvasStates) {
+    if (pair.second.valid) {
+      totalWidth = std::max(totalWidth, pair.second.viewPort.pix_width);
+      totalHeight = std::max(totalHeight, pair.second.viewPort.pix_height);
+    }
+  }
+
+  int dlgWidth = std::max(400, (int)std::round(totalWidth * 0.67));
+  int dlgHeight = std::max(300, (int)std::round(totalHeight * 0.67));
+
   wxDialog* dlg = new wxDialog(m_parent->GetParentWindow(), wxID_ANY,
                                _("SignalK Note Details"), wxDefaultPosition,
                                wxSize(dlgWidth, dlgHeight),
                                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+  dlg->CenterOnScreen();  // Zentriert auf dem Bildschirm
 
   wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -436,17 +398,13 @@ void tpSignalKNotesManager::OnIconClick(
   title->SetFont(font);
   sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-  // ============================================================
   // HTML-Content vorbereiten
-  // ============================================================
   wxString htmlContent = PrepareHTMLContent(note->description, note->url);
 
-  // ============================================================
   // Platform-spezifische Rendering
-  // ============================================================
 #if defined(__WXMSW__) || defined(__WXMAC__)
   // Windows & macOS: wxWebView (beste Unterstützung)
-  if (!RenderWithWebView(dlg, sizer, htmlContent)) {
+  if (!RenderWithWebView(dlg, sizer, htmlContent)) {w
     SKN_LOG(m_parent,
             "wxWebView not available on this system, using wxHtmlWindow");
     RenderWithHtmlWindow(dlg, sizer, htmlContent);
@@ -464,35 +422,26 @@ void tpSignalKNotesManager::OnIconClick(
   }
 #endif
 
-  // ============================================================
   // Buttons
-  // ============================================================
   wxBoxSizer* btnSizer = new wxBoxSizer(wxHORIZONTAL);
 
-  wxButton* centerBtn = new wxButton(dlg, wxID_ANY, _("Auf Karte zentrieren"));
-  centerBtn->Bind(wxEVT_BUTTON, [note, this](wxCommandEvent&) {
-    PlugIn_ViewPort vp = m_parent->m_lastViewPort;
+  wxButton* centerBtn = new wxButton(dlg, wxID_ANY, _("Center on map"));
 
-    double lat = note->latitude;
-    double lon = note->longitude;
-    double scale = vp.view_scale_ppm;
-
-    vp.clat = lat;
-    vp.clon = lon;
-
-    double latSpan = vp.lat_max - vp.lat_min;
-    double lonSpan = vp.lon_max - vp.lon_min;
-
-    vp.lat_min = lat - latSpan / 2.0;
-    vp.lat_max = lat + latSpan / 2.0;
-    vp.lon_min = lon - lonSpan / 2.0;
-    vp.lon_max = lon + lonSpan / 2.0;
-
-    SKN_LOG(m_parent, "Centering via VP lat=%.6f lon=%.6f scale=%.6f", lat, lon,
-            scale);
-
-    JumpToPosition(lat, lon, scale);
-  });
+  // Lambda mit canvasIndex capturen
+  centerBtn->Bind(
+      wxEVT_BUTTON, [note, canvasIndex, this, dlg](wxCommandEvent&) {
+        wxWindow* canvas = GetCanvasByIndex(canvasIndex);
+        double scale = 0.0;
+        if (canvas) {
+          scale = m_parent->m_canvasStates[canvasIndex].viewPort.view_scale_ppm;
+        }
+        // Dialog zuerst schließen
+        dlg->EndModal(wxID_OK);
+        // Dann zentrieren (nach EndModal ist dlg noch nicht destroyed)
+        if (canvas) {
+          CanvasJumpToPosition(canvas, note->latitude, note->longitude, scale);
+        }
+      });
   btnSizer->Add(centerBtn, 0, wxALL, 5);
 
   btnSizer->AddStretchSpacer();
@@ -506,9 +455,12 @@ void tpSignalKNotesManager::OnIconClick(
 
   dlg->ShowModal();
   dlg->Destroy();
+  dlg = nullptr;
+  m_parent->m_dialogOpen = false;
 
   // Canvas aus potenziellem Drag-Modus befreien
-  wxWindow* canvas = GetOCPNCanvasWindow();
+  // wxWindow* canvas = PluginGetFocusCanvas();
+  wxWindow* canvas = GetCanvasByIndex(canvasIndex);
   if (canvas) {
     wxMouseEvent upEvent(wxEVT_LEFT_UP);
     upEvent.SetPosition(wxGetMousePosition());
@@ -516,9 +468,7 @@ void tpSignalKNotesManager::OnIconClick(
   }
 }
 
-// ============================================================
 // Helper: HTML-Content vorbereiten
-// ============================================================
 wxString tpSignalKNotesManager::PrepareHTMLContent(const wxString& description,
                                                    const wxString& url) {
   wxString htmlContent;
@@ -566,9 +516,7 @@ wxString tpSignalKNotesManager::PrepareHTMLContent(const wxString& description,
   return htmlContent;
 }
 
-// ============================================================
 // Helper: Rendering mit wxWebView (Windows, macOS, Linux optional)
-// ============================================================
 #ifdef wxHAS_WEB_VIEW
 bool tpSignalKNotesManager::RenderWithWebView(wxDialog* dlg, wxBoxSizer* sizer,
                                               const wxString& htmlContent) {
@@ -606,9 +554,7 @@ bool tpSignalKNotesManager::RenderWithWebView(wxDialog* dlg, wxBoxSizer* sizer,
 }
 #endif
 
-// ============================================================
 // Helper: Rendering mit wxHtmlWindow (Fallback, Android)
-// ============================================================
 void tpSignalKNotesManager::RenderWithHtmlWindow(wxDialog* dlg,
                                                  wxBoxSizer* sizer,
                                                  const wxString& htmlContent) {
@@ -627,8 +573,13 @@ void tpSignalKNotesManager::RenderWithHtmlWindow(wxDialog* dlg,
   SKN_LOG(m_parent, "Using wxHtmlWindow for rendering");
 }
 
-bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
-                                           double maxDistance) {
+int tpSignalKNotesManager::FetchNotesListForCanvas(
+    double centerLat, double centerLon, double maxDistance,
+    signalk_notes_opencpn_pi::CanvasState& state) {
+  if (m_serverHost.IsEmpty()) {
+    SKN_LOG(m_parent, _("Server host not configured"));
+    return -2;
+  }
   wxString path;
   path.Printf(wxT("http://%s:%d/signalk/v2/api/resources/"
                   "notes?position=[%f,%f]&distance=%.0f"),
@@ -638,12 +589,12 @@ bool tpSignalKNotesManager::FetchNotesList(double centerLat, double centerLon,
 
   if (response.IsEmpty()) {
     SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
-    return false;
+    return -1;
   }
 
-  bool ok = ParseNotesListJSON(response);
+  int ok = ParseNotesListJSON(response, state);
 
-  if (!ok) {
+  if (ok == -1) {
     SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
   }
 
@@ -666,20 +617,22 @@ bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
   return ParseNoteDetailsJSON(response, note);
 }
 
-bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
+int tpSignalKNotesManager::ParseNotesListJSON(
+    const wxString& json, signalk_notes_opencpn_pi::CanvasState& state) {
   wxJSONReader reader;
   wxJSONValue root;
 
   int errors = reader.Parse(json, &root);
   if (errors > 0) {
     SKN_LOG(m_parent, _("Failed to parse notes list JSON"));
-    return false;
+    return -1;
   }
 
-  m_notes.clear();
-
+  // Erstelle temporäre Map für neue Notes
+  std::map<wxString, SignalKNote> newNotes;
   wxArrayString memberNames = root.GetMemberNames();
 
+  // Parse alle Notes aus JSON
   for (size_t i = 0; i < memberNames.GetCount(); i++) {
     wxString noteId = memberNames[i];
     wxJSONValue noteData = root[noteId];
@@ -722,10 +675,70 @@ bool tpSignalKNotesManager::ParseNotesListJSON(const wxString& json) {
       }
     }
 
-    note.isDisplayed = false;
-    m_notes[noteId] = note;
+    newNotes[noteId] = note;
   }
-  return true;
+
+  // Vergleiche und Update von state.notes
+  {
+    wxMutexLocker lock(state.notesMutex);
+
+    // Übernehme isDisplayed Status von bestehenden Notes
+    for (auto& newPair : newNotes) {
+      auto existingIt = state.notes.find(newPair.first);
+      if (existingIt != state.notes.end()) {
+        newPair.second.isDisplayed = existingIt->second.isDisplayed;
+        newPair.second.GUID = existingIt->second.GUID;
+      } else {
+        newPair.second.isDisplayed = false;
+      }
+    }
+
+    // Vergleiche: Haben sich die Notes wirklich geändert?
+    if (newNotes.size() != state.notes.size()) {
+      SKN_LOG(m_parent, "Notes changed: count %zu -> %zu", state.notes.size(),
+              newNotes.size());
+      state.notes = std::move(newNotes);
+      return 1;
+    }
+
+    // Gleiche Anzahl - prüfe ob Inhalte identisch sind
+    bool hasChanges = false;
+    for (const auto& newPair : newNotes) {
+      const wxString& id = newPair.first;
+      const SignalKNote& newNote = newPair.second;
+
+      auto oldIt = state.notes.find(id);
+      if (oldIt == state.notes.end()) {
+        // Neue Note
+        hasChanges = true;
+        break;
+      }
+
+      const SignalKNote& oldNote = oldIt->second;
+
+      // Feldweiser Vergleich (außer isDisplayed und GUID)
+      if (newNote.name != oldNote.name ||
+          newNote.description != oldNote.description ||
+          newNote.latitude != oldNote.latitude ||
+          newNote.longitude != oldNote.longitude ||
+          newNote.iconName != oldNote.iconName || newNote.url != oldNote.url ||
+          newNote.source != oldNote.source) {
+        hasChanges = true;
+        break;
+      }
+    }
+
+    if (hasChanges) {
+      SKN_LOG(m_parent, "Notes changed: content modified");
+      state.notes = std::move(newNotes);
+      return 1;
+    } else {
+      SKN_LOG(m_parent, "Notes unchanged - keeping existing data");
+      // Keine Änderungen - behalte state.notes wie es ist
+      return 0;
+    }
+  }  // Mutex wird hier automatisch freigegeben
+  return 0;
 }
 
 bool tpSignalKNotesManager::ParseNoteDetailsJSON(const wxString& json,
@@ -825,9 +838,12 @@ bool tpSignalKNotesManager::DeleteNoteIcon(const wxString& guid) {
 }
 
 void tpSignalKNotesManager::GetVisibleNotes(
+    signalk_notes_opencpn_pi::CanvasState& state,
     std::vector<const SignalKNote*>& outNotes) {
+  wxMutexLocker lock(state.notesMutex);
+
   outNotes.clear();
-  for (auto& pair : m_notes) {
+  for (auto& pair : state.notes) {
     const SignalKNote& note = pair.second;
     if (note.isDisplayed) {
       outNotes.push_back(&note);
@@ -836,19 +852,23 @@ void tpSignalKNotesManager::GetVisibleNotes(
 }
 
 bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
-                                                 wxBitmap& bmp) {
+                                                 wxBitmap& bmp, bool forGL) {
   wxString skIcon = note.iconName;
+
+  // 0. Cache-Check im PLUGIN
+  if (m_parent->GetCachedIconBitmap(skIcon, bmp, forGL)) {
+    return true;
+  }
 
   // 1. Mapping aus Config?
   auto it = m_iconMappings.find(skIcon);
   if (it != m_iconMappings.end()) {
     wxString mappedPath = it->second;
-
     if (wxFileExists(mappedPath)) {
       wxString base = GetBasePathWithoutExt(mappedPath);
       wxBitmap raw;
       if (LoadIconSmart(base, 24, raw) && raw.IsOk()) {
-        bmp = m_parent->PrepareIconBitmapForGL(raw, 24);
+        m_parent->CacheIconBitmap(skIcon, raw, forGL, bmp);  // Cache im Plugin
         return true;
       }
     }
@@ -858,7 +878,11 @@ bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
   wxString basePluginIcon = m_parent->GetPluginIconDir() + skIcon;
   wxBitmap raw2;
   if (LoadIconSmart(basePluginIcon, 24, raw2) && raw2.IsOk()) {
-    bmp = m_parent->PrepareIconBitmapForGL(raw2, 24);
+    if (forGL) {
+      bmp = m_parent->PrepareIconBitmapForGL(raw2, 24);
+    } else {
+      bmp = raw2;
+    }
     return true;
   }
 
@@ -866,34 +890,15 @@ bool tpSignalKNotesManager::GetIconBitmapForNote(const SignalKNote& note,
   wxString baseFallback = m_parent->GetPluginIconDir() + "notice-to-mariners";
   wxBitmap raw3;
   if (LoadIconSmart(baseFallback, 24, raw3) && raw3.IsOk()) {
-    bmp = m_parent->PrepareIconBitmapForGL(raw3, 24);
+    if (forGL) {
+      bmp = m_parent->PrepareIconBitmapForGL(raw3, 24);
+    } else {
+      bmp = raw3;
+    }
     return true;
   }
 
   return false;
-}
-
-int tpSignalKNotesManager::GetVisibleIconCount(const PlugIn_ViewPort& vp) {
-  PlugIn_ViewPort vpCopy = vp;
-
-  std::vector<const SignalKNote*> visibleNotes;
-  GetVisibleNotes(visibleNotes);
-
-  int count = 0;
-
-  for (const SignalKNote* note : visibleNotes) {
-    if (!note) continue;
-
-    wxPoint p;
-    GetCanvasPixLL(&vpCopy, &p, note->latitude, note->longitude);
-
-    if (p.x >= 0 && p.x < vpCopy.pix_width && p.y >= 0 &&
-        p.y < vpCopy.pix_height) {
-      count++;
-    }
-  }
-
-  return count;
 }
 
 void tpSignalKNotesManager::SetProviderSettings(
@@ -1065,7 +1070,7 @@ bool tpSignalKNotesManager::CheckAuthorizationStatus() {
   }
 
   if (access.HasMember("token")) {
-    SetAuthToken(access["token"].AsString());  // statt m_authToken = ...
+    SetAuthToken(access["token"].AsString());
     SKN_LOG(m_parent, "AuthStatus - token received");
     ClearAuthRequest();
     return true;
@@ -1250,31 +1255,36 @@ void tpSignalKNotesManager::ClearAuthRequest() {
   }
 }
 
-wxString tpSignalKNotesManager::FixBrokenLinksInDescription(const wxString& html)
-{
-    wxString fixed = html;
+wxString tpSignalKNotesManager::FixBrokenLinksInDescription(
+    const wxString& html) {
+  wxString fixed = html;
 
-    wxRegEx reHrefNoQuotes("<a[ ]+href=([^\"'> ]+)([^>]*)>", wxRE_ICASE);
+  wxRegEx reHrefNoQuotes("<a[ ]+href=([^\"'> ]+)([^>]*)>", wxRE_ICASE);
 
-    while (reHrefNoQuotes.Matches(fixed)) {
-        wxString fullMatch = reHrefNoQuotes.GetMatch(fixed, 0);
-        wxString url       = reHrefNoQuotes.GetMatch(fixed, 1);
-        wxString rest      = reHrefNoQuotes.GetMatch(fixed, 2);
+  while (reHrefNoQuotes.Matches(fixed)) {
+    wxString fullMatch = reHrefNoQuotes.GetMatch(fixed, 0);
+    wxString url = reHrefNoQuotes.GetMatch(fixed, 1);
+    wxString rest = reHrefNoQuotes.GetMatch(fixed, 2);
 
-        wxURI uri(url);
-        wxString safeUrl = uri.BuildURI();
+    wxURI uri(url);
+    wxString safeUrl = uri.BuildURI();
 
-        wxString replacement;
-        replacement << "<a href=\"" << safeUrl << "\"" << rest << ">";
+    wxString replacement;
+    replacement << "<a href=\"" << safeUrl << "\"" << rest << ">";
 
-        fixed.Replace(fullMatch, replacement);
-    }
+    fixed.Replace(fullMatch, replacement);
+  }
 
-    wxRegEx reMissingClose("(<a[^>]+)(?<!>)$", wxRE_ICASE);
-    if (reMissingClose.Matches(fixed)) {
-        wxString fullMatch = reMissingClose.GetMatch(fixed, 1);
-        fixed.Replace(fullMatch, fullMatch + ">");
-    }
+  wxRegEx reMissingClose("(<a[^>]+)(?<!>)$", wxRE_ICASE);
+  if (reMissingClose.Matches(fixed)) {
+    wxString fullMatch = reMissingClose.GetMatch(fixed, 1);
+    fixed.Replace(fullMatch, fullMatch + ">");
+  }
 
-    return fixed;
+  return fixed;
+}
+
+void tpSignalKNotesManager::InvalidateIconCache(const wxString& iconName) {
+  m_parent->InvalidateBmpIconCache();
+  SKN_LOG(m_parent, "Icon cache invalidated for: %s", iconName);
 }

@@ -2,7 +2,7 @@
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   Plugin class declarations and API interface definitions
  * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
  *
  * Icon Licensing:
@@ -15,13 +15,14 @@
 #include "ocpn_plugin.h"
 #include <wx/string.h>
 #include <vector>
+#include <map>
 
 class tpicons;
 class tpSignalKNotesManager;
 class tpConfigDialog;
 class SignalKNote;
 
-class signalk_notes_opencpn_pi : public opencpn_plugin_120 {
+class signalk_notes_opencpn_pi : public opencpn_plugin_119 {
 public:
   signalk_notes_opencpn_pi(void* ppimgr);
   ~signalk_notes_opencpn_pi() override;
@@ -30,7 +31,7 @@ public:
   // CLUSTER-STRUKTUR
   // ---------------------------------------------------------
   struct NoteCluster {
-    std::vector<const SignalKNote*> notes;
+    std::vector<wxString> noteIds;
     double centerLat = 0.0;
     double centerLon = 0.0;
     wxPoint screenPos;
@@ -73,10 +74,16 @@ public:
   bool RenderOverlay(wxDC& dc, PlugIn_ViewPort* vp) override;
   bool RenderGLOverlay(wxGLContext* pcontext, PlugIn_ViewPort* vp) override;
 
-  bool RenderOverlayMultiCanvas(wxDC& dc, PlugIn_ViewPort* vp,
-                                int canvasIndex) override;
+  bool RenderOverlayMultiCanvas(wxDC& dc, PlugIn_ViewPort* vp, int canvasIndex,
+                                int priority) override;
   bool RenderGLOverlayMultiCanvas(wxGLContext* pcontext, PlugIn_ViewPort* vp,
-                                  int canvasIndex) override;
+                                  int canvasIndex, int priority) override;
+
+  bool DoRenderCommon(PlugIn_ViewPort* vp, int canvasIndex, int priority);
+  bool DoRenderOverlay(wxDC& dc, PlugIn_ViewPort* vp, int canvasIndex,
+                       int priority);
+  bool DoRenderGLOverlay(wxGLContext* pcontext, PlugIn_ViewPort* vp,
+                         int canvasIndex, int priority);
 
   bool MouseEventHook(wxMouseEvent& event) override;
   bool KeyboardEventHook(wxKeyEvent& event) override;
@@ -85,26 +92,48 @@ public:
 
   wxBitmap* GetPlugInBitmap() override;
 
+  struct CanvasState {
+    std::vector<NoteCluster> clusters;
+    PlugIn_ViewPort viewPort;
+    PlugIn_ViewPort lastViewPort;
+    bool valid = false;
+    double lastFetchCenterLat = 0.0;
+    double lastFetchCenterLon = 0.0;
+    double lastFetchDistance = 0.0;
+    wxLongLong lastFetchTime = 0;
+    std::map<wxString, SignalKNote> notes;
+    mutable wxMutex notesMutex;  // Schützt notes
+    ClusterZoomState clusterZoom;
+  };
+  std::map<int, CanvasState> m_canvasStates;
+
   // Config
   void SaveConfig();
   void LoadConfig();
 
   // Utility
-  double CalculateMaxDistance(PlugIn_ViewPort& vp);
+  double CalculateMaxDistance(PlugIn_ViewPort& vp, CanvasState& state);
   void UpdateOverviewDialog();
   wxString GetPluginIconDir() const;
+  int GetVisibleNoteCount(CanvasState& state) const;
   int GetVisibleNoteCount() const;
 
   // Public state
   tpSignalKNotesManager* m_pSignalKNotesManager = nullptr;
-  PlugIn_ViewPort m_lastViewPort;
-  bool m_lastViewPortValid = false;
   wxWindow* m_parent_window = nullptr;
   wxString m_clientUUID;
 
   void SetDisplaySettings(int iconSize, int clusterSize, int clusterRadius,
                           const wxColour& clusterColor,
-                          const wxColour& textColor, int fontSize);
+                          const wxColour& textColor, int fontSize,
+                          int clusterMaxScale, int clusterMinScale);
+
+  bool GetCachedIconBitmap(const wxString& iconName, wxBitmap& bmp, bool forGL);
+  void CacheIconBitmap(const wxString& iconName, const wxBitmap& rawBitmap,
+                       bool forGL, wxBitmap& outBmp);
+  void InvalidateBmpIconCache();
+  void InvalidateBmpClusterCache();
+  void InvalidateAllBmpCaches();
 
   int GetIconSize() const { return m_iconSize; }
   int GetClusterSize() const { return m_clusterSize; }
@@ -112,11 +141,17 @@ public:
   wxColour GetClusterColor() const { return m_clusterColor; }
   wxColour GetClusterTextColor() const { return m_clusterTextColor; }
   int GetClusterFontSize() const { return m_clusterFontSize; }
+  int GetClusterMaxScale() const { return m_clusterMaxScale; }
+  int GetClusterMinScale() const { return m_clusterMinScale; }
+  int GetFetchInterval() const { return m_fetchInterval; }
   bool IsDebugMode() const { return m_debugMode; }
   void SetDebugMode(bool v) { m_debugMode = v; }
+  void SetFetchInterval(int v) { m_fetchInterval = v; }
   void ShowPreferencesDialog(wxWindow* parent);
   wxWindow* GetParentWindow();
   virtual void SetCurrentViewPort(PlugIn_ViewPort& vp) override;
+  int m_activeCanvasIndex = 0;
+  bool m_dialogOpen = false;
 
 private:
   // Config + UI
@@ -128,22 +163,20 @@ private:
   tpConfigDialog* m_pConfigDialog = nullptr;
   friend class tpSignalKNotesManager;
 
-  // Fetch-Tracking
-  double m_lastFetchCenterLat = 0.0;
-  double m_lastFetchCenterLon = 0.0;
-  double m_lastFetchDistance = 0.0;
-  wxLongLong m_lastFetchTime = 0;
+  // Bitmap-Caching
+  std::map<wxString, wxBitmap> m_iconBitmapCache;  // iconName -> Bitmap
+  std::map<int, wxBitmap> m_clusterBitmapCache;    // count -> Bitmap
 
   // Clustering
   std::vector<NoteCluster> BuildClusters(
       const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
-      int clusterRadius = 60);
+      CanvasState& state, int clusterRadius = 60);
 
-  void OnClusterClick(const NoteCluster& cluster);
-  void ShowClusterSelectionDialog(NoteCluster cluster);
-  void TryZoomToCluster(const NoteCluster& cluster);
-
-  std::vector<NoteCluster> m_currentClusters;
+  void OnClusterClick(const NoteCluster& cluster, CanvasState& state,
+                      int canvasIndex);
+  bool ProcessClusterZoom(CanvasState& state, int canvasIndex);
+  void ShowClusterSelectionDialog(NoteCluster cluster, CanvasState& state,
+                                  int canvasIndex);
 
   // Display-Einstellungen
   int m_iconSize;
@@ -152,12 +185,14 @@ private:
   wxColour m_clusterColor;
   wxColour m_clusterTextColor;
   int m_clusterFontSize;
+  int m_clusterMaxScale;
+  int m_clusterMinScale;
+  int m_fetchInterval;
   bool m_debugMode = false;
-  ClusterZoomState m_clusterZoom;
   double m_prevChartScale = -1;
+  wxPoint m_mouseDownPos;
 };
 
-wxString FormatDMM(double angle, bool isLat);
 int ComputeScale(const PlugIn_ViewPort& vp);
 
 // LOGGING-MAKRO

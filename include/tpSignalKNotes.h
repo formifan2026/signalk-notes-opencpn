@@ -2,7 +2,7 @@
  * Project:   SignalK Notes Plugin for OpenCPN
  * Purpose:   SignalK note object definitions and data structures
  * Author:    Dirk Behrendt
- * Copyright: Copyright (c) 2024 Dirk Behrendt
+ * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
  *
  * Icon Licensing:
@@ -31,6 +31,7 @@
 // Forward declaration
 class signalk_notes_opencpn_pi;
 
+
 class SignalKNote {
 public:
   wxString id;
@@ -50,28 +51,24 @@ public:
 class tpSignalKNotesManager {
 public:
   tpSignalKNotesManager(signalk_notes_opencpn_pi* parent);
-  tpSignalKNotesManager() = default;
-  ~tpSignalKNotesManager();
-
+  ~tpSignalKNotesManager() = default;  // Default-Destruktor
+  
   // Server settings
   wxString GetServerHost() const { return m_serverHost; }
   int GetServerPort() const { return m_serverPort; }
   void SetServerDetails(const wxString& host, int port);
 
   // Notes
-  bool FetchNotesForViewport(double centerLat, double centerLon,
-                             double maxDistance);
   void UpdateDisplayedIcons(double centerLat, double centerLon,
-                            double maxDistance);
-  void ClearAllIcons();
+                            double maxDistance, signalk_notes_opencpn_pi::CanvasState& state);
 
-  SignalKNote* GetNoteByGUID(const wxString& guid);
-  void OnIconClick(const wxString& guid,
-                   const PlugIn_ViewPort& currentViewPort);
+  SignalKNote* GetNoteByGUID(signalk_notes_opencpn_pi::CanvasState& state, const wxString& guid);
+  void GetVisibleNotes(signalk_notes_opencpn_pi::CanvasState& state,std::vector<const SignalKNote*>& outNotes);
+  bool GetIconBitmapForNote(const SignalKNote& note, wxBitmap& bmp, bool forGL);
 
-  void GetVisibleNotes(std::vector<const SignalKNote*>& outNotes);
-  bool GetIconBitmapForNote(const SignalKNote& note, wxBitmap& outBitmap);
-  int GetVisibleIconCount(const PlugIn_ViewPort& vp);
+
+  void OnIconClick(const wxString& guid, signalk_notes_opencpn_pi::CanvasState& state, int canvasIndex);
+  void InvalidateIconCache(const wxString& iconName);
 
   // Provider & Icon mappings
   void SetProviderSettings(const std::map<wxString, bool>& settings);
@@ -131,7 +128,7 @@ public:
 private:
   signalk_notes_opencpn_pi* m_parent = nullptr;
 
-  bool FetchNotesList(double centerLat, double centerLon, double maxDistance);
+  int FetchNotesListForCanvas(double centerLat, double centerLon, double maxDistance, signalk_notes_opencpn_pi::CanvasState& state);
   bool FetchNoteDetails(const wxString& noteId, SignalKNote& note);
 
   wxString ResolveIconPath(const wxString& skIconName);
@@ -139,7 +136,7 @@ private:
   bool CreateNoteIcon(SignalKNote& note);
   bool DeleteNoteIcon(const wxString& guid);
 
-  bool ParseNotesListJSON(const wxString& json);
+  int ParseNotesListJSON(const wxString& json, signalk_notes_opencpn_pi::CanvasState& state);
   bool ParseNoteDetailsJSON(const wxString& json, SignalKNote& note);
 
   // Server data
@@ -161,7 +158,7 @@ private:
   std::map<wxString, wxBitmap> m_iconCache;
 
   std::map<wxString, bool> m_providerSettings;
-  std::map<wxString, wxString> m_iconMappings;
+  std::map<wxString, wxString> m_iconMappings;     // iconName -> filePath
 
   std::set<wxString> m_discoveredProviders;
   std::set<wxString> m_discoveredIcons;

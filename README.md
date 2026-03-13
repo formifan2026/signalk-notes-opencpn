@@ -17,10 +17,10 @@ Several SignalK plugins (like ['Garmin Active Captain Resources'](https://active
 The plugin reads notes from SignalK and displays them as icons at their respective positions on the map.
 
 ### • Automatic Updates
-New or modified notes are detected automatically and refreshed on the chart.
+New or modified notes are detected automatically and refreshed on the chart. The update interval can be configured.
 
 ### • Selectable SignalK Providers
-If multiple SignalK data sources (providers) are available, you can choose which ones the plugin should use.
+If multiple SignalK data sources (providers) are available, you can choose which ones the plugin should use/show on the map.
 
 <img src="docs/images/configuration1.png" width="75%">
 
@@ -54,6 +54,7 @@ As soon as the request has been approved the valid connection is displayed in Si
 ### 2. Provider Selection
 - List of discovered SignalK providers  
 - Enable or disable individual sources / provider
+- Determine how often the SignalK API will be called
 
 ### 3. Icon Mapping
 - Assign icons to specific note types  
@@ -61,7 +62,9 @@ As soon as the request has been approved the valid connection is displayed in Si
 
 ### 4. Display Settings and debug log
 - Adjust icon size for single notes  
-- Adjust icon size, colour, font for cluster symbol
+- Adjust icon size, colour, font for cluster 
+- Determine the maximum scale up to which clusters are broken down into individual notes
+- Determine the minimum scale at which notes will be displayed on the map
 - Detailed debug logging for the plugin in the opencpn.log file is possible via the checkbox. However, this should only be activated temporarily if there are real problems with the plugin.
 - <img src="docs/images/configuration3.png" width="75%">
 
