@@ -79,12 +79,6 @@ public:
   bool RenderGLOverlayMultiCanvas(wxGLContext* pcontext, PlugIn_ViewPort* vp,
                                   int canvasIndex, int priority) override;
 
-  bool DoRenderCommon(PlugIn_ViewPort* vp, int canvasIndex, int priority);
-  bool DoRenderOverlay(wxDC& dc, PlugIn_ViewPort* vp, int canvasIndex,
-                       int priority);
-  bool DoRenderGLOverlay(wxGLContext* pcontext, PlugIn_ViewPort* vp,
-                         int canvasIndex, int priority);
-
   bool MouseEventHook(wxMouseEvent& event) override;
   bool KeyboardEventHook(wxKeyEvent& event) override;
 
@@ -112,7 +106,7 @@ public:
   void LoadConfig();
 
   // Utility
-  double CalculateMaxDistance(PlugIn_ViewPort& vp, CanvasState& state);
+  double CalculateMaxDistance(const CanvasState& state);
   void UpdateOverviewDialog();
   wxString GetPluginIconDir() const;
   int GetVisibleNoteCount(CanvasState& state) const;
@@ -154,6 +148,13 @@ public:
   bool m_dialogOpen = false;
 
 private:
+  bool DoRenderCommon(PlugIn_ViewPort* vp, int canvasIndex, int priority);
+  bool DoRenderOverlay(wxDC& dc, PlugIn_ViewPort* vp, int canvasIndex,
+                       int priority);
+  bool DoRenderGLOverlay(wxGLContext* pcontext, PlugIn_ViewPort* vp,
+                         int canvasIndex, int priority);
+  void PruneCanvasStates(int canvasIndex);
+  bool ViewPortsDiffer(const PlugIn_ViewPort& a, const PlugIn_ViewPort& b);
   // Config + UI
   wxFileConfig* m_pTPConfig = nullptr;
   int m_signalk_notes_opencpn_button_id = -1;
@@ -169,8 +170,8 @@ private:
 
   // Clustering
   std::vector<NoteCluster> BuildClusters(
-      const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
-      CanvasState& state, int clusterRadius = 60);
+      const std::vector<const SignalKNote*>& notes, CanvasState& state,
+      int clusterRadius = 60);
 
   void OnClusterClick(const NoteCluster& cluster, CanvasState& state,
                       int canvasIndex);

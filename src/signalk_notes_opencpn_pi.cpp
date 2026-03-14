@@ -166,9 +166,9 @@ wxString signalk_notes_opencpn_pi::GetLongDescription() {
 // Init / DeInit
 int signalk_notes_opencpn_pi::Init(void) {
   AddLocaleCatalog(PLUGIN_CATALOG_NAME);
-      // wxMessageBox("Attach debugger now! PID: " + wxString::Format("%d",
-      // getpid()),"Debug", wxOK);
-      m_parent_window = GetOCPNCanvasWindow();
+  // wxMessageBox("Attach debugger now! PID: " + wxString::Format("%d",
+  // getpid()),"Debug", wxOK);
+  m_parent_window = GetOCPNCanvasWindow();
   m_pTPConfig = GetOCPNConfigObject();
 
   LoadConfig();
@@ -246,7 +246,7 @@ void signalk_notes_opencpn_pi::OnToolbarToolCallback(int id) {
       if (state.valid) {
         double centerLat = state.viewPort.clat;
         double centerLon = state.viewPort.clon;
-        double maxDistance = CalculateMaxDistance(state.viewPort, state);
+        double maxDistance = CalculateMaxDistance(state);
         m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
                                                      maxDistance, state);
       }
@@ -273,7 +273,7 @@ void signalk_notes_opencpn_pi::UpdateOverviewDialog() {
     if (state.valid) {
       double centerLat = state.viewPort.clat;
       double centerLon = state.viewPort.clon;
-      double maxDistance = CalculateMaxDistance(state.viewPort, state);
+      double maxDistance = CalculateMaxDistance(state);
 
       m_pSignalKNotesManager->UpdateDisplayedIcons(centerLat, centerLon,
                                                    maxDistance, state);
@@ -327,15 +327,14 @@ bool signalk_notes_opencpn_pi::RenderGLOverlayMultiCanvas(wxGLContext* pcontext,
 
 bool signalk_notes_opencpn_pi::DoRenderCommon(PlugIn_ViewPort* vp,
                                               int canvasIndex, int priority) {
-  // CanvasState aktualisieren
-  m_activeCanvasIndex = canvasIndex;
-  CanvasState& state = m_canvasStates[canvasIndex];
   // MinScale-Prüfung: wenn aktiviert (!=0) und aktueller Maßstab >= MinScale →
   // nichts anzeigen
   if (m_clusterMinScale != 0 && m_clusterMinScale < vp->chart_scale) {
     return false;
   }
-
+  // CanvasState aktualisieren
+  m_activeCanvasIndex = canvasIndex;
+  CanvasState& state = m_canvasStates[canvasIndex];
   state.lastViewPort = state.viewPort;
   state.viewPort = *vp;
   state.valid = true;
@@ -346,10 +345,11 @@ bool signalk_notes_opencpn_pi::DoRenderCommon(PlugIn_ViewPort* vp,
   // Sichtbereich bestimmen
   double centerLat = state.viewPort.clat;
   double centerLon = state.viewPort.clon;
-  double maxDistance = CalculateMaxDistance(state.viewPort, state);
+  double maxDistance = CalculateMaxDistance(state);
 
   // Fetch-Update nur wenn kein Dialog offen ist
   wxLongLong now = wxGetLocalTimeMillis();
+  bool updateClusters = false;
   if (!m_dialogOpen &&
       (state.lastFetchTime == 0 ||
        (now - state.lastFetchTime).ToLong() >
@@ -364,33 +364,28 @@ bool signalk_notes_opencpn_pi::DoRenderCommon(PlugIn_ViewPort* vp,
     state.lastFetchCenterLon = centerLon;
     state.lastFetchDistance = maxDistance;
     state.lastFetchTime = now;
+    updateClusters = true;
+  } else {
+    updateClusters = ViewPortsDiffer(state.viewPort, state.lastViewPort);
   }
+  if (updateClusters) {
+    // Cluster neu berechnen, wenn sich der ViewPort geändert hat oder neue
+    // Daten geladen wurden
+    // Sichtbare Notes holen
+    std::vector<const SignalKNote*> visibleNotes;
+    m_pSignalKNotesManager->GetVisibleNotes(state, visibleNotes);
 
-  // Sichtbare Notes holen
-  std::vector<const SignalKNote*> visibleNotes;
-  m_pSignalKNotesManager->GetVisibleNotes(state, visibleNotes);
+    if (visibleNotes.empty()) return false;
 
-  if (visibleNotes.empty()) return false;
-
-  // Cluster berechnen
-  state.clusters = BuildClusters(visibleNotes, state.viewPort, state);
-
+    // Cluster berechnen
+    state.clusters = BuildClusters(visibleNotes, state);
+  }
   return !state.clusters.empty();
 }
 
 bool signalk_notes_opencpn_pi::DoRenderOverlay(wxDC& dc, PlugIn_ViewPort* vp,
                                                int canvasIndex, int priority) {
-  // Single-Canvas-Modus: alle eventuell noch vorhandenen Canvas-States außer
-  // canvasIndex entfernen
-  if (m_canvasStates.size() > 1 &&
-      m_canvasStates.size() != static_cast<size_t>(GetCanvasCount())) {
-    for (auto it = m_canvasStates.begin(); it != m_canvasStates.end();) {
-      if (it->first != canvasIndex)
-        it = m_canvasStates.erase(it);
-      else
-        ++it;
-    }
-  }
+  PruneCanvasStates(canvasIndex);
   if (priority != OVERLAY_OVER_EMBOSS ||
       !DoRenderCommon(vp, canvasIndex, priority))
     return false;
@@ -433,6 +428,7 @@ bool signalk_notes_opencpn_pi::DoRenderGLOverlay(wxGLContext* pcontext,
   return false;
 #endif
   if (priority > 0 || !m_pSignalKNotesManager) return false;
+  PruneCanvasStates(canvasIndex);
   if (!DoRenderCommon(vp, canvasIndex, priority)) return false;
 
   CanvasState& state = m_canvasStates[canvasIndex];
@@ -840,23 +836,19 @@ wxBitmap* signalk_notes_opencpn_pi::GetPlugInBitmap() {
   return &m_ptpicons->m_bm_signalk_notes_opencpn_pi;
 }
 
-double signalk_notes_opencpn_pi::CalculateMaxDistance(PlugIn_ViewPort& vp,
-                                                      CanvasState& state) {
-  double vpWidth = vp.pix_width;
-  double vpHeight = vp.pix_height;
+double signalk_notes_opencpn_pi::CalculateMaxDistance(
+    const CanvasState& state) {
+  const PlugIn_ViewPort& vp = state.viewPort;
 
-  double diagonalPixels =
-      std::sqrt(vpWidth * vpWidth + vpHeight * vpHeight) / 2.0;
-
-  double metersPerPixel = vp.view_scale_ppm;
+  const double diagonalPixels = std::hypot(vp.pix_width, vp.pix_height) / 2.0;
+  const double metersPerPixel = vp.view_scale_ppm;
 
   if (metersPerPixel > 0) {
-    double maxDistance = diagonalPixels / metersPerPixel;
-    return std::ceil(maxDistance);
+    return std::ceil(diagonalPixels / metersPerPixel);
   }
 
-  double latSpan = vpHeight * vp.view_scale_ppm / 111000.0;
-  double maxDistanceKm = latSpan * 111.0 / 2.0;
+  const double latSpan = vp.pix_height * vp.view_scale_ppm / 111000.0;
+  const double maxDistanceKm = latSpan * 111.0 / 2.0;
 
   return std::ceil(maxDistanceKm * 1000.0);
 }
@@ -884,12 +876,12 @@ int signalk_notes_opencpn_pi::GetVisibleNoteCount() const {
 
 std::vector<signalk_notes_opencpn_pi::NoteCluster>
 signalk_notes_opencpn_pi::BuildClusters(
-    const std::vector<const SignalKNote*>& notes, const PlugIn_ViewPort& vp,
-    CanvasState& state, int clusterRadius) {
+    const std::vector<const SignalKNote*>& notes, CanvasState& state,
+    int clusterRadius) {
   std::vector<NoteCluster> clusters;
   std::vector<bool> clustered(notes.size(), false);
 
-  PlugIn_ViewPort vpCopy = vp;
+  PlugIn_ViewPort vpCopy = state.viewPort;
 
   for (size_t i = 0; i < notes.size(); i++) {
     if (clustered[i]) continue;
@@ -931,6 +923,7 @@ signalk_notes_opencpn_pi::BuildClusters(
 
     cluster.centerLat = sumLat / cluster.noteIds.size();
     cluster.centerLon = sumLon / cluster.noteIds.size();
+
     GetCanvasPixLL(&vpCopy, &cluster.screenPos, cluster.centerLat,
                    cluster.centerLon);
 
@@ -1317,8 +1310,7 @@ bool signalk_notes_opencpn_pi::ProcessClusterZoom(CanvasState& state,
   }
 
   // CALCULATE NEW CLUSTERS
-  std::vector<NoteCluster> newClusters =
-      BuildClusters(originalNotes, state.viewPort, state);
+  std::vector<NoteCluster> newClusters = BuildClusters(originalNotes, state);
 
   // ARE THE NOTES STILL TOGETHER?
   bool stillTogether = false;
@@ -1390,4 +1382,29 @@ void signalk_notes_opencpn_pi::InvalidateBmpClusterCache() {
 void signalk_notes_opencpn_pi::InvalidateAllBmpCaches() {
   InvalidateBmpIconCache();
   InvalidateBmpClusterCache();
+}
+
+void signalk_notes_opencpn_pi::PruneCanvasStates(int canvasIndex) {
+  if (m_canvasStates.size() > 1 &&
+      m_canvasStates.size() != static_cast<size_t>(GetCanvasCount())) {
+    for (auto it = m_canvasStates.begin(); it != m_canvasStates.end();) {
+      if (it->first != canvasIndex)
+        it = m_canvasStates.erase(it);
+      else
+        ++it;
+    }
+  }
+}
+
+bool signalk_notes_opencpn_pi::ViewPortsDiffer(const PlugIn_ViewPort& a,
+                                               const PlugIn_ViewPort& b)
+{
+    return a.clat != b.clat || a.clon != b.clon ||
+           a.view_scale_ppm != b.view_scale_ppm || a.skew != b.skew ||
+           a.rotation != b.rotation || a.chart_scale != b.chart_scale ||
+           a.pix_width != b.pix_width || a.pix_height != b.pix_height ||
+           a.rv_rect != b.rv_rect || a.b_quilt != b.b_quilt ||
+           a.m_projection_type != b.m_projection_type || a.lat_min != b.lat_min ||
+           a.lat_max != b.lat_max || a.lon_min != b.lon_min ||
+           a.lon_max != b.lon_max || a.bValid != b.bValid;
 }
