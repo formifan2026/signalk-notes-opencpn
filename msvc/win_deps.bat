@@ -50,7 +50,6 @@ if errorlevel 1 (
 
 :: Install choco poedit and add it's persistent user path element
 ::
-echo === Detecting Poedit and Gettext ===
 set "POEDIT_HOME="
 
 if exist "C:\Program Files\Poedit\GettextTools\bin" (
@@ -58,29 +57,33 @@ if exist "C:\Program Files\Poedit\GettextTools\bin" (
 ) else if exist "C:\Program Files (x86)\Poedit\GettextTools\bin" (
     set "POEDIT_HOME=C:\Program Files (x86)\Poedit\GettextTools"
 )
-if not defined POEDIT_HOME (
-    echo Poedit not found, installing...
-    choco install -y --no-progress poedit
 
+if not defined POEDIT_HOME (
+    choco install -y --no-progress poedit
     if exist "C:\Program Files\Poedit\GettextTools\bin" (
         set "POEDIT_HOME=C:\Program Files\Poedit\GettextTools"
     ) else if exist "C:\Program Files (x86)\Poedit\GettextTools\bin" (
         set "POEDIT_HOME=C:\Program Files (x86)\Poedit\GettextTools"
     )
 )
+
 if not defined POEDIT_HOME (
-    echo ERROR: Poedit GettextTools not found even after installation!
     exit /b 1
 )
-echo Found Poedit GettextTools at %POEDIT_HOME%
-dir "%POEDIT_HOME%\bin"
+
 set "PATH=%POEDIT_HOME%\bin;%PATH%"
-echo Installing GNU Gettext for CMake compatibility...
+if defined GITHUB_PATH echo %POEDIT_HOME%\bin>> %GITHUB_PATH%
+
 choco install -y --no-progress gettext
+
 set "PATH=C:\ProgramData\chocolatey\lib\gettext\tools\bin;%PATH%"
+if defined GITHUB_PATH echo C:\ProgramData\chocolatey\lib\gettext\tools\bin>> %GITHUB_PATH%
+
 where msgmerge.exe
 where msgfmt.exe
-echo === Gettext setup complete ===
+
+:: Update required python stuff
+::
 echo doing python
 python --version > nul 2>&1 && python -m ensurepip > nul 2>&1
 if errorlevel 1 choco install -y python
