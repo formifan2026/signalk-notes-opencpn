@@ -28,11 +28,6 @@
 #include <GLES2/gl2.h>
 #endif
 
-// GCC auf Linux/arm64 (Debian Trixie) benötigt expliziten cstdint-Include
-// vor ocpn_plugin.h, da uint64_t/uint8_t dort nicht automatisch verfügbar sind
-#if defined(__linux__) && !defined(__OCPN__ANDROID__) && !defined(_WIN32)
-#include <cstdint>
-#endif
 #include "ocpn_plugin.h"
 
 #include "version.h"
