@@ -170,11 +170,11 @@ msgstr ""
 
 #: src/signalk_notes_opencpn_pi.cpp:727
 msgid ""
-"No matching NMEA connection found.\n"
-"Expected an entry starting with '1;3;'."
+"No matching NMEA SignalK connection found.\n"
+"Please add a connection for SignalK in OpenCPN."
 msgstr ""
-"ไม่พบการเชื่อมต่อ NMEA ที่ตรงกัน\n"
-"คาดว่าจะมีรายการที่ขึ้นต้นด้วย '1;3;'"
+"ไม่พบการเชื่อมต่อ NMEA ที่ตรงกันสำหรับ SignalK"
+"โปรดเพิ่มการเชื่อมต่อ SignalK ใน OpenCPN"
 
 #: src/tpConfigDialog.cpp:379
 msgid "Note: No providers configured yet. Move the map to discover providers."

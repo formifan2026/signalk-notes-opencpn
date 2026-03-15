@@ -4,7 +4,7 @@
  * Author:    Dirk Behrendt
  * Copyright: Copyright (c) 2026 Dirk Behrendt
  * Licence:   GPLv2
- * 
+ *
  * Icon Licensing:
  *   - Some icons are derived from freeboard-sk (Apache License 2.0)
  *   - Some icons are based on OpenCPN standard icons (GPLv2)
@@ -724,8 +724,8 @@ bool signalk_notes_opencpn_pi::LoadConfig() {
     SKN_LOG(this,
             "No matching DataConnections entry starting with '1;3;' found");
 
-    wxMessageBox(_("No matching NMEA connection found.\nExpected an entry "
-                   "starting with '1;3;'."),
+    wxMessageBox(_("No matching NMEA SignalK connection found.\n"
+                   "Please add a connection for SignalK in OpenCPN."),
                  _("SignalK Notes Plugin"), wxOK | wxICON_ERROR);
 
     return false;
