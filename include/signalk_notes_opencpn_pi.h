@@ -14,9 +14,6 @@
 
 // GCC auf Linux/arm64 benötigt expliziten cstdint-Include
 // vor ocpn_plugin.h (uint64_t/uint8_t sonst nicht verfügbar) - fehlt in API19
-#if defined(__linux__) && !defined(__OCPN__ANDROID__) && !defined(_WIN32)
-#include <cstdint>
-#endif
 #include "ocpn_plugin.h"
 #include <wx/string.h>
 #include <vector>
@@ -108,7 +105,7 @@ public:
 
   // Config
   void SaveConfig();
-  void LoadConfig();
+  bool LoadConfig();
 
   // Utility
   double CalculateMaxDistance(const CanvasState& state);

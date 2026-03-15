@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: opencpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-13 08:50+0100\n"
+"POT-Creation-Date: 2026-03-15 08:53+0100\n"
 "PO-Revision-Date: 2023-10-04 18:33\n"
 "Last-Translator: \n"
 "Language-Team: English, United Kingdom\n"
@@ -18,60 +18,60 @@ msgstr ""
 "signalk_notes_opencpn_pi.pot\n"
 "X-Crowdin-File-ID: 344\n"
 
-#: src/tpConfigDialog.cpp:124
+#: src/tpConfigDialog.cpp:123
 msgid "API update interval (minutes)"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:946
+#: src/tpConfigDialog.cpp:927
 msgid "Advanced debug logging in opencpn.log"
 msgstr ""
 
 #. Auth-Button deaktiviert mit neuem Text
-#: src/tpConfigDialog.cpp:716
+#: src/tpConfigDialog.cpp:709
 msgid "Authentication in progress..."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:188
+#: src/tpConfigDialog.cpp:187
 msgid "Cancel"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:181
+#: src/tpConfigDialog.cpp:180
 msgid "Cancel authentication"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:438
+#: src/tpSignalKNotes.cpp:428
 msgid "Center on map"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:883 src/tpConfigDialog.cpp:890
+#: src/tpConfigDialog.cpp:868 src/tpConfigDialog.cpp:875
 msgid "Circle color:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:875
+#: src/tpConfigDialog.cpp:860
 msgid "Cluster radius (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:861
+#: src/tpConfigDialog.cpp:846
 msgid "Cluster settings"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:867
+#: src/tpConfigDialog.cpp:852
 msgid "Cluster size (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:162
+#: src/tpConfigDialog.cpp:161
 msgid "Deciption"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:371
+#: src/tpSignalKNotes.cpp:367
 msgid "Details could not be loaded."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:563
+#: src/tpConfigDialog.cpp:556
 msgid "Error"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:560
+#: src/tpConfigDialog.cpp:553
 msgid ""
 "Error requesting authentication. Are there still 'access requests' in "
 "SignalK? If yes, delete/reject them."
@@ -82,90 +82,106 @@ msgid ""
 "Failed to load all signalk_notes_opencpn_pi icons, check OCPN log for details"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:767
+#: src/tpSignalKNotes.cpp:751
 msgid "Failed to parse note details JSON"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:643
+#: src/tpSignalKNotes.cpp:627
 msgid "Failed to parse notes list JSON"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:896
+#: src/tpConfigDialog.cpp:881
 msgid "Font size"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:158
+#: src/tpConfigDialog.cpp:157
 msgid "Icon mapping"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:836
+#: src/tpConfigDialog.cpp:821
 msgid "Icon settings"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:842
+#: src/tpConfigDialog.cpp:827
 msgid "Icon size (px):"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:535
+#: src/tpConfigDialog.cpp:528
 #, c-format
 msgid "Icons in the left map area: %d"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:524
+#: src/tpConfigDialog.cpp:517
 #, c-format
 msgid "Icons in the map area: %d"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:56
+#: src/tpConfigDialog.cpp:55
 msgid "Icons in the map area: 0"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:537
+#: src/tpConfigDialog.cpp:530
 #, c-format
 msgid "Icons in the right map area: %d"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:552
+#: src/tpConfigDialog.cpp:545
 msgid ""
 "In SignalK, please confirm the request in the menu item 'Access Requests' "
 "with 'Permission' Admin and 'Authentication Timeout' NEVER."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:143
+#: src/signalk_notes_opencpn_pi.cpp:737
+msgid "Invalid host or port values in DataConnections."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:142
 msgid "Map SignalK icons to plugin icons:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:920
+#: src/tpConfigDialog.cpp:903
 msgid "Maximum scale for cluster 1:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:1060
+#: src/tpConfigDialog.cpp:1041
 msgid "Maximum scale must be at least 800."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:1063
+#: src/tpConfigDialog.cpp:1044
 msgid ""
 "Maximum scale must be smaller than minimum scale (or minimum scale = 0)."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:929
+#: src/tpConfigDialog.cpp:912
 msgid "Minimum scale for cluster 1:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:386
+#: src/signalk_notes_opencpn_pi.cpp:693
+msgid ""
+"No DataConnections entry found.\n"
+"Please check your OpenCPN settings."
+msgstr ""
+
+#: src/signalk_notes_opencpn_pi.cpp:727
+msgid ""
+"No matching NMEA connection found.\n"
+"Expected an entry starting with '1;3;'."
+msgstr ""
+
+#: src/tpConfigDialog.cpp:379
 msgid "Note: No providers configured yet. Move the map to discover providers."
 msgstr ""
 
-#: src/tpConfigDialog.cpp:93
+#: src/tpConfigDialog.cpp:92
 msgid "Note: Providers are discovered as you move the map."
 msgstr ""
 
-#: src/signalk_notes_opencpn_pi.cpp:1232
+#: src/signalk_notes_opencpn_pi.cpp:1238
 msgid "Notes at this position"
 msgstr ""
 
-#: src/signalk_notes_opencpn_pi.cpp:1274 src/tpSignalKNotes.cpp:459
-#: src/tpConfigDialog.cpp:187
+#: src/signalk_notes_opencpn_pi.cpp:1280 src/tpSignalKNotes.cpp:449
+#: src/tpConfigDialog.cpp:186
 msgid "OK"
 msgstr ""
 
@@ -173,33 +189,33 @@ msgstr ""
 msgid "OpenCPN Alert"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:853 src/tpConfigDialog.cpp:907
+#: src/tpConfigDialog.cpp:838 src/tpConfigDialog.cpp:892
 msgid "Preview:"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:136
+#: src/tpConfigDialog.cpp:135
 msgid "Provider"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:105
+#: src/tpConfigDialog.cpp:104
 msgid "Select the providers to display:"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:596
+#: src/tpSignalKNotes.cpp:580
 msgid "Server host not configured"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:117 src/tpConfigDialog.cpp:684
-#: src/tpConfigDialog.cpp:732
+#: src/tpConfigDialog.cpp:116 src/tpConfigDialog.cpp:677
+#: src/tpConfigDialog.cpp:725
 msgid "SignalK Connection"
 msgstr ""
 
-#: src/tpSignalKNotes.cpp:391
+#: src/tpSignalKNotes.cpp:387
 msgid "SignalK Note Details"
 msgstr ""
 
-#: src/signalk_notes_opencpn_pi.cpp:194 src/signalk_notes_opencpn_pi.cpp:197
-#: src/signalk_notes_opencpn_pi.cpp:200 src/signalk_notes_opencpn_pi.cpp:202
+#: src/signalk_notes_opencpn_pi.cpp:181 src/signalk_notes_opencpn_pi.cpp:184
+#: src/signalk_notes_opencpn_pi.cpp:187 src/signalk_notes_opencpn_pi.cpp:189
 msgid "SignalK Notes"
 msgstr ""
 
@@ -207,12 +223,17 @@ msgstr ""
 msgid "SignalK Notes Configuration"
 msgstr ""
 
+#: src/signalk_notes_opencpn_pi.cpp:695 src/signalk_notes_opencpn_pi.cpp:729
+#: src/signalk_notes_opencpn_pi.cpp:738
+msgid "SignalK Notes Plugin"
+msgstr ""
+
 #. Auth-Button aktiv
-#: src/tpConfigDialog.cpp:176 src/tpConfigDialog.cpp:736
+#: src/tpConfigDialog.cpp:175 src/tpConfigDialog.cpp:729
 msgid "SignalK authentication"
 msgstr ""
 
-#: src/tpConfigDialog.cpp:539
+#: src/tpConfigDialog.cpp:532
 #, c-format
 msgid "Total icons: %d"
 msgstr ""

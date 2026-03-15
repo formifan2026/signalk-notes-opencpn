@@ -167,11 +167,14 @@ wxString signalk_notes_opencpn_pi::GetLongDescription() {
 int signalk_notes_opencpn_pi::Init(void) {
   AddLocaleCatalog(PLUGIN_CATALOG_NAME);
   // wxMessageBox("Attach debugger now! PID: " + wxString::Format("%d",
-  // getpid()),"Debug", wxOK);
+  // getpid()),
+  //              "Debug", wxOK);
   m_parent_window = GetOCPNCanvasWindow();
   m_pTPConfig = GetOCPNConfigObject();
 
-  LoadConfig();
+  if (!LoadConfig()) {
+    return false;
+  }
 
 #ifdef PLUGIN_USE_SVG
   m_signalk_notes_opencpn_button_id = InsertPlugInToolSVG(
@@ -614,11 +617,11 @@ void signalk_notes_opencpn_pi::SaveConfig() {
   SKN_LOG(this, "SaveConfig called, token='%s'",  // ← NEU
           m_pSignalKNotesManager->GetAuthToken().Left(20));
 
-  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+  /*pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
 
   pConf->Write("SignalKHost", m_pSignalKNotesManager->GetServerHost());
   pConf->Write("SignalKPort", m_pSignalKNotesManager->GetServerPort());
-
+  */
   pConf->SetPath("/Settings/signalk_notes_opencpn_pi/Providers");
 
   for (auto& it : m_pSignalKNotesManager->GetProviderSettings())
@@ -678,20 +681,66 @@ void signalk_notes_opencpn_pi::SaveConfig() {
   SKN_LOG(this, "SaveConfig Flush done");  // ← NEU
 }
 
-void signalk_notes_opencpn_pi::LoadConfig() {
+bool signalk_notes_opencpn_pi::LoadConfig() {
   wxFileConfig* pConf = m_pTPConfig;
-  if (!pConf) return;
+  if (!pConf) return false;
+  pConf->SetPath("/Settings/NMEADataSource");
 
-  pConf->SetPath("/Settings/signalk_notes_opencpn_pi");
+  wxString data;
+  if (!pConf->Read("DataConnections", &data)) {
+    SKN_LOG(this, "DataConnections not found");
+
+    wxMessageBox(_("No DataConnections entry found.\nPlease check your OpenCPN "
+                   "settings."),
+                 _("SignalK Notes Plugin"), wxOK | wxICON_ERROR);
+
+    return false;
+  }
 
   wxString host;
-  int port;
+  int port = -1;
 
-  pConf->Read("SignalKHost", &host, "192.168.188.25");
-  pConf->Read("SignalKPort", &port, 4000);
+  wxArrayString entries = wxSplit(data, '|');
+  bool found = false;
+
+  for (auto& entry : entries) {
+    if (entry.StartsWith("1;3;")) {
+      wxArrayString fields = wxSplit(entry, ';');
+
+      if (fields.size() >= 4) {
+        host = fields[2];
+        long portLong = 0;
+        fields[3].ToLong(&portLong);
+        port = (int)portLong;
+
+        SKN_LOG(this, "FOUND: host=%s port=%d", host, port);
+        found = true;
+        break;
+      }
+    }
+  }
+
+  if (!found) {
+    SKN_LOG(this,
+            "No matching DataConnections entry starting with '1;3;' found");
+
+    wxMessageBox(_("No matching NMEA connection found.\nExpected an entry "
+                   "starting with '1;3;'."),
+                 _("SignalK Notes Plugin"), wxOK | wxICON_ERROR);
+
+    return false;
+  }
+
+  if (host.IsEmpty() || port <= 0) {
+    SKN_LOG(this, "Invalid host or port extracted from DataConnections");
+
+    wxMessageBox(_("Invalid host or port values in DataConnections."),
+                 _("SignalK Notes Plugin"), wxOK | wxICON_ERROR);
+
+    return false;
+  }
 
   m_pSignalKNotesManager->SetServerDetails(host, port);
-
   std::map<wxString, bool> providers;
 
   pConf->SetPath("/Settings/signalk_notes_opencpn_pi/Providers");
@@ -824,6 +873,7 @@ void signalk_notes_opencpn_pi::LoadConfig() {
   m_fetchInterval =
       m_pTPConfig->Read("DisplaySettings/FetchInterval",
                         (long)tpConfigDialog::DEFAULT_FETCH_INTERVAL);
+  return true;
 }
 
 wxString signalk_notes_opencpn_pi::GetPluginIconDir() const {

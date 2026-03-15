@@ -32,6 +32,10 @@ Each note type can be assigned its own icon. Icon mappings can be configured in 
 ### • SignalK Authentication Support
 The plugin supports authentication for SignalK servers that require login credentials. The current authentication status is shown in the settings dialog.
 
+## Prerequisite
+The plugin will only work with a valid SignalK data connection configured in OpenCPN!
+<img src="docs/images/dataconnection.png" width="75%">
+
 ## Configuration
 
 Open the settings dialog via the toolbar or via
