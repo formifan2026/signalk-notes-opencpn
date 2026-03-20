@@ -197,7 +197,7 @@ int signalk_notes_opencpn_pi::Init(void) {
 }
 
 void signalk_notes_opencpn_pi::LateInit(void) {
-  SendPluginMessage("SIGNALK_NOTES_OPENCPN_PI_READY_FOR_REQUESTS", "TRUE");
+  // SendPluginMessage("SIGNALK_NOTES_OPENCPN_PI_READY_FOR_REQUESTS", "TRUE");
 }
 
 bool signalk_notes_opencpn_pi::DeInit(void) {

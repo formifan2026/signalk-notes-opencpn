@@ -36,7 +36,10 @@
 #include <wx/bmpbndl.h>
 #endif
 
-wxString HttpGet(const wxString& url, const wxString& authHeader = "");
+wxString HttpGet(const wxString& url,
+                 const wxString& authHeader = "",
+                 long* httpStatusOut = nullptr,
+                 wxString* errorOut = nullptr);
 
 #if (defined(__linux__) || defined(__APPLE__)) && !defined(__OCPN__ANDROID__)
 
@@ -50,37 +53,61 @@ static size_t CurlWriteCallback(void* contents, size_t size, size_t nmemb,
   return total;
 }
 
-wxString HttpGet(const wxString& url, const wxString& authHeader) {
-  CURL* curl = curl_easy_init();
-  if (!curl) return "";
+wxString HttpGet(const wxString& url,
+                 const wxString& authHeader,
+                 long* httpStatusOut,
+                 wxString* errorOut)
+{
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "curl_easy_init failed";
+        return "";
+    }
 
-  std::string response;
-  struct curl_slist* headers = NULL;
+    std::string response;
+    struct curl_slist* headers = NULL;
 
-  if (!authHeader.IsEmpty()) {
-    wxString hdr = authHeader;
-    headers = curl_slist_append(headers, hdr.mb_str().data());
-  }
+    if (!authHeader.IsEmpty()) {
+        headers = curl_slist_append(headers, authHeader.mb_str().data());
+    }
 
-  curl_easy_setopt(curl, CURLOPT_URL, url.mb_str().data());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_URL, url.mb_str().data());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-  if (headers) curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    if (headers)
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-  CURLcode res = curl_easy_perform(curl);
+    CURLcode res = curl_easy_perform(curl);
 
-  long httpCode = 0;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
+    long httpCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 
-  curl_slist_free_all(headers);
-  curl_easy_cleanup(curl);
+    if (httpStatusOut)
+        *httpStatusOut = httpCode;
 
-  if (res != CURLE_OK || httpCode != 200) return "";
+    if (res != CURLE_OK) {
+        if (errorOut)
+            *errorOut = wxString::Format("CURL error: %s",
+                                         curl_easy_strerror(res));
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        return "";
+    }
 
-  return wxString::FromUTF8(response.c_str());
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+
+    if (httpCode != 200) {
+        if (errorOut)
+            *errorOut = wxString::Format("HTTP error %ld", httpCode);
+        return "";
+    }
+
+    return wxString::FromUTF8(response.c_str());
 }
 
 #endif
@@ -90,131 +117,198 @@ wxString HttpGet(const wxString& url, const wxString& authHeader) {
 #include <winhttp.h>
 #pragma comment(lib, "winhttp.lib")
 
-wxString HttpGet(const wxString& url, const wxString& authHeader) {
-  // URL parsen
-  URL_COMPONENTS uc = {0};
-  uc.dwStructSize = sizeof(uc);
+wxString HttpGet(const wxString& url,
+                 const wxString& authHeader,
+                 long* httpStatusOut,
+                 wxString* errorOut)
+{
+    URL_COMPONENTS uc = {0};
+    uc.dwStructSize = sizeof(uc);
 
-  wchar_t host[256];
-  wchar_t path[2048];
+    wchar_t host[256];
+    wchar_t path[2048];
 
-  uc.lpszHostName = host;
-  uc.dwHostNameLength = 256;
-  uc.lpszUrlPath = path;
-  uc.dwUrlPathLength = 2048;
+    uc.lpszHostName = host;
+    uc.dwHostNameLength = 256;
+    uc.lpszUrlPath = path;
+    uc.dwUrlPathLength = 2048;
 
-  if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc)) return "";
+    if (!WinHttpCrackUrl(url.wc_str(), 0, 0, &uc)) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpCrackUrl failed";
+        return "";
+    }
 
-  HINTERNET hSession =
-      WinHttpOpen(L"SignalKNotes/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-                  WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    HINTERNET hSession =
+        WinHttpOpen(L"SignalKNotes/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 
-  if (!hSession) return "";
+    if (!hSession) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpOpen failed";
+        return "";
+    }
 
-  HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
-  if (!hConnect) {
-    WinHttpCloseHandle(hSession);
-    return "";
-  }
+    HINTERNET hConnect = WinHttpConnect(hSession, uc.lpszHostName, uc.nPort, 0);
+    if (!hConnect) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpConnect failed";
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
 
-  HINTERNET hRequest = WinHttpOpenRequest(
-      hConnect, L"GET", uc.lpszUrlPath, NULL, WINHTTP_NO_REFERER,
-      WINHTTP_DEFAULT_ACCEPT_TYPES,
-      (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
+    HINTERNET hRequest = WinHttpOpenRequest(
+        hConnect, L"GET", uc.lpszUrlPath, NULL, WINHTTP_NO_REFERER,
+        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        (uc.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
 
-  if (!hRequest) {
-    WinHttpCloseHandle(hConnect);
-    WinHttpCloseHandle(hSession);
-    return "";
-  }
+    if (!hRequest) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpOpenRequest failed";
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
 
-  // Authorization Header korrekt übernehmen
-  if (!authHeader.IsEmpty()) {
-    std::wstring hdr = std::wstring(authHeader.wc_str());
-    WinHttpAddRequestHeaders(
-        hRequest, hdr.c_str(), (DWORD)-1,
-        WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
-  }
+    if (!authHeader.IsEmpty()) {
+        std::wstring hdr = std::wstring(authHeader.wc_str());
+        WinHttpAddRequestHeaders(
+            hRequest, hdr.c_str(), (DWORD)-1,
+            WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+    }
 
-  if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
-                          WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
+    if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                            WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpSendRequest failed";
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    if (!WinHttpReceiveResponse(hRequest, NULL)) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpReceiveResponse failed";
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    DWORD status = 0;
+    DWORD size = sizeof(status);
+
+    if (!WinHttpQueryHeaders(hRequest,
+                             WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                             WINHTTP_HEADER_NAME_BY_INDEX,
+                             &status,
+                             &size,
+                             WINHTTP_NO_HEADER_INDEX))
+    {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "WinHttpQueryHeaders failed";
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        return "";
+    }
+
+    if (httpStatusOut)
+        *httpStatusOut = status;
+
+    std::string response;
+    DWORD bytesAvailable = 0;
+
+    do {
+        if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable)) break;
+        if (bytesAvailable == 0) break;
+
+        std::vector<char> buffer(bytesAvailable);
+        DWORD bytesRead = 0;
+
+        if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
+            break;
+
+        response.append(buffer.data(), bytesRead);
+
+    } while (bytesAvailable > 0);
+
     WinHttpCloseHandle(hRequest);
     WinHttpCloseHandle(hConnect);
     WinHttpCloseHandle(hSession);
-    return "";
-  }
 
-  if (!WinHttpReceiveResponse(hRequest, NULL)) {
-    WinHttpCloseHandle(hRequest);
-    WinHttpCloseHandle(hConnect);
-    WinHttpCloseHandle(hSession);
-    return "";
-  }
+    if (status != 200) {
+        if (errorOut)
+            *errorOut = wxString::Format("HTTP error %lu", status);
+        return "";
+    }
 
-  std::string response;
-  DWORD bytesAvailable = 0;
-
-  do {
-    if (!WinHttpQueryDataAvailable(hRequest, &bytesAvailable)) break;
-
-    if (bytesAvailable == 0) break;
-
-    std::vector<char> buffer(bytesAvailable);
-    DWORD bytesRead = 0;
-
-    if (!WinHttpReadData(hRequest, buffer.data(), bytesAvailable, &bytesRead))
-      break;
-
-    response.append(buffer.data(), bytesRead);
-
-  } while (bytesAvailable > 0);
-
-  WinHttpCloseHandle(hRequest);
-  WinHttpCloseHandle(hConnect);
-  WinHttpCloseHandle(hSession);
-
-  return wxString::FromUTF8(response.c_str());
+    return wxString::FromUTF8(response.c_str());
 }
 
 #endif
 
 #ifdef __OCPN__ANDROID__
 
-wxString HttpGet(const wxString& url, const wxString& authHeader) {
-  // Android: HTTP über wxHTTP
-  wxHTTP http;
-  http.SetTimeout(10);
+wxString HttpGet(const wxString& url,
+                 const wxString& authHeader,
+                 long* httpStatusOut,
+                 wxString* errorOut)
+{
+    wxHTTP http;
+    http.SetTimeout(10);
 
-  wxURL wxurl(url);
-  if (wxurl.GetError() != wxURL_NOERR) return "";
+    wxURL wxurl(url);
+    if (wxurl.GetError() != wxURL_NOERR) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "wxURL parse error";
+        return "";
+    }
 
-  wxString host = wxurl.GetServer();
-  long port = 80;
-  wxurl.GetPort().ToLong(&port);
-  wxString path = "/" + wxurl.GetPath();
+    wxString host = wxurl.GetServer();
+    long port = 80;
+    wxurl.GetPort().ToLong(&port);
+    wxString path = "/" + wxurl.GetPath();
 
-  if (!authHeader.IsEmpty()) {
-    http.SetHeader("Authorization", authHeader.AfterFirst(' ').AfterFirst(' '));
-  }
+    if (!authHeader.IsEmpty()) {
+        http.SetHeader("Authorization", authHeader.AfterFirst(' ').AfterFirst(' '));
+    }
 
-  if (!http.Connect(host, (unsigned short)port)) return "";
+    if (!http.Connect(host, (unsigned short)port)) {
+        if (httpStatusOut) *httpStatusOut = -1;
+        if (errorOut) *errorOut = "HTTP connect failed";
+        return "";
+    }
 
-  wxInputStream* in = http.GetInputStream(path);
-  if (!in || !in->IsOk()) {
+    wxInputStream* in = http.GetInputStream(path);
+    if (!in || !in->IsOk()) {
+        if (httpStatusOut) *httpStatusOut = http.GetResponse();
+        if (errorOut) *errorOut = "HTTP input stream failed";
+        delete in;
+        return "";
+    }
+
+    if (httpStatusOut)
+        *httpStatusOut = http.GetResponse();
+
+    wxString response;
+    char buf[4096];
+    while (true) {
+        in->Read(buf, sizeof(buf));
+        size_t read = in->LastRead();
+        if (read == 0) break;
+        response += wxString::FromUTF8(buf, read);
+    }
     delete in;
-    return "";
-  }
 
-  wxString response;
-  char buf[4096];
-  while (true) {
-    in->Read(buf, sizeof(buf));
-    size_t read = in->LastRead();
-    if (read == 0) break;
-    response += wxString::FromUTF8(buf, read);
-  }
-  delete in;
-  return response;
+    if (httpStatusOut && *httpStatusOut != 200) {
+        if (errorOut)
+            *errorOut = wxString::Format("HTTP error %ld", *httpStatusOut);
+        return "";
+    }
+
+    return response;
 }
 
 #endif
@@ -575,46 +669,97 @@ void tpSignalKNotesManager::RenderWithHtmlWindow(wxDialog* dlg,
 
 int tpSignalKNotesManager::FetchNotesListForCanvas(
     double centerLat, double centerLon, double maxDistance,
-    signalk_notes_opencpn_pi::CanvasState& state) {
-  if (m_serverHost.IsEmpty()) {
-    SKN_LOG(m_parent, _("Server host not configured"));
-    return -2;
-  }
-  wxString path;
-  path.Printf(wxT("http://%s:%d/signalk/v2/api/resources/"
-                  "notes?position=[%f,%f]&distance=%.0f"),
-              m_serverHost, m_serverPort, centerLon, centerLat, maxDistance);
+    signalk_notes_opencpn_pi::CanvasState& state)
+{
+    if (m_serverHost.IsEmpty()) {
+        SKN_LOG(m_parent, _("Server host not configured"));
+        return -2;
+    }
 
-  wxString response = HttpGet(path);
+    wxString path;
+    path.Printf("http://%s:%d/signalk/v2/api/resources/"
+                "notes?position=[%f,%f]&distance=%.0f",
+                m_serverHost.c_str(), m_serverPort,
+                centerLon, centerLat, maxDistance);
 
-  if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "FetchNotesList FAILED - empty response");
-    return -1;
-  }
+    long status = 0;
+    wxString err;
 
-  int ok = ParseNotesListJSON(response, state);
+    wxString response = HttpGet(path, "", &status, &err);
 
-  if (ok == -1) {
-    SKN_LOG(m_parent, "FetchNotesList FAILED - JSON parse error");
-  }
+    if (response.IsEmpty() || status != 200) {
 
-  return ok;
+        wxString shortResp = response.Left(200);
+        if (response.Length() > 200)
+            shortResp += "...";
+
+        SKN_LOG(m_parent,
+            wxString::Format(
+                "FetchNotesList FAILED — status=%ld error=\"%s\" url=%s host=%s port=%d response=\"%s\"",
+                status,
+                err,
+                path,
+                m_serverHost.c_str(),
+                m_serverPort,
+                shortResp
+            )
+        );
+
+        return -1;
+    }
+
+    int ok = ParseNotesListJSON(response, state);
+
+    if (ok == -1) {
+        SKN_LOG(m_parent,
+            wxString::Format(
+                "FetchNotesList FAILED — JSON parse error url=%s host=%s port=%d",
+                path,
+                m_serverHost.c_str(),
+                m_serverPort
+            )
+        );
+    }
+
+    return ok;
 }
 
+
 bool tpSignalKNotesManager::FetchNoteDetails(const wxString& noteId,
-                                             SignalKNote& note) {
-  wxString path;
-  path.Printf(wxT("http://%s:%d/signalk/v2/api/resources/notes/%s"),
-              m_serverHost, m_serverPort, noteId);
+                                             SignalKNote& note)
+{
+    wxString path;
+    path.Printf("http://%s:%d/signalk/v2/api/resources/notes/%s",
+                m_serverHost.c_str(), m_serverPort, noteId);
 
-  wxString response = HttpGet(path);
+    long status = 0;
+    wxString err;
 
-  if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "FetchNoteDetails FAILED - empty response");
-    return false;
-  }
+    wxString response = HttpGet(path, "", &status, &err);
 
-  return ParseNoteDetailsJSON(response, note);
+    if (response.IsEmpty() || status != 200) {
+
+        // Response kürzen, damit Logs nicht explodieren
+        wxString shortResp = response.Left(200);
+        if (response.Length() > 200)
+            shortResp += "...";
+
+        SKN_LOG(m_parent,
+            wxString::Format(
+                "FetchNoteDetails FAILED — status=%ld error=\"%s\" url=%s host=%s port=%d response=\"%s\"",
+                status,
+                err,
+                path,
+                m_serverHost.c_str(),
+                m_serverPort,
+                shortResp
+            )
+        );
+
+        return false;
+    }
+
+    return ParseNoteDetailsJSON(response, note);
 }
 
 int tpSignalKNotesManager::ParseNotesListJSON(
@@ -969,9 +1114,10 @@ bool tpSignalKNotesManager::RequestAuthorization() {
 
   wxHTTP http;
   http.SetTimeout(10);
-  if (!http.Connect(m_serverHost, m_serverPort)) {
+  if (!http.Connect(m_serverHost, m_serverPort)) {  
     SKN_LOG(m_parent,
-            "SignalK Notes Auth: Connection failed (RequestAuthorization)");
+            wxString::Format("SignalK Notes Auth: Connection failed (RequestAuthorization) — host=%s port=%d",
+                             m_serverHost, m_serverPort));
     return false;
   }
 
@@ -1093,7 +1239,9 @@ bool tpSignalKNotesManager::ValidateToken() {
   wxString response = HttpGet(url, "Authorization: Bearer " + m_authToken);
 
   if (response.IsEmpty()) {
-    SKN_LOG(m_parent, "ValidateToken - empty or failed HTTP response");
+        SKN_LOG(m_parent,
+            wxString::Format("ValidateToken - empty or failed HTTP response — url=%s host=%s port=%d",
+                             url, m_serverHost.c_str(), m_serverPort));
     return false;
   }
 
