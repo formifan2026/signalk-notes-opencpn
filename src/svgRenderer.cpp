@@ -5,8 +5,13 @@
 #include <wx/regex.h>
 #include <wx/log.h>
 #include <wx/sstream.h>
-#include <wx/dcmemory.h>
-#include <wx/dcgraph.h>
+
+// Graphics-Includes nur für Non-Android Builds
+#ifndef __OCPN__ANDROID__
+  #include <wx/dcmemory.h>
+  #include <wx/dcgraph.h>
+#endif
+
 #include <wx/pen.h>
 #include <wx/brush.h>
 
@@ -83,6 +88,12 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
                               int targetWidth,
                               int targetHeight)
 {
+#ifdef __OCPN__ANDROID__
+  // Android: wxGraphicsContext nicht verfügbar
+  wxLogWarning("SvgRenderer::RenderToPng: Android - wxGraphicsContext not available");
+  return false;
+#else
+  // Desktop: Verwende wxGraphicsContext zum Rendern
   wxLogMessage("=== RenderToPng START ===");
   wxLogMessage("targetWidth=%d targetHeight=%d", targetWidth, targetHeight);
   wxLogMessage("SVG viewBox: x=%f y=%f w=%f h=%f",
@@ -191,6 +202,7 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
   wxLogMessage("PNG save: OK");
   wxLogMessage("=== RenderToPng END ===");
   return true;
+#endif
 }
 
 // ---------------------------------------------------------
@@ -964,6 +976,7 @@ void SvgRenderer::ApproximateQuadraticBezier(
 // Style anwenden
 // ---------------------------------------------------------
 
+#ifndef __OCPN__ANDROID__
 void SvgRenderer::ApplyStyle(wxGraphicsContext* gc, const SvgStyle& style,
                              bool forStroke) {
   wxColour col = forStroke ? style.stroke : style.fill;
@@ -1009,11 +1022,13 @@ void SvgRenderer::ApplyStyle(wxGraphicsContext* gc, const SvgStyle& style,
     gc->SetBrush(brush);
   }
 }
+#endif
 
 // ---------------------------------------------------------
 // RenderElement
 // ---------------------------------------------------------
 
+#ifndef __OCPN__ANDROID__
 void SvgRenderer::RenderElement(wxGraphicsContext* gc, const SvgElement& el,
                                 const SvgDocument& doc,
                                 const wxAffineMatrix2D& parentTransform) {
@@ -1192,3 +1207,4 @@ void SvgRenderer::RenderElement(wxGraphicsContext* gc, const SvgElement& el,
 
   gc->PopState();
 }
+#endif
