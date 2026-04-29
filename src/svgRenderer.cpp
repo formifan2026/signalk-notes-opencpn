@@ -1,6 +1,7 @@
 ﻿#include "svgRenderer.h"
-#include "signalk_notes_opencpn_pi.h"
-
+#ifndef __OCPN__ANDROID__
+  #include "signalk_notes_opencpn_pi.h"
+#endif
 #include <wx/tokenzr.h>
 #include <wx/regex.h>
 #include <wx/log.h>
@@ -90,18 +91,9 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
 {
 #ifdef __OCPN__ANDROID__
   // Android: wxGraphicsContext nicht verfügbar
-  wxLogWarning("SvgRenderer::RenderToPng: Android - wxGraphicsContext not available");
   return false;
 #else
   // Desktop: Verwende wxGraphicsContext zum Rendern
-  wxLogMessage("=== RenderToPng START ===");
-  wxLogMessage("targetWidth=%d targetHeight=%d", targetWidth, targetHeight);
-  wxLogMessage("SVG viewBox: x=%f y=%f w=%f h=%f",
-               doc.viewBoxX, doc.viewBoxY,
-               doc.viewBoxWidth, doc.viewBoxHeight);
-  wxLogMessage("SVG pixel size: widthPx=%d heightPx=%d",
-               doc.widthPx, doc.heightPx);
-
   int w = 0;
   int h = 0;
 
@@ -110,7 +102,6 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
       (doc.viewBoxWidth <= 0 || doc.viewBoxHeight <= 0)) {
     w = targetWidth;
     h = targetHeight;
-    wxLogMessage("Using explicit target size (no viewBox): %d x %d", w, h);
   }
   // 2) Wenn viewBox vorhanden → Größe aus viewBox + Limits ableiten
   else if (doc.viewBoxWidth > 0 && doc.viewBoxHeight > 0) {
@@ -142,22 +133,17 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
 
     w = (int)std::round(fw);
     h = (int)std::round(fh);
-    wxLogMessage("Using viewBox-based size: %d x %d (aspect=%f)", w, h, aspect);
   }
   // 3) Fallback: width/height-Attribute oder Defaults
   else {
     if (doc.widthPx > 0 && doc.heightPx > 0) {
       w = doc.widthPx;
       h = doc.heightPx;
-      wxLogMessage("Using pixel size: %d x %d", w, h);
     } else {
       w = (targetWidth  > 0) ? targetWidth  : 900;
       h = (targetHeight > 0) ? targetHeight : 400;
-      wxLogMessage("Using default size: %d x %d", w, h);
     }
   }
-
-  wxLogMessage("Final render size: %d x %d", w, h);
 
   wxBitmap bmp(w, h);
   wxMemoryDC dc(bmp);
@@ -179,9 +165,6 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
     const double tx = (w / s - doc.viewBoxWidth) * 0.5;
     const double ty = (h / s - doc.viewBoxHeight) * 0.5;
 
-    wxLogMessage("Applying scale: sx=%f sy=%f (iso=%f), translate=%f,%f",
-                 sx, sy, s, tx, ty);
-
     gc->Scale(s, s);
     gc->Translate(-doc.viewBoxX + tx, -doc.viewBoxY + ty);
   }
@@ -189,8 +172,6 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
   wxAffineMatrix2D identity;
   if (doc.root) {
     RenderElement(gc.get(), *doc.root, doc, identity);
-  } else {
-    wxLogWarning("SvgRenderer::RenderToPng: doc.root is NULL");
   }
 
   wxImage img = bmp.ConvertToImage();
@@ -199,8 +180,6 @@ bool SvgRenderer::RenderToPng(const SvgDocument& doc,
     return false;
   }
 
-  wxLogMessage("PNG save: OK");
-  wxLogMessage("=== RenderToPng END ===");
   return true;
 #endif
 }
@@ -740,10 +719,6 @@ wxColour SvgRenderer::ParseColour(const wxString& s, bool& ok) {
     }
   }
 
-  if (v.StartsWith("rgb(") || v.StartsWith("rgba(")) {
-    wxLogWarning("SvgRenderer::ParseColour: parsing rgb/rgba color '%s'", v);
-  }
-
   wxColour c(v);
   if (c.IsOk()) {
     ok = true;
@@ -1032,8 +1007,6 @@ void SvgRenderer::ApplyStyle(wxGraphicsContext* gc, const SvgStyle& style,
 void SvgRenderer::RenderElement(wxGraphicsContext* gc, const SvgElement& el,
                                 const SvgDocument& doc,
                                 const wxAffineMatrix2D& parentTransform) {
-  wxLogMessage("RenderElement: type=%d", (int)el.type);
-
   wxAffineMatrix2D m = parentTransform;
   m.Concat(el.transform.matrix);
 
@@ -1041,33 +1014,7 @@ void SvgRenderer::RenderElement(wxGraphicsContext* gc, const SvgElement& el,
   wxPoint2DDouble tr;
   m.Get(&mat, &tr);
 
-  wxLogMessage("  Transform: [%f %f; %f %f] + [%f %f]", mat.m_11, mat.m_12,
-               mat.m_21, mat.m_22, tr.m_x, tr.m_y);
-
   gc->PushState();
-
-  switch (el.type) {
-    case SvgElementType::TEXT:
-      wxLogMessage("  TEXT: '%s' at (%f, %f) fontSize=%f", el.text, el.tx,
-                   el.ty, el.style.fontSize);
-      break;
-
-    case SvgElementType::RECT:
-      wxLogMessage("  RECT: x=%f y=%f w=%f h=%f", el.x, el.y, el.width,
-                   el.height);
-      break;
-
-    case SvgElementType::LINE:
-      wxLogMessage("  LINE: (%f,%f) -> (%f,%f)", el.x1, el.y1, el.x2, el.y2);
-      break;
-
-    case SvgElementType::PATH:
-      wxLogMessage("  PATH: %zu points", el.points.size());
-      break;
-
-    default:
-      break;
-  }
 
   switch (el.type) {
     case SvgElementType::GROUP: {

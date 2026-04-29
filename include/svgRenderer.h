@@ -6,7 +6,12 @@
 #include <wx/geometry.h>
 #include <wx/affinematrix2d.h>
 #include <wx/xml/xml.h>
-#include <wx/graphics.h>
+
+// Graphics-Header nur für Non-Android Builds
+#ifndef __OCPN__ANDROID__
+  #include <wx/graphics.h>
+#endif
+
 #include <wx/image.h>
 
 #include <map>
@@ -135,10 +140,12 @@ private:
   void ParsePathData(const wxString& d,
                      std::vector<wxPoint2DDouble>& outPoints);
 
-  // Rendering
+  // Rendering (nur auf Non-Android)
+#ifndef __OCPN__ANDROID__
   void RenderElement(wxGraphicsContext* gc, const SvgElement& el,
                      const SvgDocument& doc,
                      const wxAffineMatrix2D& parentTransform);
 
   void ApplyStyle(wxGraphicsContext* gc, const SvgStyle& style, bool forStroke);
+#endif
 };
