@@ -1228,46 +1228,8 @@ void SvgRenderer::RenderElement(wxGraphicsContext* gc, const SvgElement& el,
 // ---------------------------------------------------------
 #ifdef __OCPN__ANDROID__
 
-// Minimal NanoSVG inline implementation für SVG Rasterization
-namespace {
-  struct NSVGimage {
-    float width, height;
-  };
-  
-  struct NSVGrasterizer {
-    unsigned char* data;
-  };
-  
-  NSVGimage* nsvgParse(char* input, const char* units, float dpi) {
-    NSVGimage* img = new NSVGimage();
-    img->width = 100;
-    img->height = 100;
-    return img;
-  }
-  
-  NSVGrasterizer* nsvgCreateRasterizer() {
-    return new NSVGrasterizer();
-  }
-  
-  void nsvgRasterize(NSVGrasterizer* r, NSVGimage* img, float tx, float ty,
-                     float scale, unsigned char* dst, int w, int h, int stride) {
-    // Placeholder: weiße Fläche
-    for (int i = 0; i < w * h * 4; i += 4) {
-      dst[i] = 255;     // R
-      dst[i+1] = 255;   // G
-      dst[i+2] = 255;   // B
-      dst[i+3] = 255;   // A
-    }
-  }
-  
-  void nsvgDeleteRasterizer(NSVGrasterizer* r) {
-    delete r;
-  }
-  
-  void nsvgDelete(NSVGimage* img) {
-    delete img;
-  }
-}
+#define NANOSVG_IMPLEMENTATION
+#include "nanosvg.h"
 
 bool SvgRenderer::RenderToImageNanoSVG(const wxString& svgXml, wxImage& outImage,
                                        int targetWidth, int targetHeight) {
