@@ -1,11 +1,6 @@
-﻿#include "svgRenderer.h"
-
-// Nur auf Android: NanoSVG Library
-#ifdef __OCPN__ANDROID__
-  #warning "NanoSVG included!"
-  #define NANOSVG_IMPLEMENTATION
-  #include <nanosvg.h>
-#endif
+﻿#define NANOSVG_IMPLEMENTATION
+#include <nanosvg.h>
+#include "svgRenderer.h"
 
 #include <wx/tokenzr.h>
 #include <wx/regex.h>
