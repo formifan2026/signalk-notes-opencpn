@@ -201,6 +201,7 @@ set(HDRS
     include/tpConfigDialog.h
     include/android_uuid.h
     include/nanosvg.h
+    include/nanosvgrast.h
     include/svgRenderer.h
 )
 
